@@ -718,6 +718,14 @@ static int realMain(int argc, char** argv) {
         check(status(r) == 200 && has(rr, "\"ok\":true") && countMails("confirmation", "rahim@example.com") == before + 1,
               "employee: admin-added account logs in, reserves, gets the confirmation email", rr);
         rahim.post("/api/reservations/cancel", {{"id", std::to_string(jsonInt(rr, "id"))}});
+
+        Browser page;
+        std::string copy = body(page.get("/")) + body(page.get("/login.html")) + body(page.get("/register.html"));
+        check(has(body(page.get("/")), "university staff") &&
+                  has(body(page.get("/login.html")), "university staff") &&
+                  has(body(page.get("/register.html")), "university staff") &&
+                  has(body(page.get("/js/api.js")), "University staff"),
+              "pages: copy names university staff", copy.substr(0, 120));
     }
 
     std::printf("(stopping server)\n");

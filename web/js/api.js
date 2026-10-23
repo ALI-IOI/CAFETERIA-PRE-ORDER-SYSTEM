@@ -85,6 +85,11 @@ const store = {
   },
 };
 
+// "student" / "teacher" / "employee" as people read it.
+function roleLabel(role) {
+  return role === "teacher" ? "Teacher" : role === "employee" ? "University staff" : "Student";
+}
+
 function statusChip(status) {
   return el("span", { class: "chip chip--" + status }, status);
 }
