@@ -73,7 +73,12 @@ if(DRY_RUN)
   return()
 endif()
 
-git(commit commit-tree ${tree} -p public -m "${MESSAGE}")
+# The message goes through a file: CMake splits values at ';', so passing it as
+# an argument would break any message that contains a semicolon.
+set(msgfile "${ROOT}/.git/publish-message")
+file(WRITE "${msgfile}" "${MESSAGE}\n")
+git(commit commit-tree ${tree} -p public -F "${msgfile}")
+file(REMOVE "${msgfile}")
 git(ignored update-ref refs/heads/public ${commit})
 execute_process(COMMAND git push origin public:main WORKING_DIRECTORY "${ROOT}" RESULT_VARIABLE rc)
 if(NOT rc EQUAL 0)
