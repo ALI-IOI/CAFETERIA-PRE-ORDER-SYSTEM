@@ -84,14 +84,14 @@ function dishCard(item) {
     meter.firstChild.style.width = pct + "%";
     body.append(
       el("p", { class: "dish__meta" }, el("span", { class: "dish__left" }, Math.max(0, item.remaining) + " portions left"),
-        " · up to " + menu.perUserLimit + " per person" + (item.yours ? " · you have " + item.yours : "")),
+        ", up to " + menu.perUserLimit + " each" + (item.yours ? ", you have " + item.yours : "")),
       meter);
     if (!menu.open) body.append(el("p", { class: "dish__meta" }, el("strong", {}, "Reservations closed for today.")));
     if (soldOut || item.yourPosition > 0) body.append(waitlistBox(item));
     if (!soldOut) body.append(freshControls(item));
   } else {
     body.append(el("p", { class: "dish__meta" },
-      item.stock > 0 ? item.stock + " in stock · buy at the counter" : el("span", { class: "out" }, "Out of stock")));
+      item.stock > 0 ? item.stock + " in stock, buy at the counter" : el("span", { class: "out" }, "Out of stock")));
   }
   return el("article", { class: "dish" + (soldOut ? " dish--soldout" : "") }, img, body);
 }

@@ -361,7 +361,7 @@
     if (v < reserved(i)) return fail(409, "The limit cannot go below the " + reserved(i) + " portions already reserved.");
     const before = it.limit;
     it.limit = v;
-    pushUndo(u.login, "Daily limit of " + it.name + ": " + before + " → " + v, { kind: "limit", i, value: before });
+    pushUndo(u.login, "Set " + it.name + " daily limit " + before + " -> " + v, { kind: "limit", i, value: before });
     promote(i);
     return ok({ message: "Daily limit of " + it.name + " is now " + v + "." });
   });
@@ -371,7 +371,7 @@
     if (!it || it.kind !== "packaged" || v === null) return fail(400, "Enter a whole number.");
     const before = it.stock;
     it.stock = v;
-    pushUndo(u.login, "Stock of " + it.name + ": " + before + " → " + v, { kind: "stock", i, value: before });
+    pushUndo(u.login, "Set " + it.name + " stock " + before + " -> " + v, { kind: "stock", i, value: before });
     return ok({ message: "Stock of " + it.name + " is now " + v + "." });
   });
   routes["POST /api/staff/settings"] = staffOnly((p, q, u) => {
@@ -387,7 +387,7 @@
     const before = db.settings[key];
     db.settings[key] = v;
     const show = (x) => (clock ? hhmm(x) : x);
-    pushUndo(u.login, "Setting " + key + ": " + show(before) + " → " + show(v), { kind: "setting", key, value: before });
+    pushUndo(u.login, "Changed " + key + " " + show(before) + " -> " + show(v), { kind: "setting", key, value: before });
     return ok({ message: "Saved " + key + " = " + show(v) + "." });
   });
   routes["POST /api/staff/undo"] = staffOnly(() => {
@@ -418,7 +418,7 @@
     if (!it || v === null) return fail(400, "Enter a whole number of taka.");
     const before = it.price;
     it.price = v;
-    pushUndo(u.login, "Price of " + it.name + ": " + before + " → " + v, { kind: "price", i, value: before });
+    pushUndo(u.login, "Set " + it.name + " price " + before + " -> " + v, { kind: "price", i, value: before });
     return ok({ message: "Price of " + it.name + " is now ৳ " + v + "." });
   });
   routes["POST /api/staff/items/available"] = staffOnly((p, q, u) => {
@@ -426,7 +426,7 @@
     if (!it) return fail(400, "That dish does not exist.");
     const before = it.available;
     it.available = p.available === "1";
-    pushUndo(u.login, it.name + (it.available ? " available today" : " not available today"), { kind: "available", i, value: before });
+    pushUndo(u.login, "Made " + it.name + (it.available ? " available" : " unavailable"), { kind: "available", i, value: before });
     return ok({ message: it.name + (it.available ? " is available today." : " is hidden from the menu today.") });
   });
   routes["POST /api/staff/items/image"] = staffOnly(() =>

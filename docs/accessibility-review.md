@@ -126,3 +126,12 @@ visible piece of text against the background actually behind it.
 | Colour notation | `build/check_hex_colors` (ctest `hex_colors_only`): 25 files in `web/` and `pages-demo/`, 0 non-hex colours |
 | Reflow | No horizontal scroll on any page at 375 px |
 | Browser surfaces | Text selection uses pale basil (`#E3EDE6`, text 14.0:1 on it); the caret is basil green |
+
+### Refinement pass (same day)
+
+Generic touches removed after a review against the frontend-design guidance: labels are in
+sentence case (no `text-transform: uppercase` left anywhere), the small label above the landing
+headline is gone, phrases joined by middle dots are plain sentences, the arrow is gone from
+"Review tray", and basil green is the only accent (prices are bold charcoal). Re-measured all 8
+pages at 1280 and 375 px: 0 failing text elements, lowest ratio 6.35:1, 0 uppercase elements, no
+horizontal scroll, no control under 44 px. `build/contrast_check`: 22/22 pairs.

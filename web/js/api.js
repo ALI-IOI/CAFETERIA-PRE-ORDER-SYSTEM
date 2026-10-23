@@ -110,8 +110,8 @@ async function fillAnnouncement(id) {
   const info = await api.get("/api/public/info");
   if (!info.ok) return;
   bar.textContent = info.open
-    ? "Orders open until " + info.cutoff + " \u00b7 pay at the counter"
-    : "Orders closed for today \u00b7 back tomorrow";
+    ? "Orders are open until " + info.cutoff + ". You pay at the counter when you collect."
+    : "Orders are closed for today. You can order again tomorrow morning.";
 }
 
 // "student" / "teacher" / "employee" as people read it.
