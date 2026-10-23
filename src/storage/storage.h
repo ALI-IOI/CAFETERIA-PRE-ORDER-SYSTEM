@@ -2,7 +2,8 @@
 //
 //   menu.txt          category|name|kind|stock|dailyLimit     (array order = item index)
 //   settings.txt      key=value  (settings + current_day + next_id)
-//   reservations.txt  id|user|item|qty|reservedAt|status|readyAt|lastNoticeAt|day
+//   reservations.txt  id|user|item|qty|reservedAt|status|readyAt|lastNoticeAt|day|expiresAt|reminderMinutes
+//                     (older 9-field lines still load; the last two are filled from settings)
 //   history.txt       same format, append-only archive of earlier days
 //
 // Lines starting with '#' and blank lines are ignored.

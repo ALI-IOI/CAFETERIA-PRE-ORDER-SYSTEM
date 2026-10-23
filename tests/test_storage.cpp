@@ -249,3 +249,39 @@ TEST(save_is_atomic_no_tmp_left_behind) {
     CHECK(!fs::exists(dir + "/menu.txt.tmp"));
     CHECK(fs::exists(dir + "/menu.txt"));
 }
+
+TEST(ready_deadline_and_interval_survive_restart) {
+    std::string dir = tempDir("deadline");
+    CafeFixture f;
+    Reservation* a = f.reserveOk(ALICE, TEHARI, 1);
+    ReadyReport rep;
+    markReady(f.caf, STAFF, TEHARI, 0, f.out, rep);
+    bool rec;
+    changeSetting(f.caf, STAFF, "freshness_minutes", 60, rec);  // after ready: must not apply to a
+    std::string err;
+    CHECK(saveCafeteria(f.caf, dir, err));
+    Restarted r(dir, f.clock.now());
+    Reservation* b = rlFindById(r.caf.reservations, a->id);
+    CHECK(b != nullptr);
+    if (b == nullptr) return;
+    CHECK_EQ(b->expiresAt, a->expiresAt);
+    CHECK_EQ(b->reminderMinutes, 60);
+}
+
+TEST(old_nine_field_reservation_lines_still_load) {
+    std::string dir = tempDir("old_format");
+    CafeFixture f;
+    std::string err;
+    saveCafeteria(f.caf, dir, err);
+    {
+        std::ofstream o(dir + "/reservations.txt");
+        o << "1|alice@uni.example|2|1|1000|Ready|2000|2000|20261023\n";
+    }
+    Restarted r(dir, f.clock.now());
+    CHECK(r.ok);
+    Reservation* a = rlFindById(r.caf.reservations, 1);
+    CHECK(a != nullptr);
+    if (a == nullptr) return;
+    CHECK_EQ(a->expiresAt, (time_t)(2000 + 420 * 60));  // filled in from the settings
+    CHECK_EQ(a->reminderMinutes, 60);
+}

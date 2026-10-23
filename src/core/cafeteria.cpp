@@ -162,6 +162,9 @@ Result markReady(Cafeteria& caf, const std::string& staff, int itemIndex, int po
         r->status = ResStatus::Ready;
         r->readyAt = now;
         r->lastNoticeAt = now;
+        // D7: later setting changes apply only to food marked ready after them.
+        r->expiresAt = now + (time_t)caf.settings.freshnessMinutes * 60;
+        r->reminderMinutes = caf.settings.reminderIntervalMinutes;
         qEnqueue(caf.reminders, r);  // capacity covers every reservation (see cafInit)
         report.madeReady++;
 
@@ -234,8 +237,6 @@ void timerTick(Cafeteria& caf, NotificationList& out) {
     time_t now = caf.clock->now();
     cafEnsureToday(caf);
 
-    const time_t interval = (time_t)caf.settings.reminderIntervalMinutes * 60;
-    const time_t window = (time_t)caf.settings.freshnessMinutes * 60;
     // Every reminder is due one interval after the previous notice, so the
     // front of the queue is always the next one due (proposal section 8).
     while (!qIsEmpty(caf.reminders)) {
@@ -246,7 +247,8 @@ void timerTick(Cafeteria& caf, NotificationList& out) {
         }
         std::string code = resCode(r->id);
         const std::string& name = itemName(caf, r);
-        time_t expiresAt = r->readyAt + window;
+        const time_t interval = (time_t)r->reminderMinutes * 60;
+        time_t expiresAt = r->expiresAt;
         if (now >= expiresAt) {
             qDequeue(caf.reminders);
             r->status = ResStatus::Expired;

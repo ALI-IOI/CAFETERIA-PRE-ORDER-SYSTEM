@@ -80,14 +80,15 @@ static bool loadSettings(Cafeteria& caf, const std::string& path, std::string& e
 static bool loadReservations(Cafeteria& caf, const std::string& path, std::string& err) {
     std::ifstream in(path);
     if (!in) return true;  // no reservations yet
-    std::string line, f[9];
+    std::string line, f[11];
     int lineNo = 0;
     while (std::getline(in, line)) {
         lineNo++;
         line = stripCR(line);
         if (isSkippable(line)) continue;
-        if (splitFields(line, '|', f, 9) != 9) {
-            err = lineError("reservations.txt", lineNo, "expected 9 fields");
+        int n = splitFields(line, '|', f, 11);
+        if (n != 9 && n != 11) {  // 9 = format before expiresAt/reminderMinutes were stored
+            err = lineError("reservations.txt", lineNo, "expected 11 fields");
             return false;
         }
         Reservation* r = new Reservation;
@@ -106,6 +107,19 @@ static bool loadReservations(Cafeteria& caf, const std::string& path, std::strin
         r->reservedAt = (time_t)reservedAt;
         r->readyAt = (time_t)readyAt;
         r->lastNoticeAt = (time_t)lastNoticeAt;
+        long long expiresAt = 0;
+        int reminderMinutes = 0;
+        if (n == 11 && (!parseIntStrict(f[9], expiresAt) || !parseIntStrict(f[10], reminderMinutes))) {
+            delete r;
+            err = lineError("reservations.txt", lineNo, "bad expiresAt or reminderMinutes");
+            return false;
+        }
+        if (r->readyAt != 0 && (n == 9 || reminderMinutes <= 0)) {  // fill from current settings
+            expiresAt = (long long)r->readyAt + (long long)caf.settings.freshnessMinutes * 60;
+            reminderMinutes = caf.settings.reminderIntervalMinutes;
+        }
+        r->expiresAt = (time_t)expiresAt;
+        r->reminderMinutes = reminderMinutes;
         rlAppendNode(caf.reservations, r);  // keeps nextId above every loaded ID
     }
     return true;
@@ -140,7 +154,9 @@ static void rebuild(Cafeteria& caf) {
     for (int i = 1; i < n; i++) {
         Reservation* key = ready[i];
         int j = i - 1;
-        while (j >= 0 && ready[j]->lastNoticeAt > key->lastNoticeAt) {
+        // next due = last notice + that reservation's own interval
+        while (j >= 0 && ready[j]->lastNoticeAt + ready[j]->reminderMinutes * 60 >
+                             key->lastNoticeAt + key->reminderMinutes * 60) {
             ready[j + 1] = ready[j];
             j--;
         }
@@ -175,7 +191,8 @@ static std::string reservationLine(const Reservation* r) {
     return std::to_string(r->id) + "|" + r->user + "|" + std::to_string(r->itemIndex) + "|" +
            std::to_string(r->quantity) + "|" + std::to_string((long long)r->reservedAt) + "|" +
            statusName(r->status) + "|" + std::to_string((long long)r->readyAt) + "|" +
-           std::to_string((long long)r->lastNoticeAt) + "|" + std::to_string(r->day) + "\n";
+           std::to_string((long long)r->lastNoticeAt) + "|" + std::to_string(r->day) + "|" +
+           std::to_string((long long)r->expiresAt) + "|" + std::to_string(r->reminderMinutes) + "\n";
 }
 
 bool saveCafeteria(Cafeteria& caf, const std::string& dataDir, std::string& err) {
@@ -197,7 +214,7 @@ bool saveCafeteria(Cafeteria& caf, const std::string& dataDir, std::string& err)
     settings += "current_day=" + std::to_string(caf.currentDay) + "\n";
     settings += "next_id=" + std::to_string(caf.reservations.nextId) + "\n";
 
-    std::string res = "# id|user|item|qty|reservedAt|status|readyAt|lastNoticeAt|day\n";
+    std::string res = "# id|user|item|qty|reservedAt|status|readyAt|lastNoticeAt|day|expiresAt|reminderMinutes\n";
     for (Reservation* r = caf.reservations.head; r != nullptr; r = r->next) res += reservationLine(r);
 
     if (caf.archive.size > 0) {

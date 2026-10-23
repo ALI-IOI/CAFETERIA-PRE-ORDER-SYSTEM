@@ -210,3 +210,36 @@ TEST(reserve_after_midnight_before_tick_is_kept) {
     CHECK_EQ(rep.madeReady, 1);
     CHECK_EQ(r->status, ResStatus::Ready);
 }
+
+// Review finding 3 / decision D7: settings changed after food is Ready apply
+// only to food marked ready later. The deadline in the "ready" email holds.
+TEST(freshness_change_after_ready_keeps_original_deadline) {
+    CafeFixture f;
+    Reservation* a = f.reserveOk(ALICE, TEHARI, 1);
+    f.clock.set(2026, 10, 23, 11, 0, 0);
+    ReadyReport rep;
+    markReady(f.caf, STAFF, TEHARI, 0, f.out, rep);          // fresh until 18:00, hourly
+    CHECK_EQ(a->expiresAt, a->readyAt + 7 * 3600);
+    bool rec;
+    f.clock.advanceMinutes(5);
+    changeSetting(f.caf, STAFF, "freshness_minutes", 60, rec);  // would mean 12:00
+    changeSetting(f.caf, STAFF, "reminder_minutes", 30, rec);
+    nlClear(f.out);
+    tickMinutes(f, 7 * 60 - 6);                                 // until 17:59
+    CHECK_EQ(a->status, ResStatus::Ready);
+    CHECK_EQ(f.countType(NotifType::Reminder), 6);              // still hourly: 12..17
+    CHECK_EQ(f.countType(NotifType::Expired), 0);
+    tickMinutes(f, 1);                                          // 18:00
+    CHECK_EQ(a->status, ResStatus::Expired);
+    // food made ready after the change uses the new values
+    Reservation* b = f.reserveOk(BOB, KHICHURI, 1);
+    if (b == nullptr) {
+        f.caf.settings.cutoffMinute = 23 * 60;
+        b = f.reserveOk(BOB, KHICHURI, 1);
+    }
+    CHECK(b != nullptr);
+    if (b == nullptr) return;
+    markReady(f.caf, STAFF, KHICHURI, 0, f.out, rep);
+    CHECK_EQ(b->expiresAt, b->readyAt + 3600);
+    CHECK_EQ(b->reminderMinutes, 30);
+}

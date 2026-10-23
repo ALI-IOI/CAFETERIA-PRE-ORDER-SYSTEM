@@ -140,7 +140,7 @@ static void writeReservation(Json& j, const Cafeteria& caf, const Reservation* r
     j.key("day").value(r->day);
     j.key("readyAt").value(r->readyAt ? formatClock(r->readyAt) : "");
     j.key("freshUntil")
-        .value(r->readyAt ? formatClock(r->readyAt + (time_t)caf.settings.freshnessMinutes * 60) : "");
+        .value(r->readyAt ? formatClock(r->expiresAt) : "");
     j.key("canCancel").value(canCancel(caf, r));
     if (withUser) j.key("user").value(r->user);
     j.endObject();
