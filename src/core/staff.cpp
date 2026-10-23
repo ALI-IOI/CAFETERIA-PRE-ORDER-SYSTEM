@@ -176,7 +176,8 @@ Result addMenuItem(Cafeteria& caf, const std::string& staff, const std::string& 
                    const std::string& name, ItemKind kind, int priceTaka, int amount, int& newIndex) {
     (void)staff;
     newIndex = -1;
-    if (!validName(category) || !validName(name) || menuFindByName(caf.menu, name) != -1)
+    // The category starts the menu.txt line, where a leading '#' marks a comment.
+    if (!validName(category) || category[0] == '#' || !validName(name) || menuFindByName(caf.menu, name) != -1)
         return Result::InvalidValue;
     if (priceTaka < 0 || priceTaka > MAX_PRICE_TAKA) return Result::InvalidValue;
     int maxAmount = kind == ItemKind::Fresh ? caf.cookingCapacity : MAX_STOCK;

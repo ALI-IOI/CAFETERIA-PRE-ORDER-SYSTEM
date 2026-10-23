@@ -95,13 +95,9 @@ static Result checkReserve(Cafeteria& caf, const std::string& user, int itemInde
     return Result::Ok;
 }
 
-// Checks, then books: node at the list tail, portions from the array, entry in
-// the item's cooking queue, and the person leaves that item's waitlist. No email.
-static Result reserveCore(Cafeteria& caf, const std::string& user, int itemIndex, int quantity,
-                          Reservation** created) {
-    if (created) *created = nullptr;
-    Result chk = checkReserve(caf, user, itemIndex, quantity, 0, 0, 0);
-    if (chk != Result::Ok) return chk;
+// Books an already-checked line: node at the list tail, portions from the array,
+// entry in the item's cooking queue, and the person leaves that item's waitlist.
+static Reservation* bookChecked(Cafeteria& caf, const std::string& user, int itemIndex, int quantity) {
     MenuItem* item = menuAt(caf.menu, itemIndex);
     time_t now = caf.clock->now();
     Reservation* r = rlAppend(caf.reservations, user, itemIndex, quantity, now, dayKeyOf(now));
@@ -111,6 +107,16 @@ static Result reserveCore(Cafeteria& caf, const std::string& user, int itemIndex
     // has already taken the entry off the front, so this only matters for a
     // direct reservation).
     leaveWaitlist(caf, user, itemIndex);
+    return r;
+}
+
+// Checks, then books. No email.
+static Result reserveCore(Cafeteria& caf, const std::string& user, int itemIndex, int quantity,
+                          Reservation** created) {
+    if (created) *created = nullptr;
+    Result chk = checkReserve(caf, user, itemIndex, quantity, 0, 0, 0);
+    if (chk != Result::Ok) return chk;
+    Reservation* r = bookChecked(caf, user, itemIndex, quantity);
     if (created) *created = r;
     return Result::Ok;
 }
@@ -141,12 +147,13 @@ Result reserveBatch(Cafeteria& caf, const std::string& user, const TrayLine* lin
         entries[item]++;
     }
 
-    // 2. Book them all (every check above already passed under the same lock).
+    // 2. Book them all. Every check above already passed under the same lock, so
+    // nothing is checked again: the clock may tick past the cutoff by now, and a
+    // second check could then refuse a later line after earlier ones were booked.
     std::string codes, body = "Your reservations are confirmed:\n";
     int total = 0;
     for (int i = 0; i < n; i++) {
-        Reservation* r = nullptr;
-        reserveCore(caf, user, lines[i].itemIndex, lines[i].quantity, &r);
+        Reservation* r = bookChecked(caf, user, lines[i].itemIndex, lines[i].quantity);
         const MenuItem& m = caf.menu.items[lines[i].itemIndex];
         int lineTotal = m.priceTaka * lines[i].quantity;
         total += lineTotal;

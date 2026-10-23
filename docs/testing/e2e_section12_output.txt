@@ -83,6 +83,7 @@ PASS redesign: upload_picture_then_served
 PASS redesign: non_image_upload_refused
 PASS redesign: student_cannot_upload
 PASS redesign: other_routes_keep_4kb_limit
+PASS redesign: multipart_body_keeps_4kb_limit
 PASS redesign: item_name_shown_as_text
 PASS redesign: unavailable_item_hidden_and_refused
 PASS redesign: tray with one bad line reserves nothing and names the dish
@@ -99,4 +100,4 @@ PASS account: staff use the admin tool, not this page
 (stopping server)
 (server stopped)
 
-98 checks, 98 passed, 0 failed
+99 checks, 99 passed, 0 failed

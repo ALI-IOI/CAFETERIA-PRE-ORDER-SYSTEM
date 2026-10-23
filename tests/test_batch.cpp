@@ -118,3 +118,33 @@ TEST(batch_removes_user_from_each_dishs_waitlist) {
     CHECK_EQ(reserveBatch(f.caf, CAROL, lines, 1, f.out, failed, ids), Result::Ok);
     CHECK_EQ(waitlistPosition(f.caf, CAROL, FRIED_RICE), 1);
 }
+
+// A clock that jumps past the 10:00 cutoff after a given number of reads, so
+// the cutoff can pass between checking a tray and booking it.
+struct JumpClock : Clock {
+    int readsLeft = 0;
+    time_t before = 0, after = 0;
+    time_t now() override { return readsLeft-- > 0 ? before : after; }
+};
+
+TEST(batch_cutoff_passing_mid_booking_is_all_or_nothing) {
+    for (int k = 0; k < 40; k++) {
+        CafeFixture f;
+        JumpClock jc;
+        jc.before = f.clock.t;           // 09:00
+        jc.after = f.clock.t + 61 * 60;  // 10:01, past the cutoff
+        jc.readsLeft = k;
+        f.caf.clock = &jc;
+        TrayLine lines[] = {{TEHARI, 1}, {KHICHURI, 1}, {FRIED_RICE, 1}};
+        int failed = -1, ids[3] = {0, 0, 0};
+        Result r = reserveBatch(f.caf, ALICE, lines, 3, f.out, failed, ids);
+        if (r == Result::Ok) {
+            CHECK_EQ(f.caf.reservations.size, 3);
+            CHECK(ids[0] > 0 && ids[1] > 0 && ids[2] > 0);
+        } else {
+            CHECK_EQ(r, Result::CutoffPassed);
+            CHECK_EQ(f.caf.reservations.size, 0);
+        }
+        f.caf.clock = &f.clock;
+    }
+}

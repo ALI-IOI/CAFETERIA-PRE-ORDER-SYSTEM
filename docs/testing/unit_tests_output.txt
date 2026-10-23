@@ -115,6 +115,7 @@ PASS add_item_appends_at_next_index
 PASS add_item_refused_when_full
 PASS add_item_duplicate_name_refused
 PASS item_name_validation
+PASS category_starting_with_hash_refused
 PASS set_price_and_undo
 PASS set_available_off_refuses_reserve_and_waitlist
 PASS existing_reservation_survives_unavailable
@@ -149,7 +150,7 @@ PASS path_like_old_name_not_deleted
 PASS valid_image_file_names
 PASS history_loads_only_that_users_orders_newest_first
 PASS history_missing_file_is_empty
-PASS history_bad_line_reported
+PASS history_bad_line_skipped_and_reported
 PASS history_after_rollover_contains_yesterdays_orders
 PASS harness_passing_check
 PASS outbox_writes_one_file_per_notification_with_to_subject_body
@@ -168,6 +169,7 @@ PASS batch_after_cutoff_refused
 PASS batch_queue_full_reserves_nothing
 PASS batch_bad_input_refused
 PASS batch_removes_user_from_each_dishs_waitlist
+PASS batch_cutoff_passing_mid_booking_is_all_or_nothing
 PASS non_university_email_rejected
 PASS registration_disabled_until_domain_configured
 PASS unlisted_id_rejected
@@ -197,4 +199,4 @@ PASS stack_lifo_order
 PASS stack_push_full_returns_false_top_unchanged
 PASS stack_from_top_index_for_history_display
 
-197 tests, 197 passed, 0 failed
+199 tests, 199 passed, 0 failed

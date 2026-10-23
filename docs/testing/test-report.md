@@ -5,12 +5,12 @@
 
 | Suite | What it is | Result |
 |---|---|---|
-| `unit_tests` | 197 unit tests: data structures (incl. linked-list merge sort), rules, storage, auth, email, lock file, waitlist, email retry, menu items, tray, pictures, order history, password change (fake clock) | **197 / 197 pass** |
+| `unit_tests` | 199 unit tests: data structures (incl. linked-list merge sort), rules, storage, auth, email, lock file, waitlist, email retry, menu items, tray, pictures, order history, password change (fake clock) | **199 / 199 pass** |
 | `no_stl_guard` | Fails the build if `vector/list/queue/stack/deque/map/set/array` appear in `src/ds`, `src/core`, `src/auth`, `src/storage`, `src/console`, `src/email` | **pass** (proven to fail on an injected `#include <vector>`) |
 | `console_demo` | Scripted run of the stage-2 console program, checks the transcript | **pass** |
 | `admin_tool` | Staff account creation: hashed, duplicate/short/mismatched password refused, refused while a live server holds the lock, allowed with a stale lock | **pass** |
 | `thread_exit_stress` | 640 short-lived client threads against an in-process HTTP server (guards the MinGW thread-exit crash fix below) | **pass** |
-| `e2e_section12` | Starts the real server (fake clock, temp data, email outbox), drives it over HTTP, crashes and restarts it | **98 / 98 checks pass** |
+| `e2e_section12` | Starts the real server (fake clock, temp data, email outbox), drives it over HTTP, crashes and restarts it | **99 / 99 checks pass** |
 
 Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit_tests_output.txt),
 [e2e_section12_output.txt](e2e_section12_output.txt).
@@ -81,6 +81,15 @@ Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit
 | Password change | unit `change_password_*` (3): other sessions signed out, wrong current password counts toward lockout, weak or unchanged new password refused | Pass |
 | End to end | E2E `history:` / `account:` checks (8): yesterday's orders listed after midnight, newest first, only your own, needs a login; wrong current password refused; changed password keeps this session; old password stops working; staff refused (they use the admin tool) | Pass |
 | Pages | Browser check: "Order history" table under My reservations; My account shows the university details and changes the password (mismatch, wrong current, success messages); logged-out visitors are redirected | Pass |
+
+## Fixes from the final review of the redesign (each test seen failing first)
+
+| Finding | Test | Before → after |
+|---|---|---|
+| A category starting with `#` made the item vanish on restart (the line read as a comment) and shifted later items | unit `category_starting_with_hash_refused` | FAIL → PASS |
+| Multipart bodies skipped the 4 KB limit (they go to `req.form`, not `req.body`); now refused from the headers, before the body is read | E2E `redesign: multipart_body_keeps_4kb_limit` | 401 → 413 |
+| One damaged line in `history.txt` broke everyone's history page; now skipped and logged | unit `history_bad_line_skipped_and_reported` | FAIL → PASS |
+| The cutoff passing between checking and booking a tray could crash the server with half the tray booked | unit `batch_cutoff_passing_mid_booking_is_all_or_nothing` | crash → PASS |
 
 ## Gaps (not covered automatically)
 

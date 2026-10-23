@@ -7,5 +7,6 @@
 
 // Reads history.txt, appends this user's records to `out` (a linked list of
 // new nodes the caller frees with rlClear) and sorts it newest first with the
-// list merge sort. A missing file means no history.
+// list merge sort. A missing file means no history. Damaged lines are skipped;
+// `err` then names the first one and the count (the result is still true).
 bool loadUserHistory(const std::string& dataDir, const std::string& user, ReservationList& out, std::string& err);

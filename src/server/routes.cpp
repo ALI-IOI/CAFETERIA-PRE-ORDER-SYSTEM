@@ -23,6 +23,7 @@ static std::string imageUrl(const MenuItem& m) {
     if (m.category == "Soft drinks") return "/img/demo/can.svg";
     return "/img/demo/bottle.svg";
 }
+#include <cstdlib>
 #include <functional>
 
 using httplib::Request;
@@ -686,11 +687,8 @@ static void routeRedesign(httplib::Server& svr, AppState& app) {
             ReservationList past;
             rlInit(past);
             std::string err;
-            if (!loadUserHistory(c.app.dataDir, c.session->login, past, err)) {
-                std::fprintf(stderr, "HISTORY: %s\n", err.c_str());
-                fail(c, 500, "Your order history could not be read.");
-                return;
-            }
+            loadUserHistory(c.app.dataDir, c.session->login, past, err);
+            if (!err.empty()) std::fprintf(stderr, "HISTORY: %s\n", err.c_str());
             Json j;
             j.beginObject().key("ok").value(true).key("count").value(past.size).key("orders").beginArray();
             for (Reservation* r = past.head; r != nullptr; r = r->next) {
@@ -858,6 +856,15 @@ void registerRoutes(httplib::Server& svr, AppState& app, bool devRoutes) {
         bool staffPage = req.path == "/staff/portal.html";
         if (req.path == "/home.html") {  // old address of the menu page
             res.set_redirect("/menu.html");
+            return httplib::Server::HandlerResponse::Handled;
+        }
+        // Runs before httplib reads the body. Multipart bodies go to req.form, not
+        // req.body, so handle()'s size check alone would let them through.
+        if (req.path != IMAGE_UPLOAD_PATH &&
+            (std::strtoull(req.get_header_value("Content-Length").c_str(), nullptr, 10) > SMALL_BODY_LIMIT ||
+             req.has_header("Transfer-Encoding"))) {
+            reply(res, 413, jsonError("Request too large."));
+            res.set_header("Connection", "close");  // the unread body must not be parsed as a request
             return httplib::Server::HandlerResponse::Handled;
         }
         bool userPage = req.path == "/menu.html" || req.path == "/reservations.html" || req.path == "/account.html";

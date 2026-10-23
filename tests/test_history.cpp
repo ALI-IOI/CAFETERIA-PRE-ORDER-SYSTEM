@@ -42,17 +42,24 @@ TEST(history_missing_file_is_empty) {
     CHECK_EQ(l.size, 0);
 }
 
-TEST(history_bad_line_reported) {
+// One torn or damaged line (say, a crash during the midnight append) must not
+// hide everyone's history: it is skipped and reported, the rest still loads.
+TEST(history_bad_line_skipped_and_reported) {
     std::string dir = historyDir("hist_bad");
     {
         std::ofstream o(dir + "/history.txt");
         o << "x|alice@uni.example|2|1|1000|Collected|0|0|20261021\n";
+        o << "GARBAGE LINE\n";
+        o << "7|alice@uni.example|2|1|1000|Collected|0|0|20261021\n";
     }
     ReservationList l;
     rlInit(l);
     std::string err;
-    CHECK(!loadUserHistory(dir, "alice@uni.example", l, err));
+    CHECK(loadUserHistory(dir, "alice@uni.example", l, err));
+    CHECK_EQ(l.size, 1);
+    CHECK(l.head != nullptr && l.head->id == 7);
     CHECK(err.find("history.txt line 1") != std::string::npos);
+    CHECK(err.find("2 damaged") != std::string::npos);
     rlClear(l);
 }
 
