@@ -1,0 +1,5 @@
+# Cafeteria counter computers: the only computers that can open the staff terminal.
+# One IP address per line (IPv4 or IPv6). While this list is empty, any computer can
+# reach it (the server prints a NOTICE at start-up); links to it are hidden either way.
+# The addresses must be fixed. Behind a reverse proxy, restrict /staff/ at the proxy instead.
+# [CONFIRM: the counter computers' IP addresses, e.g. 192.168.10.21]

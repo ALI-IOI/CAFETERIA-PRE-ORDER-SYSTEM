@@ -128,6 +128,12 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
+    if (!staffComputersLoad(app.staffComputers, configDir + "/staff_computers.txt", err)) {
+        std::fprintf(stderr, "Staff computer list error: %s\n", err.c_str());
+        return 1;
+    }
+    if (app.staffComputers.count == 0)
+        std::printf("NOTICE: config/staff_computers.txt is empty - the staff terminal is reachable from any computer.\n");
     if (cfg.emailDomain.empty() || app.auth.uni.count == 0)
         std::printf("NOTE: registration is disabled until email_domain in %s/app.cfg and %s are set.\n",
                     configDir.c_str(), uniPath.c_str());
@@ -151,9 +157,9 @@ int main(int argc, char** argv) {
     bool outbox = std::string(app.email->modeName()) == "outbox";
     std::printf("Email mode: %s%s%s\n", app.email->modeName(),
                 outbox ? " - SMTP not configured, emails are files in " : "", outbox ? (dataDir + "/outbox").c_str() : "");
-    std::string placeholderFiles[] = {configDir + "/app.cfg", configDir + "/smtp.cfg", seedDir + "/menu.txt",
+    std::string placeholderFiles[] = {configDir + "/app.cfg", configDir + "/smtp.cfg", configDir + "/staff_computers.txt", seedDir + "/menu.txt",
                                       seedDir + "/settings.txt"};
-    printPlaceholders(placeholderFiles, 4);
+    printPlaceholders(placeholderFiles, 5);
     std::printf("Loaded %d menu items, %d users, %d reservations (%d ready awaiting reminders), "
                 "%d email(s) waiting to retry.\n",
                 app.caf.menu.count, app.auth.users.count, app.caf.reservations.size, app.caf.reminders.count,

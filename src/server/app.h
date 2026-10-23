@@ -3,6 +3,7 @@
 // read-modify-save sequence, and emails are sent after it is released.
 #pragma once
 #include "auth/auth.h"
+#include "auth/staff_computers.h"
 #include "core/cafeteria.h"
 #include "email/email.h"
 #include "email/mailer.h"
@@ -31,6 +32,7 @@ struct AppState {
     Mailer mailer;  // own mutex; lock order is always mu -> mailer.mu, never the reverse
     std::string dataDir;
     bool secureCookies = false;  // --behind-https
+    StaffComputers staffComputers{{}, 0};  // config/staff_computers.txt; empty = staff terminal not restricted
 };
 
 // Writes menu/settings/reservations and users. Call with the mutex held.
