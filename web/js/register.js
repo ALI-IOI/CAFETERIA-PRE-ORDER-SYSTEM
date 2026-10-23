@@ -3,6 +3,7 @@
 const step1 = document.getElementById("step1");
 const step2 = document.getElementById("step2");
 let email = "";
+let password = "";  // kept in memory for step 2: the server checks it again with the code
 
 step1.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -15,6 +16,7 @@ step1.addEventListener("submit", async (e) => {
     id: document.getElementById("uid").value.trim(),  // step1.id would be the form's own id
     password: step1.password.value,
   });
+  password = step1.password.value;
   button.disabled = false;
   if (!r.ok) {
     say("msg1", r.error);
@@ -28,7 +30,7 @@ step1.addEventListener("submit", async (e) => {
 
 step2.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const r = await api.post("/api/verify", { email, code: step2.code.value.trim() });
+  const r = await api.post("/api/verify", { email, code: step2.code.value.trim(), password });
   if (!r.ok) {
     say("msg2", r.error);
     step2.code.select();

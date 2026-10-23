@@ -217,7 +217,7 @@ static void writeFixtures() {
 static bool registerUser(Browser& b, const std::string& email, const std::string& id) {
     auto r = b.post("/api/register", {{"email", email}, {"id", id}, {"password", PW}});
     if (status(r) != 200) return false;
-    r = b.post("/api/verify", {{"email", email}, {"code", latestCode(email)}});
+    r = b.post("/api/verify", {{"email", email}, {"code", latestCode(email)}, {"password", PW}});
     if (status(r) != 200) return false;
     r = b.post("/api/login", {{"email", email}, {"password", PW}});
     return status(r) == 200;
@@ -259,9 +259,14 @@ int main(int argc, char** argv) {
     check(status(r) == 200 && latestCode("ayon@uni.example").size() == 6, "12.1 valid registration sends a code",
           body(r));
     std::string code = latestCode("ayon@uni.example");
-    r = ayon.post("/api/verify", {{"email", "ayon@uni.example"}, {"code", code == "000000" ? "111111" : "000000"}});
+    r = ayon.post("/api/verify",
+                  {{"email", "ayon@uni.example"}, {"code", code == "000000" ? "111111" : "000000"}, {"password", PW}});
     check(status(r) == 400, "12.1 wrong verification code rejected", body(r));
-    r = ayon.post("/api/verify", {{"email", "ayon@uni.example"}, {"code", code}});
+    r = ayon.post("/api/verify", {{"email", "ayon@uni.example"}, {"code", code}, {"password", "someone-elses-pw"}});
+    check(status(r) == 400, "review: verify with a different password refused (no takeover)", body(r));
+    r = ayon.post("/api/register", {{"email", "ayon@uni.example"}, {"id", "1072520005101030"}, {"password", PW}});
+    code = latestCode("ayon@uni.example");
+    r = ayon.post("/api/verify", {{"email", "ayon@uni.example"}, {"code", code}, {"password", PW}});
     check(status(r) == 200, "12.1 correct verification code accepted", body(r));
     r = ayon.post("/api/login", {{"email", "ayon@uni.example"}, {"password", PW}});
     check(status(r) == 200 && !ayon.cookie.empty(), "12.1 verified student can log in", body(r));

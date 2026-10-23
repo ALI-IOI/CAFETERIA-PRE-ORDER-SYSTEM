@@ -65,8 +65,13 @@ void authFree(AuthState& a);
 AuthResult registerStart(AuthState& a, const std::string& email, const std::string& universityId,
                          const std::string& password, NotificationList& out);
 
-// Step 2: the code from the email. Wrong code 5 times or after 15 minutes -> CodeExpired.
-AuthResult registerVerify(AuthState& a, const std::string& email, const std::string& code);
+// Step 2: the code from the email plus the password chosen in step 1. Asking
+// for the password again means a stranger who re-registers the same email
+// (replacing the pending password) cannot get their password verified by the
+// real owner entering the code. Wrong code/password 5 times or after 15
+// minutes -> CodeExpired.
+AuthResult registerVerify(AuthState& a, const std::string& email, const std::string& code,
+                          const std::string& password);
 
 // Staff can log in only through the staff portal (staffPortal = true) and
 // students/teachers only through the public page. Repeated failures lock the

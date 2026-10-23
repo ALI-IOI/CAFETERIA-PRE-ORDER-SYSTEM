@@ -46,7 +46,7 @@ struct AuthFixture {
     }
     void registerAndVerify(const char* email, const char* id, const char* pw) {
         CHECK_EQ(registerStart(auth, email, id, pw, out), AuthResult::Ok);
-        CHECK_EQ(registerVerify(auth, email, lastCode()), AuthResult::Ok);
+        CHECK_EQ(registerVerify(auth, email, lastCode(), pw), AuthResult::Ok);
     }
 };
 
@@ -100,16 +100,16 @@ TEST(verification_code_correct_wrong_expired) {
     std::string code = f.lastCode();
     CHECK_EQ(code.size(), (size_t)6);
     std::string wrong = code == "000000" ? "111111" : "000000";
-    CHECK_EQ(registerVerify(f.auth, "ayon@uni.example", wrong), AuthResult::BadCode);
-    CHECK_EQ(registerVerify(f.auth, "ayon@uni.example", code), AuthResult::Ok);
+    CHECK_EQ(registerVerify(f.auth, "ayon@uni.example", wrong, "longpassword"), AuthResult::BadCode);
+    CHECK_EQ(registerVerify(f.auth, "ayon@uni.example", code, "longpassword"), AuthResult::Ok);
     CHECK(ulFind(f.auth.users, "ayon@uni.example")->verified);
-    CHECK_EQ(registerVerify(f.auth, "ayon@uni.example", code), AuthResult::AlreadyRegistered);
+    CHECK_EQ(registerVerify(f.auth, "ayon@uni.example", code, "longpassword"), AuthResult::AlreadyRegistered);
 
     // expired code
     registerStart(f.auth, "ali@uni.example", "1072520005101050", "longpassword", f.out);
     std::string code2 = f.lastCode();
     f.clock.advanceMinutes(16);
-    CHECK_EQ(registerVerify(f.auth, "ali@uni.example", code2), AuthResult::CodeExpired);
+    CHECK_EQ(registerVerify(f.auth, "ali@uni.example", code2, "longpassword"), AuthResult::CodeExpired);
 }
 
 TEST(verification_code_locked_after_5_wrong_attempts) {
@@ -117,8 +117,8 @@ TEST(verification_code_locked_after_5_wrong_attempts) {
     registerStart(f.auth, "ayon@uni.example", "1072520005101030", "longpassword", f.out);
     std::string code = f.lastCode();
     std::string wrong = code == "000000" ? "111111" : "000000";
-    for (int i = 0; i < 5; i++) registerVerify(f.auth, "ayon@uni.example", wrong);
-    CHECK_EQ(registerVerify(f.auth, "ayon@uni.example", code), AuthResult::CodeExpired);
+    for (int i = 0; i < 5; i++) registerVerify(f.auth, "ayon@uni.example", wrong, "longpassword");
+    CHECK_EQ(registerVerify(f.auth, "ayon@uni.example", code, "longpassword"), AuthResult::CodeExpired);
 }
 
 TEST(login_before_verify_refused) {
@@ -252,4 +252,22 @@ TEST(bad_university_list_line_reported) {
     CHECK(!uniLoadCsv(list, p.string(), err));
     CHECK(err.find("line 2") != std::string::npos);
     uniClear(list);
+}
+
+// Review finding 2: someone who knows a student's email and ID re-registers
+// during the pending window with their own password. The student then enters
+// the newest code from their inbox. That must NOT verify the attacker's password.
+TEST(pending_registration_cannot_be_taken_over) {
+    AuthFixture f;
+    CHECK_EQ(registerStart(f.auth, "ayon@uni.example", "1072520005101030", "victim-password", f.out), AuthResult::Ok);
+    CHECK_EQ(registerStart(f.auth, "ayon@uni.example", "1072520005101030", "attacker-password", f.out), AuthResult::Ok);
+    std::string newestCode = f.lastCode();  // arrives in the victim's inbox
+    CHECK_EQ(registerVerify(f.auth, "ayon@uni.example", newestCode, "victim-password"), AuthResult::BadCode);
+    CHECK(!ulFind(f.auth.users, "ayon@uni.example")->verified);
+    std::string token;
+    CHECK(login(f.auth, "ayon@uni.example", "attacker-password", false, token) != AuthResult::Ok);
+    // the victim simply registers again and completes it
+    CHECK_EQ(registerStart(f.auth, "ayon@uni.example", "1072520005101030", "victim-password", f.out), AuthResult::Ok);
+    CHECK_EQ(registerVerify(f.auth, "ayon@uni.example", f.lastCode(), "victim-password"), AuthResult::Ok);
+    CHECK_EQ(login(f.auth, "ayon@uni.example", "victim-password", false, token), AuthResult::Ok);
 }

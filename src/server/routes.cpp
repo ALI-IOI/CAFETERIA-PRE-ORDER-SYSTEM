@@ -192,7 +192,8 @@ static void routeAuth(httplib::Server& svr, AppState& app) {
 
     svr.Post("/api/verify", [&](const Request& req, Response& res) {
         handle(app, req, res, Access::Public, [](Ctx& c) {
-            AuthResult r = registerVerify(c.app.auth, param(c.req, "email"), param(c.req, "code"));
+            AuthResult r =
+                registerVerify(c.app.auth, param(c.req, "email"), param(c.req, "code"), param(c.req, "password"));
             c.changed = true;  // attempt counter changes on failure too
             if (r != AuthResult::Ok) {
                 fail(c, httpStatus(r), authMessage(r));
