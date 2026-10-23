@@ -49,6 +49,11 @@ bool rlDelete(ReservationList& list, int id);
 // Frees every node.
 void rlClear(ReservationList& list);
 
+// Merge sort on the linked list itself (O(n log n), no extra array): newest
+// day first, then latest reservation time, then highest ID. Fixes the tail
+// pointer afterwards. Used for a person's order history.
+void rlSortNewestFirst(ReservationList& list);
+
 const char* statusName(ResStatus s);
 bool statusFromName(const std::string& name, ResStatus& out);
 
