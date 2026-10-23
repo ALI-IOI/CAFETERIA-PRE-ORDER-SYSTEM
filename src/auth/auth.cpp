@@ -17,7 +17,7 @@ const char* authMessage(AuthResult r) {
     switch (r) {
         case AuthResult::Ok: return "OK";
         case AuthResult::NotUniversityEmail: return "Please use your university email address.";
-        case AuthResult::IdNotListed: return "That ID is not on the university's student/teacher list.";
+        case AuthResult::IdNotListed: return "That ID is not on the university's list.";
         case AuthResult::EmailIdMismatch: return "That email does not match the university record for this ID.";
         case AuthResult::AlreadyRegistered: return "An account already exists for this email.";
         case AuthResult::WeakPassword: return "Password must be 8 to 128 characters.";
@@ -30,6 +30,9 @@ const char* authMessage(AuthResult r) {
         case AuthResult::NotVerified: return "Please verify your email first.";
         case AuthResult::InvalidInput: return "Invalid input.";
         case AuthResult::CryptoError: return "Internal error.";
+        case AuthResult::NoUniversityEmail:
+            return "You have no university email. Ask the cafeteria office to create your account.";
+        case AuthResult::NotEligible: return "That ID is not a university staff member without a university email.";
     }
     return "Unknown error.";
 }
@@ -69,6 +72,7 @@ AuthResult registerStart(AuthState& a, const std::string& emailIn, const std::st
     if (!validUniversityId(universityId)) return AuthResult::IdNotListed;
     UniEntry* entry = uniFindById(a.uni, universityId);
     if (entry == nullptr) return AuthResult::IdNotListed;
+    if (entry->email.empty()) return AuthResult::NoUniversityEmail;
     if (entry->email != email) return AuthResult::EmailIdMismatch;
     if (!validPassword(password)) return AuthResult::WeakPassword;
 
@@ -196,6 +200,30 @@ void sessionPruneExpired(AuthState& a) {
         else prev = s;
         s = next;
     }
+}
+
+AuthResult addPerson(AuthState& a, const std::string& universityId, const std::string& emailIn,
+                     const std::string& password) {
+    std::string email = toLower(emailIn);
+    if (!validEmail(email)) return AuthResult::InvalidInput;
+    UniEntry* entry = uniFindById(a.uni, universityId);
+    if (entry == nullptr) return AuthResult::IdNotListed;
+    if (entry->role != Role::Employee || !entry->email.empty()) return AuthResult::NotEligible;
+    if (!validPassword(password)) return AuthResult::WeakPassword;
+    if (ulFind(a.users, email) != nullptr || uniFindByEmail(a.uni, email) != nullptr) return AuthResult::AlreadyRegistered;
+    for (User* u = a.users.head; u != nullptr; u = u->next)
+        if (u->universityId == universityId) return AuthResult::AlreadyRegistered;
+    std::string hash = hashPassword(password);
+    if (hash.empty()) return AuthResult::CryptoError;
+    User* u = ulAppend(a.users);
+    u->login = email;
+    u->universityId = entry->id;
+    u->role = Role::Employee;
+    u->name = entry->name;
+    u->department = entry->department;
+    u->passwordHash = hash;
+    u->verified = true;
+    return AuthResult::Ok;
 }
 
 AuthResult addStaff(AuthState& a, const std::string& login, const std::string& name,
