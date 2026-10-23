@@ -1,0 +1,67 @@
+PASS 12.1 non-university email rejected
+PASS 12.1 unlisted ID rejected
+PASS 12.1 valid registration sends a code
+PASS 12.1 wrong verification code rejected
+PASS 12.1 correct verification code accepted
+PASS 12.1 verified student can log in
+PASS security: session cookie is HttpOnly + SameSite
+PASS setup: ali registered
+PASS setup: teacher registered
+PASS 12.2 student sees student profile (university ID)
+PASS 12.2 teacher sees teacher profile (department)
+PASS 12.2 staff cannot use the public login
+PASS 12.2 staff log in through the staff portal
+PASS 12.2 student cannot use the staff login
+PASS 12.2 student opening the staff portal page is redirected
+PASS 12.2 staff can open the staff portal page
+PASS review: student_cannot_call_staff_api
+PASS review: student cannot list all reservations
+PASS 12.2 staff do not use the student menu API
+PASS security: menu needs a login
+PASS security: POST without X-Cafe header refused (CSRF)
+PASS 12.3 valid reservation confirmed
+PASS 12.3 reservation appears in My Reservations
+PASS 12.3 confirmation email sent
+PASS privacy: other users do not see the reservation
+PASS setup: staff set Fried Rice limit to 1
+PASS 12.4 last Fried Rice portion reserved
+PASS 12.4 sold-out item rejected
+PASS 12.4 more than the per-user limit rejected
+PASS 12.4 packaged item cannot be reserved
+PASS review: cannot_cancel_others
+PASS 12.5 cancel before deadline returns the portion
+PASS review: concurrent_last_portion (10 at once, 1 left)
+PASS setup: clock at 09:59
+PASS 12.4 reservation at 09:59 accepted
+PASS 12.4 reservation at 10:00 (cutoff) rejected
+PASS 12.5 cancel after deadline refused, portion not returned
+PASS 12.6 mark ready: 4 ready, 1 skipped
+PASS 12.6 ready emails in FIFO order, cancelled skipped
+PASS 12.6 cancelled reservation gets no ready email
+PASS 12.7 first hourly reminder at 11:00
+PASS staff search by reservation ID
+PASS 12.9 special characters in search rejected
+PASS 12.7 staff mark R-0001 collected
+PASS 12.7 reminders stop after collection, continue for others
+PASS setup: staff set Lays stock 25
+PASS 12.8 undo restores Lays stock
+PASS 12.10 server restarts on the same data
+PASS 12.10 sessions are not kept across restart (log in again)
+PASS 12.10 users and reservations restored
+PASS 12.10 menu and portions restored
+PASS 12.8/12.10 stack empty after restart: nothing to undo
+PASS 12.10 no duplicate ready emails after restart
+PASS 12.7 six hourly reminders in the 7-hour window
+PASS 12.7 expiry email when the window ends (not for collected food)
+PASS 12.7 uncollected reservation is Expired
+PASS 12.9 negative quantity rejected
+PASS 12.9 non-numeric quantity rejected
+PASS 12.9 unknown item rejected
+PASS 12.9 very long text rejected
+PASS 12.9 special characters handled safely
+PASS 12.9 invalid time setting rejected
+PASS 12.9 wrong passwords lock the account
+PASS staff change cutoff to 18:00
+PASS reservation allowed again after cutoff moved
+
+65 checks, 65 passed, 0 failed
