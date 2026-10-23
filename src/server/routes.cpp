@@ -9,6 +9,19 @@
 #include "auth/validation.h"
 #include "server/json.h"
 #include "storage/file_util.h"
+#include "storage/image_store.h"
+
+static const size_t SMALL_BODY_LIMIT = 4096;
+static const char* const IMAGE_UPLOAD_PATH = "/api/staff/items/image";
+
+// "/images/<file>" for an uploaded picture, else a demo drawing by category.
+static std::string imageUrl(const MenuItem& m) {
+    if (!m.imageFile.empty()) return "/images/" + m.imageFile;
+    if (m.kind == ItemKind::Fresh) return "/img/demo/bowl.svg";
+    if (m.category == "Chips") return "/img/demo/chips.svg";
+    if (m.category == "Soft drinks") return "/img/demo/can.svg";
+    return "/img/demo/bottle.svg";
+}
 #include <functional>
 
 using httplib::Request;
@@ -50,6 +63,11 @@ static void fail(Ctx& c, int status, const std::string& message) { reply(c.res, 
 
 static void handle(AppState& app, const Request& req, Response& res, Access access,
                    const std::function<void(Ctx&)>& fn) {
+    // Only the picture upload may send a large body; every other route keeps 4 KB.
+    if (req.body.size() > SMALL_BODY_LIMIT && req.path != IMAGE_UPLOAD_PATH) {
+        reply(res, 413, jsonError("Request too large."));
+        return;
+    }
     if (req.method == "POST" && req.get_header_value("X-Cafe") != "1") {
         reply(res, 403, jsonError("Missing request header."));
         return;
@@ -268,8 +286,11 @@ static void routeUser(httplib::Server& svr, AppState& app) {
             j.key("items").beginArray();
             for (int i = 0; i < caf.menu.count; i++) {
                 const MenuItem& m = caf.menu.items[i];
+                if (!m.available) continue;  // hidden while staff have it switched off
                 j.beginObject().key("index").value(i).key("name").value(m.name);
                 j.key("category").value(m.category);
+                j.key("price").value(m.priceTaka);
+                j.key("image").value(imageUrl(m));
                 if (m.kind == ItemKind::Fresh) {
                     j.key("kind").value("fresh");
                     j.key("remaining").value(menuRemaining(m));
@@ -414,6 +435,9 @@ static void routeStaff(httplib::Server& svr, AppState& app) {
                 j.beginObject().key("index").value(i).key("name").value(m.name).key("category").value(m.category);
                 j.key("kind").value(m.kind == ItemKind::Fresh ? "fresh" : "packaged");
                 j.key("stock").value(m.stock);
+                j.key("price").value(m.priceTaka);
+                j.key("image").value(imageUrl(m));
+                j.key("available").value(m.available);
                 if (m.kind == ItemKind::Fresh) {
                     int waiting = 0;
                     for (int k = 0; k < caf.cooking[i].count; k++)
@@ -588,6 +612,163 @@ static void routeStaff(httplib::Server& svr, AppState& app) {
 
 // ---- testing / demo: move the fake clock ------------------------------------------------
 
+// ---- redesign: public info, tray, staff-managed items -------------------------------
+
+// "3:1,2:2" -> lines. False on anything else (bad numbers, too many lines).
+static bool parseTray(const std::string& s, TrayLine* lines, int& n) {
+    n = 0;
+    if (s.empty() || s.size() > 512) return false;
+    std::string parts[MAX_MENU_ITEMS];
+    int count = splitFields(s, ',', parts, MAX_MENU_ITEMS);
+    if (count < 1) return false;
+    for (int i = 0; i < count; i++) {
+        std::string f[2];
+        if (splitFields(parts[i], ':', f, 2) != 2 || !parseIntStrict(f[0], lines[i].itemIndex) ||
+            !parseIntStrict(f[1], lines[i].quantity))
+            return false;
+    }
+    n = count;
+    return true;
+}
+
+static void routeRedesign(httplib::Server& svr, AppState& app) {
+    svr.Get("/api/public/info", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::Public, [](Ctx& c) {
+            const Cafeteria& caf = c.app.caf;
+            Json j;
+            j.beginObject().key("ok").value(true);
+            j.key("now").value(formatClock(caf.clock->now()));
+            j.key("cutoff").value(formatMinuteOfDay(caf.settings.cutoffMinute));
+            j.key("cancelDeadline").value(formatMinuteOfDay(caf.settings.cancelDeadlineMinute));
+            j.key("freshness").value(durationText(caf.settings.freshnessMinutes));
+            j.endObject();
+            reply(c.res, 200, j.str());
+        });
+    });
+
+    svr.Post("/api/reservations/batch", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::User, [](Ctx& c) {
+            TrayLine lines[MAX_MENU_ITEMS];
+            int n = 0;
+            if (!parseTray(param(c.req, "items"), lines, n)) {
+                fail(c, 400, "Your tray could not be read. Reload the page and try again.");
+                return;
+            }
+            int failed = -1;
+            int ids[MAX_MENU_ITEMS];
+            Result r = reserveBatch(c.app.caf, c.session->login, lines, n, c.out, failed, ids);
+            if (r != Result::Ok) {
+                const MenuItem* m = failed >= 0 ? menuAt(c.app.caf.menu, lines[failed].itemIndex) : nullptr;
+                fail(c, httpStatus(r), (m ? m->name + ": " : std::string()) + resultMessage(r));
+                return;
+            }
+            c.changed = true;
+            int total = 0;
+            Json j;
+            j.beginObject().key("ok").value(true).key("codes").beginArray();
+            for (int i = 0; i < n; i++) {
+                j.value(resCode(ids[i]));
+                total += c.app.caf.menu.items[lines[i].itemIndex].priceTaka * lines[i].quantity;
+            }
+            j.endArray().key("total").value(total);
+            j.key("message").value("Reserved. Confirmation email sent. Pay at the counter when you collect.");
+            j.endObject();
+            reply(c.res, 200, j.str());
+        });
+    });
+
+    svr.Post("/api/staff/items", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::Staff, [](Ctx& c) {
+            std::string kind = param(c.req, "kind");
+            int price, amount, index = -1;
+            if ((kind != "fresh" && kind != "packaged") || !parseIntStrict(param(c.req, "price"), price) ||
+                !parseIntStrict(param(c.req, "amount"), amount)) {
+                fail(c, 400, "Fill in every field; price and amount are whole numbers.");
+                return;
+            }
+            Result r = addMenuItem(c.app.caf, c.session->login, param(c.req, "category"), param(c.req, "name"),
+                                   kind == "fresh" ? ItemKind::Fresh : ItemKind::Packaged, price, amount, index);
+            if (r != Result::Ok) {
+                fail(c, httpStatus(r),
+                     r == Result::InvalidValue
+                         ? "Check the item: a new name (1-60 characters, no |), price 0-9999, a sensible amount."
+                         : resultMessage(r));
+                return;
+            }
+            c.changed = true;
+            Json j;
+            j.beginObject().key("ok").value(true).key("index").value(index);
+            j.key("message").value("Added " + c.app.caf.menu.items[index].name + ".").endObject();
+            reply(c.res, 200, j.str());
+        });
+    });
+
+    svr.Post("/api/staff/items/price", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::Staff, [](Ctx& c) {
+            int item, price;
+            bool rec = false;
+            if (!parseIntStrict(param(c.req, "item"), item) || !parseIntStrict(param(c.req, "price"), price)) {
+                fail(c, 400, "Enter a whole number.");
+                return;
+            }
+            Result r = setPrice(c.app.caf, c.session->login, item, price, rec);
+            if (r != Result::Ok) {
+                fail(c, httpStatus(r), resultMessage(r));
+                return;
+            }
+            c.changed = true;
+            okMessage(c, lastDescription(c.app.caf), rec);
+        });
+    });
+
+    svr.Post("/api/staff/items/available", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::Staff, [](Ctx& c) {
+            int item;
+            std::string a = param(c.req, "available");
+            bool rec = false;
+            if (!parseIntStrict(param(c.req, "item"), item) || (a != "0" && a != "1")) {
+                fail(c, 400, "Choose available or not available.");
+                return;
+            }
+            Result r = setAvailable(c.app.caf, c.session->login, item, a == "1", c.out, rec);
+            if (r != Result::Ok) {
+                fail(c, httpStatus(r), resultMessage(r));
+                return;
+            }
+            c.changed = true;
+            okMessage(c, lastDescription(c.app.caf), rec);
+        });
+    });
+
+    svr.Post(IMAGE_UPLOAD_PATH, [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::Staff, [](Ctx& c) {
+            int item;
+            if (!c.req.is_multipart_form_data() || !c.req.form.has_file("image") ||
+                !parseIntStrict(c.req.form.get_field("item"), item)) {
+                fail(c, 400, "Choose an item and a picture.");
+                return;
+            }
+            MenuItem* m = menuAt(c.app.caf.menu, item);
+            if (m == nullptr) {
+                fail(c, 400, resultMessage(Result::BadItem));
+                return;
+            }
+            std::string newFile, err;
+            if (!storeItemImage(c.app.dataDir, item, c.req.form.get_file("image").content, m->imageFile, newFile,
+                                err)) {
+                fail(c, 400, err);
+                return;
+            }
+            setItemImage(c.app.caf, c.session->login, item, newFile);
+            c.changed = true;
+            Json j;
+            j.beginObject().key("ok").value(true).key("image").value("/images/" + newFile);
+            j.key("message").value("Picture updated for " + m->name + ".").endObject();
+            reply(c.res, 200, j.str());
+        });
+    });
+}
+
 static void routeDev(httplib::Server& svr, AppState& app) {
     svr.Post("/api/dev/advance", [&](const Request& req, Response& res) {
         if (req.remote_addr != "127.0.0.1" && req.remote_addr != "::1") {
@@ -620,12 +801,16 @@ static bool pageAllowed(AppState& app, const Request& req, bool staffPage) {
 }
 
 void registerRoutes(httplib::Server& svr, AppState& app, bool devRoutes) {
-    svr.set_payload_max_length(4096);
+    svr.set_payload_max_length(MAX_IMAGE_BYTES + 64 * 1024);  // handle() keeps other routes at 4 KB
 
     // Pages that need a login: send people to the right login page instead.
     svr.set_pre_routing_handler([&](const Request& req, Response& res) {
         bool staffPage = req.path == "/staff/portal.html";
-        bool userPage = req.path == "/home.html" || req.path == "/reservations.html";
+        if (req.path == "/home.html") {  // old address of the menu page
+            res.set_redirect("/menu.html");
+            return httplib::Server::HandlerResponse::Handled;
+        }
+        bool userPage = req.path == "/menu.html" || req.path == "/reservations.html";
         if ((staffPage || userPage) && !pageAllowed(app, req, staffPage)) {
             res.set_redirect(staffPage ? "/staff/login.html" : "/");
             return httplib::Server::HandlerResponse::Handled;
@@ -645,5 +830,6 @@ void registerRoutes(httplib::Server& svr, AppState& app, bool devRoutes) {
     routeAuth(svr, app);
     routeUser(svr, app);
     routeStaff(svr, app);
+    routeRedesign(svr, app);
     if (devRoutes) routeDev(svr, app);
 }

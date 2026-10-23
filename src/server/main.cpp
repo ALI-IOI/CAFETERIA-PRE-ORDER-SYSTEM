@@ -166,6 +166,8 @@ int main(int argc, char** argv) {
     httplib::Server svr;
     g_server = &svr;
     registerRoutes(svr, app, app.fakeClock != nullptr);
+    ensureDir(dataDir + "/images", err);
+    svr.set_mount_point("/images", dataDir + "/images");  // staff-uploaded pictures, read-only
     if (!svr.set_mount_point("/", webDir)) std::printf("WARNING: web folder %s not found\n", webDir.c_str());
 
     // Timer thread: wakes every tickSeconds (proposal: every minute).
