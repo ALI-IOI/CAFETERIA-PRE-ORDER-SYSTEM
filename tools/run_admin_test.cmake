@@ -37,7 +37,15 @@ foreach(case "pw.txt;duplicate" "short.txt;short password" "mismatch.txt;passwor
   endif()
 endforeach()
 
-file(WRITE "${WORK}/server.lock" "running")
+file(WRITE "${WORK}/server.lock" "4000000
+")
+execute_process(COMMAND "${EXE}" --data "${WORK}" add-staff stale.staff "Stale Lock"
+                INPUT_FILE "${WORK}/pw.txt" OUTPUT_QUIET ERROR_QUIET RESULT_VARIABLE rc)
+if(NOT rc EQUAL 0)
+  message(FATAL_ERROR "a stale lock (dead PID) must not block add-staff")
+endif()
+file(WRITE "${WORK}/server.lock" "4
+")  # PID 4 is always alive
 execute_process(COMMAND "${EXE}" --data "${WORK}" add-staff locked.staff "Locked"
                 INPUT_FILE "${WORK}/pw.txt" OUTPUT_VARIABLE out ERROR_VARIABLE out RESULT_VARIABLE rc)
 if(rc EQUAL 0)

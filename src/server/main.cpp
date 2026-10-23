@@ -12,6 +12,7 @@
 #include "server/app.h"
 #include "server/routes.h"
 #include "storage/file_util.h"
+#include "storage/lock_file.h"
 #include "storage/storage.h"
 #include <atomic>
 #include <chrono>
@@ -19,7 +20,7 @@
 #include <fstream>
 #include <thread>
 #ifdef _WIN32
-#include <process.h>
+
 #include <windows.h>
 #endif
 
@@ -130,6 +131,13 @@ int main(int argc, char** argv) {
     if (cfg.emailDomain.empty() || app.auth.uni.count == 0)
         std::printf("NOTE: registration is disabled until email_domain in %s/app.cfg and %s are set.\n",
                     configDir.c_str(), uniPath.c_str());
+    // Lock file before the first write: a second server on the same data folder
+    // stops here without touching any file (cafeteria_admin checks it too).
+    std::string lockPath = dataDir + "/server.lock";
+    if (!ensureDir(dataDir, err) || !acquireLock(lockPath, err)) {
+        std::fprintf(stderr, "Cannot start: %s\n", err.c_str());
+        return 1;
+    }
     cafEnsureToday(app.caf);  // started on a new day: roll over before serving anyone
     saveAll(app);             // first start: writes the seed into data/
 
@@ -143,10 +151,7 @@ int main(int argc, char** argv) {
     std::printf("Loaded %d menu items, %d users, %d reservations (%d ready awaiting reminders).\n",
                 app.caf.menu.count, app.auth.users.count, app.caf.reservations.size, app.caf.reminders.count);
 
-    // Lock file: tells cafeteria_admin the server is running.
-    std::string lockPath = dataDir + "/server.lock";
 #ifdef _WIN32
-    atomicWrite(lockPath, std::to_string(_getpid()) + "\n", err);
     SetConsoleCtrlHandler(onCtrl, TRUE);
 #endif
 
@@ -186,7 +191,7 @@ int main(int argc, char** argv) {
         std::lock_guard<std::mutex> lock(app.mu);
         saveAll(app);
     }
-    std::remove(lockPath.c_str());
+    releaseLock(lockPath);  // only removes it if it is ours
     if (!ok) {
         std::fprintf(stderr, "Could not listen on %s:%d\n", host.c_str(), port);
         return 1;
