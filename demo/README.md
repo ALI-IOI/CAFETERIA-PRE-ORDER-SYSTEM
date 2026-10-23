@@ -10,7 +10,7 @@ printf 'demo-staff-pass\ndemo-staff-pass\n' | build/cafeteria_admin --data demo/
 build/cafeteria_server --config demo/config --data demo/data --fake-clock 2026-10-23T08:30 --tick-seconds 0
 ```
 
-Open http://127.0.0.1:8080.
+Open http://127.0.0.1:8080 for the landing page; students log in at `/login.html`, staff at `/staff/login.html`.
 
 | Account | Login | Password (test only) |
 |---|---|---|
