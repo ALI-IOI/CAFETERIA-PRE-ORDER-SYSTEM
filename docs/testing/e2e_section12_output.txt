@@ -31,10 +31,18 @@ PASS 12.4 more than the per-user limit rejected
 PASS 12.4 packaged item cannot be reserved
 PASS review: cannot_cancel_others
 PASS 12.5 cancel before deadline returns the portion
+PASS waitlist: join sold-out Fried Rice at position 1
+PASS waitlist: joining twice refused
+PASS waitlist: cannot join while portions remain
+PASS waitlist: menu shows the person's place in line
+PASS waitlist: a cancellation gives the portion to the first person waiting, with email
+PASS waitlist: promoted person now holds the reservation; portion used once
 PASS review: concurrent_last_portion (10 at once, 1 left)
+PASS waitlist: s6 joins the sold-out Khichuri waitlist
 PASS setup: clock at 09:59
 PASS 12.4 reservation at 09:59 accepted
 PASS 12.4 reservation at 10:00 (cutoff) rejected
+PASS waitlist: closes at the cutoff with one email to each person still waiting
 PASS 12.5 cancel after deadline refused, portion not returned
 PASS 12.6 mark ready: 4 ready, 1 skipped
 PASS 12.6 ready emails in FIFO order, cancelled skipped
@@ -65,5 +73,10 @@ PASS 12.9 invalid time setting rejected
 PASS 12.9 wrong passwords lock the account
 PASS staff change cutoff to 18:00
 PASS reservation allowed again after cutoff moved
+PASS setup: restart with the email outbox blocked
+PASS email retry: a failed confirmation waits in the retry queue
+PASS email retry: sent one minute later once the outbox works again
+(stopping server)
+(server stopped)
 
-67 checks, 67 passed, 0 failed
+78 checks, 78 passed, 0 failed

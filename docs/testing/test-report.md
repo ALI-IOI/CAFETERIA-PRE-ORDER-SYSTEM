@@ -5,11 +5,11 @@
 
 | Suite | What it is | Result |
 |---|---|---|
-| `unit_tests` | 116 unit tests: data structures, rules, storage, auth, email, lock file (fake clock) | **116 / 116 pass** |
+| `unit_tests` | 156 unit tests: data structures, rules, storage, auth, email, lock file, waitlist, email retry (fake clock) | **156 / 156 pass** |
 | `no_stl_guard` | Fails the build if `vector/list/queue/stack/deque/map/set/array` appear in `src/ds`, `src/core`, `src/auth`, `src/storage`, `src/console` | **pass** (proven to fail on an injected `#include <vector>`) |
 | `console_demo` | Scripted run of the stage-2 console program, checks the transcript | **pass** |
 | `admin_tool` | Staff account creation: hashed, duplicate/short/mismatched password refused, refused while a live server holds the lock, allowed with a stale lock | **pass** |
-| `e2e_section12` | Starts the real server (fake clock, temp data, email outbox), drives it over HTTP, crashes and restarts it | **67 / 67 checks pass** |
+| `e2e_section12` | Starts the real server (fake clock, temp data, email outbox), drives it over HTTP, crashes and restarts it | **78 / 78 checks pass** |
 
 Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit_tests_output.txt),
 [e2e_section12_output.txt](e2e_section12_output.txt).
@@ -47,6 +47,19 @@ Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit
 | Someone knowing a student's email + ID could re-register during the pending window and have the student's code verify the stranger's password | unit `pending_registration_cannot_be_taken_over`; E2E `verify with a different password refused` | compile fail (no password check) | Pass |
 | Changing freshness/interval moved the deadline of food already Ready (against decision D7) | unit `freshness_change_after_ready_keeps_original_deadline`, `ready_deadline_and_interval_survive_restart`, `old_nine_field_reservation_lines_still_load` | compile fail (no stored deadline) | Pass |
 | A second server on the same data folder overwrote the live lock; a crash's stale lock blocked the admin tool | unit `test_lock_file.cpp` (4); admin-tool stale-lock case; E2E `second server on the same data folder refuses` | E2E FAIL against the pre-fix server (exit 259, lock overwritten) | Pass |
+
+## Additions #1 (waitlist) and #2 (email retry)
+
+| Area | Tests | Result |
+|---|---|---|
+| Waitlist queue (circular, hand-built) | unit `waitq_*` (5): empty, FIFO, full, wraparound, clear | Pass |
+| Waitlist rules | unit `test_waitlist.cpp` (19): join only when sold out, once, within limit, before cutoff; strict FIFO promotion on cancel / limit raise / undo; skip people at their limit; close at cutoff with one email; rollover; compaction; direct reserve leaves the list; promotion after a full cooking queue empties; cancelling never re-books the canceller | Pass |
+| Waitlist on restart | unit `waitlist_order_survives_restart`, `left_entries_not_saved`, `old_day_waitlist_not_loaded`, `corrupt_waitlist_line_refuses_start` | Pass |
+| Email retry queue (linked, hand-built) | unit `test_mailer.cpp` (11): failure queued; retry after 1 min; 1/5/15 then give up and log; order kept; not-due items wait; survives restart; escaping; new mail waits behind the same person's older mail; other people not held up; damaged file refused | Pass |
+| End to end | E2E: join at position 1, join twice refused, cannot join while portions remain, place in line shown, cancellation promotes with email, portion used once, list closes at cutoff with email; outbox blocked → confirmation waits → delivered 1 minute after recovery | Pass |
+| Console demo | scripted waitlist scenario (strict FIFO, cutoff email) | Pass |
+
+**Intermittent E2E failures seen once during development:** 4 of about 25 runs in one batch failed (one request with no response, a missed retry check, an abnormal exit after the last check), and one CTest run hung. The cause was **not confirmed**. After hardening the test harness (client timeouts, a 180 s CTest limit, stopping a stray server left by an interrupted run), 35 consecutive runs passed. `tools/e2e_loop.ps1 -Runs 20` re-runs the check.
 
 ## Gaps (not covered automatically)
 

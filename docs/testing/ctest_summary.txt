@@ -1,7 +1,7 @@
-1/5 Test #1: unit_tests .......................   Passed    4.99 sec
-2/5 Test #2: no_stl_guard .....................   Passed    0.04 sec
+1/5 Test #1: unit_tests .......................   Passed    5.13 sec
+2/5 Test #2: no_stl_guard .....................   Passed    0.03 sec
 3/5 Test #3: console_demo .....................   Passed    0.03 sec
 4/5 Test #4: admin_tool .......................   Passed    0.30 sec
-5/5 Test #5: e2e_section12 ....................   Passed   10.04 sec
+5/5 Test #5: e2e_section12 ....................   Passed   11.27 sec
 100% tests passed, 0 tests failed out of 5
-Total Test time (real) =  15.40 sec
+Total Test time (real) =  16.77 sec
