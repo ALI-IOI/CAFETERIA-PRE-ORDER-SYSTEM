@@ -133,8 +133,9 @@ int main(int argc, char** argv) {
     saveAll(app);  // first start: writes the seed into data/
 
     app.email = makeSender(smtp, dataDir + "/outbox");
-    std::printf("Email mode: %s%s\n", app.email->modeName(),
-                std::string(app.email->modeName()) == "outbox" ? " (files in data/outbox, SMTP not configured)" : "");
+    bool outbox = std::string(app.email->modeName()) == "outbox";
+    std::printf("Email mode: %s%s%s\n", app.email->modeName(),
+                outbox ? " - SMTP not configured, emails are files in " : "", outbox ? (dataDir + "/outbox").c_str() : "");
     std::string placeholderFiles[] = {configDir + "/app.cfg", configDir + "/smtp.cfg", seedDir + "/menu.txt",
                                       seedDir + "/settings.txt"};
     printPlaceholders(placeholderFiles, 4);

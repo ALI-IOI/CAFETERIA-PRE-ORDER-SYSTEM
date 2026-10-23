@@ -1,0 +1,7 @@
+# SAMPLE ONLY - fake people on the reserved test domain uni.example.
+# [CONFIRM] The real list comes from the university. Save it as
+# config/university_list.csv in this format (one person per line):
+id,email,role,name,department
+1072520005101030,ayon@uni.example,student,Ayon Das,CSE
+1072520005101050,ali@uni.example,student,Mohammad Ali Gazi,CSE
+2000000000000001,teacher1@uni.example,teacher,Sample Teacher,CSE

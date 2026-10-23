@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Staff portal · BAUSTK Cafeteria</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="/staff/portal.html">BAUSTK Cafeteria <small>Staff portal</small></a>
+      <nav aria-label="Portal sections">
+        <a href="#kitchen">Kitchen</a>
+        <a href="#reservations">Reservations</a>
+        <a href="#stock">Packaged stock</a>
+        <a href="#settings">Settings</a>
+        <span id="who"></span>
+        <button class="linkbtn" type="button" id="logout">Log out</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <h1>Today in the kitchen</h1>
+    <p class="lead" id="clock"></p>
+    <p id="msg" class="msg" role="status" aria-live="polite"></p>
+
+    <div class="split">
+      <div>
+        <section id="kitchen" aria-labelledby="kitchen-h">
+          <h2 id="kitchen-h">Fresh food</h2>
+          <p class="hint">"Mark ready" emails people in the order they reserved (first come, first served), skipping cancellations. Leave portions empty to serve everyone waiting.</p>
+          <div class="kpis" id="fresh"></div>
+        </section>
+
+        <section id="reservations" aria-labelledby="res-h">
+          <h2 id="res-h">Today's reservations</h2>
+          <form id="search" class="row" role="search">
+            <div class="field">
+              <label for="q">Find by reservation ID</label>
+              <input id="q" name="q" placeholder="R-0042" maxlength="12" autocomplete="off">
+            </div>
+            <button class="btn" type="submit">Search</button>
+            <button class="btn btn--ghost" type="button" id="clear">Show all</button>
+          </form>
+          <div class="card table-wrap">
+            <table>
+              <caption id="res-caption">Sorted by item, then reservation time</caption>
+              <thead>
+                <tr><th scope="col">ID</th><th scope="col">Food</th><th scope="col" class="num">Qty</th>
+                    <th scope="col">Person</th><th scope="col">Time</th><th scope="col">Status</th>
+                    <th scope="col"><span class="visually-hidden">Action</span></th></tr>
+              </thead>
+              <tbody id="res-rows"></tbody>
+            </table>
+            <p id="res-empty" hidden>No reservations found.</p>
+          </div>
+        </section>
+
+        <section id="stock" aria-labelledby="stock-h">
+          <h2 id="stock-h">Packaged stock</h2>
+          <div class="card table-wrap">
+            <table>
+              <caption class="visually-hidden">Packaged items and stock</caption>
+              <thead><tr><th scope="col">Item</th><th scope="col">Category</th><th scope="col">Stock</th></tr></thead>
+              <tbody id="stock-rows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="settings" aria-labelledby="settings-h">
+          <h2 id="settings-h">Times and limits</h2>
+          <div class="card">
+            <form id="settings-form" class="grid" novalidate>
+              <div class="field"><label for="s-cutoff">Reservation cutoff</label>
+                <input id="s-cutoff" name="cutoff" type="time" required></div>
+              <div class="field"><label for="s-cancel">Cancellation deadline</label>
+                <input id="s-cancel" name="cancel_deadline" type="time" required></div>
+              <div class="field"><label for="s-fresh">Freshness window <span class="hint">minutes after "ready"</span></label>
+                <input id="s-fresh" name="freshness_minutes" type="number" min="30" max="1440" required></div>
+              <div class="field"><label for="s-remind">Reminder interval <span class="hint">minutes</span></label>
+                <input id="s-remind" name="reminder_minutes" type="number" min="5" max="720" required></div>
+              <div class="field"><label for="s-limit">Portions per person per item</label>
+                <input id="s-limit" name="per_user_limit" type="number" min="1" max="10" required></div>
+              <div class="field"><button class="btn btn--block" type="submit">Save changed settings</button></div>
+            </form>
+          </div>
+        </section>
+      </div>
+
+      <aside aria-labelledby="undo-h">
+        <h2 id="undo-h">Undo</h2>
+        <div class="card">
+          <p class="hint" id="stack-size"></p>
+          <button class="btn btn--block" type="button" id="undo">Undo latest action</button>
+          <h3 class="visually-hidden">Action history, newest first</h3>
+          <ol class="stack-list" id="history" aria-label="Action history, newest first"></ol>
+          <p class="hint">Marking food ready is not undoable: the emails have already been sent.</p>
+        </div>
+        <h2>Email</h2>
+        <p class="card hint" id="email-mode"></p>
+      </aside>
+    </div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/staff-portal.js"></script>
+</body>
+</html>
