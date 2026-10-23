@@ -105,6 +105,14 @@ struct Browser {
         remember(r);
         return r;
     }
+    httplib::Result postMultipart(const std::string& path, const httplib::UploadFormDataItems& items) {
+        httplib::Headers h;
+        h.emplace("X-Cafe", "1");
+        if (!cookie.empty()) h.emplace("Cookie", cookie);
+        auto r = cli.Post(path, h, items);
+        remember(r);
+        return r;
+    }
     httplib::Result get(const std::string& path) {
         httplib::Headers h;
         if (!cookie.empty()) h.emplace("Cookie", cookie);
@@ -588,6 +596,68 @@ static int realMain(int argc, char** argv) {
           ov2.substr(0, 120) + " ... emailsWaiting=" + std::to_string(jsonInt(ov2, "emailsWaiting")) +
               " s8-confirmations=" + std::to_string(countMails("confirmation", "s8@uni.example")) +
               " outbox-is-dir=" + std::to_string(fs::is_directory(g_data + "/outbox")));
+
+    // ---- redesign: public info, staff-managed items, pictures, tray -----------------------
+    {
+        Browser guest;
+        r = guest.get("/api/public/info");
+        check(status(r) == 200 && jsonStr(body(r), "cutoff") == "18:00" && !has(body(r), "@"),
+              "redesign: public_info_without_login", body(r));
+        r = staff.post("/api/staff/items", {{"category", "Fresh food"}, {"name", "Biryani"}, {"kind", "fresh"},
+                                            {"price", "150"}, {"amount", "10"}});
+        int idx = (int)jsonInt(body(r), "index");
+        check(status(r) == 200 && idx == 13, "redesign: staff adds an item", body(r));
+        const std::string IDX = std::to_string(idx);
+        s[9].post("/api/login", {{"email", uniEmail(9)}, {"password", PW}});
+        std::string menu9 = body(s[9].get("/api/menu"));
+        size_t bp = menu9.find("\"name\":\"Biryani\"");
+        check(bp != std::string::npos && jsonInt(menu9, "price", bp) == 150,
+              "redesign: staff_adds_item_student_sees_it (with price)", menu9.substr(0, 200));
+
+        const std::string png = std::string("\x89PNG\r\n\x1a\n", 8) + std::string(64, 'p');
+        r = staff.postMultipart("/api/staff/items/image",
+                                {{"item", IDX, "", ""}, {"image", png, "biryani.png", "image/png"}});
+        std::string img = jsonStr(body(r), "image");
+        auto served = guest.get(img);
+        check(status(r) == 200 && img.rfind("/images/item-13-", 0) == 0 && status(served) == 200 &&
+                  served->get_header_value("Content-Type") == "image/png" && served->body == png,
+              "redesign: upload_picture_then_served", body(r));
+        r = staff.postMultipart("/api/staff/items/image",
+                                {{"item", IDX, "", ""}, {"image", "<html>hi</html>", "evil.png", "image/png"}});
+        check(status(r) == 400, "redesign: non_image_upload_refused", body(r));
+        r = s[9].postMultipart("/api/staff/items/image",
+                               {{"item", IDX, "", ""}, {"image", png, "x.png", "image/png"}});
+        check(status(r) == 403, "redesign: student_cannot_upload", body(r));
+        r = guest.post("/api/register",
+                       {{"email", std::string(5000, 'a') + "@uni.example"}, {"id", "1"}, {"password", PW}});
+        check(status(r) == 413, "redesign: other_routes_keep_4kb_limit", std::to_string(status(r)));
+
+        r = staff.post("/api/staff/items", {{"category", "Fresh food"}, {"name", "<b>Halwa</b>"}, {"kind", "fresh"},
+                                            {"price", "40"}, {"amount", "5"}});
+        std::string m2 = body(s[9].get("/api/menu"));
+        check(status(r) == 200 && has(m2, "\\u003cb\\u003eHalwa") && !has(m2, "<b>Halwa"),
+              "redesign: item_name_shown_as_text", body(r));
+
+        r = staff.post("/api/staff/items/available", {{"item", IDX}, {"available", "0"}});
+        std::string m3 = body(s[9].get("/api/menu"));
+        auto rr = s[9].post("/api/reservations", {{"item", IDX}, {"quantity", "1"}});
+        check(status(r) == 200 && !has(m3, "Biryani") && has(body(rr), "not available"),
+              "redesign: unavailable_item_hidden_and_refused", body(rr));
+        staff.post("/api/staff/items/available", {{"item", IDX}, {"available", "1"}});
+
+        r = s[9].post("/api/reservations/batch",
+                      {{"items", IDX + ":1," + std::to_string(TEHARI) + ":5"}});
+        std::string mine9 = body(s[9].get("/api/reservations/mine"));
+        check((status(r) == 400 || status(r) == 409) && has(body(r), "Tehari") && !has(mine9, "Biryani"),
+              "redesign: tray with one bad line reserves nothing and names the dish", body(r));
+        readOutbox();
+        int trayFrom = g_mailCount;
+        r = s[9].post("/api/reservations/batch", {{"items", IDX + ":1," + std::to_string(TEHARI) + ":1"}});
+        mine9 = body(s[9].get("/api/reservations/mine"));
+        check(status(r) == 200 && jsonInt(body(r), "total") == 150 && has(mine9, "Biryani") && has(mine9, "Tehari") &&
+                  countMails("confirmation", "s9@uni.example", trayFrom) == 1,
+              "redesign: tray reserves every dish with one confirmation email", body(r));
+    }
 
     std::printf("(stopping server)\n");
     std::fflush(stdout);
