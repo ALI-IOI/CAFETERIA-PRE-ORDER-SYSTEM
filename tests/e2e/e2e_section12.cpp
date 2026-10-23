@@ -321,6 +321,7 @@ int main(int argc, char** argv) {
     check(status(r) == 200, "setup: staff set Fried Rice limit to 1", body(r));
     res = reserveRes(ali, FRIED_RICE, "1");
     check(has(res, "\"ok\":true"), "12.4 last Fried Rice portion reserved", res);
+    std::string aliFriedRice = std::to_string(jsonInt(res, "id"));
     r = teacher.post("/api/reservations", {{"item", std::to_string(FRIED_RICE)}, {"quantity", "1"}});
     check(status(r) == 409 && has(body(r), "Not enough portions"), "12.4 sold-out item rejected", body(r));
     r = ayon.post("/api/reservations", {{"item", std::to_string(TEHARI)}, {"quantity", "2"}});
@@ -342,6 +343,30 @@ int main(int argc, char** argv) {
           "12.5 cancel before deadline returns the portion",
           std::to_string(before) + "/" + std::to_string(during) + "/" + std::to_string(after));
 
+    // ---- addition #1: waitlist for a sold-out item ------------------------------------------
+    const std::string FR = std::to_string(FRIED_RICE);
+    r = teacher.post("/api/waitlist/join", {{"item", FR}, {"quantity", "1"}});
+    check(status(r) == 200 && jsonInt(body(r), "position") == 1, "waitlist: join sold-out Fried Rice at position 1",
+          body(r));
+    r = teacher.post("/api/waitlist/join", {{"item", FR}, {"quantity", "1"}});
+    check(status(r) == 409 && has(body(r), "already on the waitlist"), "waitlist: joining twice refused", body(r));
+    r = ayon.post("/api/waitlist/join", {{"item", std::to_string(TEHARI)}, {"quantity", "1"}});
+    check(status(r) == 409 && has(body(r), "still available"), "waitlist: cannot join while portions remain", body(r));
+    {
+        std::string m = body(teacher.get("/api/menu"));
+        size_t frPos = m.find("\"name\":\"Fried Rice\"");
+        check(jsonInt(m, "yourPosition", frPos) == 1 && jsonInt(m, "waiting", frPos) == 1,
+              "waitlist: menu shows the person's place in line", m);
+    }
+    readOutbox();
+    int wlFrom = g_mailCount;
+    r = ali.post("/api/reservations/cancel", {{"id", aliFriedRice}});
+    check(status(r) == 200 && countMails("confirmation", "teacher1@uni.example", wlFrom) == 1,
+          "waitlist: a cancellation gives the portion to the first person waiting, with email", body(r));
+    r = teacher.get("/api/reservations/mine");
+    check(has(body(r), "\"item\":\"Fried Rice\"") && remainingOf(body(ali.get("/api/menu")), "Fried Rice") == 0,
+          "waitlist: promoted person now holds the reservation; portion used once", body(r));
+
     // ---- review: concurrent last portion --------------------------------------------------
     for (int i = 1; i <= 12; i++) registerUser(s[i], uniEmail(i), uniId(i));
     staff.post("/api/staff/limit", {{"item", std::to_string(KHICHURI)}, {"value", "1"}});
@@ -357,6 +382,8 @@ int main(int argc, char** argv) {
     for (auto& t : threads) t.join();
     check(okCount == 1 && soldOut == 9, "review: concurrent_last_portion (10 at once, 1 left)",
           std::to_string(okCount.load()) + " ok, " + std::to_string(soldOut.load()) + " sold out");
+    r = s[6].post("/api/waitlist/join", {{"item", std::to_string(KHICHURI)}, {"quantity", "1"}});
+    check(status(r) == 200, "waitlist: s6 joins the sold-out Khichuri waitlist", body(r));
 
     // ---- FIFO scenario on Tehari: ayon(R-0001), teacher, s11 (cancels), s12 ------------
     reserveRes(teacher, TEHARI, "1");
@@ -375,6 +402,9 @@ int main(int argc, char** argv) {
     staff.post("/api/dev/advance", {{"minutes", "1"}});
     r = s[4].post("/api/reservations", {{"item", std::to_string(TEHARI)}, {"quantity", "1"}});
     check(status(r) == 409 && has(body(r), "cutoff"), "12.4 reservation at 10:00 (cutoff) rejected", body(r));
+    check(countMails("waitlist-closed", "s6@uni.example") == 1 &&
+              countMails("waitlist-closed", "teacher1@uni.example") == 0,
+          "waitlist: closes at the cutoff with one email to each person still waiting");
     long tehariBefore = remainingOf(body(s[12].get("/api/menu")), "Tehari");
     r = s[12].post("/api/reservations/cancel", {{"id", s12Id}});
     long tehariAfter = remainingOf(body(s[12].get("/api/menu")), "Tehari");
@@ -502,6 +532,25 @@ int main(int argc, char** argv) {
     s[5].post("/api/login", {{"email", uniEmail(5)}, {"password", PW}});  // sessions ended at the restart
     res = reserveRes(s[5], TEHARI, "1");
     check(has(res, "\"ok\":true"), "reservation allowed again after cutoff moved", res);
+
+    // ---- addition #2: email retry when sending fails ----------------------------------------
+    // Block the outbox (a file where the folder should be) so every send fails.
+    killServer(server);
+    fs::rename(g_data + "/outbox", g_data + "/outbox_saved");
+    { std::ofstream blocker(g_data + "/outbox"); blocker << "blocked"; }
+    check(startServer(server, "2026-10-23T17:10"), "setup: restart with the email outbox blocked");
+    staff.post("/api/staff/login", {{"login", "cafe.staff"}, {"password", "staffpass123"}});
+    s[8].post("/api/login", {{"email", uniEmail(8)}, {"password", PW}});
+    res = reserveRes(s[8], TEHARI, "1");
+    std::string ov2 = body(staff.get("/api/staff/overview"));
+    check(has(res, "\"ok\":true") && jsonInt(ov2, "emailsWaiting") == 1,
+          "email retry: a failed confirmation waits in the retry queue", res + " " + ov2.substr(0, 200));
+    fs::remove(g_data + "/outbox");
+    fs::rename(g_data + "/outbox_saved", g_data + "/outbox");
+    staff.post("/api/dev/advance", {{"minutes", "1"}});
+    ov2 = body(staff.get("/api/staff/overview"));
+    check(jsonInt(ov2, "emailsWaiting") == 0 && countMails("confirmation", "s8@uni.example") == 1,
+          "email retry: sent one minute later once the outbox works again");
 
     killServer(server);
     std::printf("\n%d checks, %d passed, %d failed\n", g_checks, g_checks - g_failures, g_failures);

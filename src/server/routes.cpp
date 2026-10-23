@@ -275,6 +275,8 @@ static void routeUser(httplib::Server& svr, AppState& app) {
                     j.key("remaining").value(menuRemaining(m));
                     j.key("limit").value(m.dailyLimit);
                     j.key("yours").value(userPortionsToday(caf, c.session->login, i));
+                    j.key("waiting").value(waitlistActiveCount(caf, i));
+                    j.key("yourPosition").value(waitlistPosition(caf, c.session->login, i));
                 } else {
                     j.key("kind").value("packaged");
                     j.key("stock").value(m.stock);
@@ -322,6 +324,51 @@ static void routeUser(httplib::Server& svr, AppState& app) {
             j.endArray().endObject();
             delete[] arr;
             reply(c.res, 200, j.str());
+        });
+    });
+
+    svr.Post("/api/waitlist/join", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::User, [](Ctx& c) {
+            int item, qty, position = 0;
+            if (!parseIntStrict(param(c.req, "item"), item)) {
+                fail(c, 400, resultMessage(Result::BadItem));
+                return;
+            }
+            if (!parseIntStrict(param(c.req, "quantity"), qty)) {
+                fail(c, 400, resultMessage(Result::BadQuantity));
+                return;
+            }
+            Result r = joinWaitlist(c.app.caf, c.session->login, item, qty, position);
+            if (r != Result::Ok) {
+                fail(c, httpStatus(r), resultMessage(r));
+                return;
+            }
+            c.changed = true;
+            Json j;
+            j.beginObject().key("ok").value(true).key("position").value(position);
+            j.key("message").value("You are #" + std::to_string(position) + " on the " +
+                                   c.app.caf.menu.items[item].name + " waitlist. If a portion becomes free before " +
+                                   formatMinuteOfDay(c.app.caf.settings.cutoffMinute) +
+                                   ", it is reserved for you and we email you.");
+            j.endObject();
+            reply(c.res, 200, j.str());
+        });
+    });
+
+    svr.Post("/api/waitlist/leave", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::User, [](Ctx& c) {
+            int item;
+            if (!parseIntStrict(param(c.req, "item"), item)) {
+                fail(c, 400, resultMessage(Result::BadItem));
+                return;
+            }
+            Result r = leaveWaitlist(c.app.caf, c.session->login, item);
+            if (r != Result::Ok) {
+                fail(c, httpStatus(r), resultMessage(r));
+                return;
+            }
+            c.changed = true;
+            reply(c.res, 200, "{\"ok\":true,\"message\":\"You left the waitlist.\"}");
         });
     });
 
@@ -377,11 +424,13 @@ static void routeStaff(httplib::Server& svr, AppState& app) {
                     j.key("waitingPortions").value(waiting);
                     j.key("queueEntries").value(caf.cooking[i].count);
                     j.key("queueCapacity").value(caf.cooking[i].capacity);
+                    j.key("waitlist").value(waitlistActiveCount(caf, i));
                 }
                 j.endObject();
             }
             j.endArray();
             j.key("reminderQueue").value(caf.reminders.count);
+            j.key("emailsWaiting").value(mailerWaiting(c.app.mailer));  // app.mu -> mailer.mu (allowed order)
             j.key("historySize").value(stSize(caf.history));
             j.key("historyCapacity").value(ACTION_STACK_CAPACITY);
             j.key("history").beginArray();
@@ -558,6 +607,7 @@ static void routeDev(httplib::Server& svr, AppState& app) {
             c.changed = true;
             reply(c.res, 200, "{\"ok\":true,\"now\":\"" + formatClock(c.app.clock->now()) + "\"}");
         });
+        mailerRetryDue(app.mailer);  // what the timer thread does each minute; outside app.mu
     });
 }
 
