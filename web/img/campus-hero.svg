@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 700" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Placeholder for the BAUST Khulna campus photo">
+  <defs>
+    <pattern id="brush" width="1600" height="6" patternUnits="userSpaceOnUse">
+      <rect width="1600" height="6" fill="#C8CDD2"/><rect y="0" width="1600" height="2" fill="#D3D7DB"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="700" fill="url(#brush)"/>
+  <g fill="none" stroke="#9AA1A8" stroke-width="3">
+    <rect x="900" y="250" width="520" height="300"/>
+    <path d="M900 330h520M900 410h520M900 490h520M1030 250v300M1160 250v300M1290 250v300"/>
+    <path d="M860 250l300-120 300 120"/>
+  </g>
+  <rect x="1060" y="600" width="480" height="56" fill="#F1F2F3" stroke="#6B737B" stroke-width="2" stroke-dasharray="10 6"/>
+  <text x="1300" y="636" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" fill="#3A4046">BAUST Khulna photo goes here (web/img/campus-hero.jpg)</text>
+</svg>
