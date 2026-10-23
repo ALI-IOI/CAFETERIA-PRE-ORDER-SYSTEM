@@ -5,7 +5,7 @@
 #include <ctime>
 #include <string>
 
-enum class Role { Student, Teacher, Staff };
+enum class Role { Student, Teacher, Staff, Employee };  // Staff = cafeteria staff; Employee = university staff
 const char* roleName(Role r);
 bool roleFromName(const std::string& name, Role& out);
 
@@ -36,11 +36,11 @@ User* ulAppend(UserList& list);  // new zeroed node at the tail
 User* ulFind(const UserList& list, const std::string& login);
 void ulClear(UserList& list);
 
-// One row of the university's student/teacher list.
+// One row of the university's list of students, teachers and staff.
 struct UniEntry {
     std::string id;
-    std::string email;  // lower-case
-    Role role;          // Student or Teacher only
+    std::string email;  // lower-case; empty only for Employee rows (no university email)
+    Role role;          // Student, Teacher or Employee
     std::string name;
     std::string department;
     UniEntry* next;
@@ -55,6 +55,7 @@ struct UniList {
 void uniInit(UniList& list);
 void uniClear(UniList& list);
 UniEntry* uniFindById(const UniList& list, const std::string& id);
+UniEntry* uniFindByEmail(const UniList& list, const std::string& email);  // lower-case; never matches a blank email
 
 // Loads "id,email,role,name,department" CSV [CONFIRM format]. '#' lines and a
 // header line starting with "id," are skipped. Returns false with
