@@ -75,4 +75,5 @@ if(E2E_SOURCES AND TARGET cafeteria_server)
   add_dependencies(e2e_section12 cafeteria_server)
   add_test(NAME e2e_section12
     COMMAND e2e_section12 $<TARGET_FILE:cafeteria_server> ${CMAKE_SOURCE_DIR})
+set_tests_properties(e2e_section12 PROPERTIES TIMEOUT 180)
 endif()

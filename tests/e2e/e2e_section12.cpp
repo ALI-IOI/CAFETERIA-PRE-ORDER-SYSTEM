@@ -90,6 +90,12 @@ static void killServer(ServerProc& sp) {
 struct Browser {
     httplib::Client cli{"127.0.0.1", g_port};
     std::string cookie;
+    Browser() {
+        // Fail a stuck request quickly and visibly instead of waiting 5 minutes.
+        cli.set_connection_timeout(5, 0);
+        cli.set_read_timeout(15, 0);
+        cli.set_write_timeout(15, 0);
+    }
 
     httplib::Result post(const std::string& path, const httplib::Params& params, bool withHeader = true) {
         httplib::Headers h;
@@ -114,7 +120,9 @@ struct Browser {
 };
 
 static int status(const httplib::Result& r) { return r ? r->status : -1; }
-static std::string body(const httplib::Result& r) { return r ? r->body : std::string("(no response)"); }
+static std::string body(const httplib::Result& r) {
+    return r ? r->body : "(no response: " + httplib::to_string(r.error()) + ")";
+}
 
 // ---- outbox ---------------------------------------------------------------------
 
@@ -191,6 +199,20 @@ static std::string uniEmail(int i) { return "s" + std::to_string(i) + "@uni.exam
 static std::string uniId(int i) { return "10000000000000" + std::string(i < 10 ? "0" : "") + std::to_string(i); }
 
 static void writeFixtures() {
+    // A server left over from an earlier, interrupted run would keep writing
+    // into this folder: stop it first (its PID is in the lock file).
+    {
+        std::ifstream lock(g_data + "/server.lock");
+        unsigned long pid = 0;
+        if (lock >> pid && pid > 0) {
+            HANDLE h = OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE, FALSE, (DWORD)pid);
+            if (h != nullptr) {
+                TerminateProcess(h, 1);
+                WaitForSingleObject(h, 5000);
+                CloseHandle(h);
+            }
+        }
+    }
     fs::remove_all(g_work);
     fs::create_directories(g_data);
     fs::create_directories(g_config);
@@ -230,7 +252,19 @@ static std::string reserveRes(Browser& b, int item, const std::string& qty) {
 
 const int KHICHURI = 0, FRIED_RICE = 1, TEHARI = 2, LAYS = 5;  // indices in seed/menu.txt
 
+static int realMain(int argc, char** argv);
+
 int main(int argc, char** argv) {
+    try {
+        return realMain(argc, argv);
+    } catch (const std::exception& e) {
+        std::printf("FAIL uncaught exception: %s\n", e.what());
+        std::fflush(stdout);
+        return 99;
+    }
+}
+
+static int realMain(int argc, char** argv) {
     if (argc < 3) {
         std::printf("usage: e2e_section12 <server exe> <project root>\n");
         return 2;
@@ -550,9 +584,17 @@ int main(int argc, char** argv) {
     staff.post("/api/dev/advance", {{"minutes", "1"}});
     ov2 = body(staff.get("/api/staff/overview"));
     check(jsonInt(ov2, "emailsWaiting") == 0 && countMails("confirmation", "s8@uni.example") == 1,
-          "email retry: sent one minute later once the outbox works again");
+          "email retry: sent one minute later once the outbox works again",
+          ov2.substr(0, 120) + " ... emailsWaiting=" + std::to_string(jsonInt(ov2, "emailsWaiting")) +
+              " s8-confirmations=" + std::to_string(countMails("confirmation", "s8@uni.example")) +
+              " outbox-is-dir=" + std::to_string(fs::is_directory(g_data + "/outbox")));
 
+    std::printf("(stopping server)\n");
+    std::fflush(stdout);
     killServer(server);
+    std::printf("(server stopped)\n");
+    std::fflush(stdout);
     std::printf("\n%d checks, %d passed, %d failed\n", g_checks, g_checks - g_failures, g_failures);
+    std::fflush(stdout);
     return g_failures;
 }

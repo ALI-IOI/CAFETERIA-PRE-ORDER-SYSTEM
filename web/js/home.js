@@ -50,7 +50,9 @@ function freshCard(item, menu) {
     el("p", { class: "food__meta" },
       item.yours > 0 ? "You have reserved " + item.yours + " today." : "Up to " + menu.perUserLimit + " per person."),
     reason ? el("p", { class: "food__meta" }, el("strong", {}, reason)) : null,
-    soldOut ? waitlistBox(item, menu) : form,
+    // Still waiting while portions are free (the person ahead needs more than
+    // are left): show both. Reserving directly takes you off the waitlist.
+    soldOut ? waitlistBox(item, menu) : item.yourPosition > 0 ? el("div", {}, form, waitlistBox(item, menu)) : form,
   );
 }
 
