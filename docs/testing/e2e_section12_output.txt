@@ -2,6 +2,7 @@ PASS 12.1 non-university email rejected
 PASS 12.1 unlisted ID rejected
 PASS 12.1 valid registration sends a code
 PASS 12.1 wrong verification code rejected
+PASS review: verify with a different password refused (no takeover)
 PASS 12.1 correct verification code accepted
 PASS 12.1 verified student can log in
 PASS security: session cookie is HttpOnly + SameSite
@@ -47,6 +48,7 @@ PASS setup: staff set Lays stock 25
 PASS 12.8 undo restores Lays stock
 PASS 12.10 server restarts on the same data
 PASS 12.10 sessions are not kept across restart (log in again)
+PASS review: second server on the same data folder refuses, first keeps its lock
 PASS 12.10 users and reservations restored
 PASS 12.10 menu and portions restored
 PASS 12.8/12.10 stack empty after restart: nothing to undo
@@ -64,4 +66,4 @@ PASS 12.9 wrong passwords lock the account
 PASS staff change cutoff to 18:00
 PASS reservation allowed again after cutoff moved
 
-65 checks, 65 passed, 0 failed
+67 checks, 67 passed, 0 failed

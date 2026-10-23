@@ -1,0 +1,77 @@
+# Build log (decisions and rulings)
+
+Kept for the course report: every deviation from the approved plan, with its reason and what it costs if wrong, plus the final review triage.
+
+- # SDD ledger — plan: docs/superpowers/plans/2026-10-23-cafeteria-pre-order-system.md
+- Spec: docs/proposal/Cafeteria_Pre_Order_System_DSA_Proposal.docx
+- Pre-flight: Interfaces checked across Tasks 2-12; Task 5 consumes MenuArray/ResQueue/ActionStack exactly as Tasks 2-4 produce; Task 9 consumes UserList from Task 10 (ordering conflict).
+- Pre-flight: Ruling: users storage (loadUsers/saveUsers) moves from Task 9 to Task 10 because UserList is defined in Task 10 — cost if wrong: none, same tests.
+- Task 1: Ruling: httplib needs -D_WIN32_WINNT=0x0A00 on MinGW (CreateFile2) — set globally in CMake — cost if wrong: Windows 7 unsupported.
+- Task 1: Ruling: link with -static so the .exe files run without MinGW DLLs on PATH — cost if wrong: larger binaries.
+- Task 1: complete (commits root..dfec812, tests: ctest → 2/2 pass; guard proven to fail on <vector>)
+- Task 2: complete (commits dfec812..01bcd14, tests: ctest → unit 5/5, guard pass)
+- Task 3: Ruling: added qAt/qClear/rlAppendNode/statusFromName (display, rollover, loading) beyond the brief — needed by Tasks 6, 8, 9 — cost if wrong: unused helpers
+- Task 3: complete (commits 01bcd14..00caf99, tests: unit_tests → 19/19 pass)
+- Task 4: complete (commits 00caf99..20b164f, tests: unit_tests → 24/24 pass)
+- Task 5: Ruling: added Result::NotReady and test list_user_reservations_only_returns_own — needed by Task 6/12 — cost if wrong: none
+- Task 5: Ruling: NotOwner shows the same message as NotFound so users cannot probe other people's IDs — cost if wrong: less specific error
+- Task 5: complete (commits 20b164f..af7c017, tests: unit_tests → 39/39 pass)
+- Task 6: Ruling: markReady returns Result + ReadyReport{madeReady,skipped,leftWaiting} instead of int — needs error codes for bad item/kind/portions — cost if wrong: signature change
+- Task 6: Ruling: markCollected takes bool& undoRecorded (same pattern as Task 7 setters) — cost if wrong: none
+- Task 6: Ruling: rollover moves finished earlier-day nodes to Cafeteria.archive via new rlUnlink instead of deleting, so storage can append them to history.txt — cost if wrong: one extra list
+- Task 6: Ruling: reminder schedule anchored at readyAt + k*interval (lastNoticeAt = due) unless a full interval behind — prevents minute drift from a free-running timer — cost if wrong: none
+- Task 6: complete (commits af7c017..cb47a8d, tests: unit_tests → 50/50 pass)
+- Task 7: Ruling: added Result::WrongKind for stock-on-fresh / limit-on-packaged — clearer than BadItem — cost if wrong: none
+- Task 7: Ruling: undo of MarkCollected re-enqueues only if not already in the reminder queue (lazy removal) + test undo_collected_does_not_duplicate_queue_entry — prevents double reminders — cost if wrong: none
+- Task 7: complete (commits cb47a8d..52ca96f, tests: unit_tests → 63/63 pass)
+- Task 8: Ruling: expected file line 'Expired' corrected to the real email text '[email:expired] ... has expired' — test expectation typo, code verified correct in transcript (expires 16:00 = 09:00 + 7h) — cost if wrong: none
+- Task 8: Ruling: console prints the queue contents (R-0002 bob Cancelled) instead of a 'skipped' line; skipped count is in the Ready line — cost if wrong: none
+- Task 8: complete (commits 52ca96f..aac7910, tests: ctest → 3/3 pass)
+- Task 9: Ruling: reservedToday is not stored; it is recomputed from today's non-cancelled reservations on load — single source of truth — cost if wrong: none
+- Task 9: Ruling: settings.txt also stores current_day and next_id so an overnight restart still runs rollover and IDs are never reused after archiving (tests restart_next_day_runs_rollover, ids_continue_after_archive) — cost if wrong: none
+- Task 9: Ruling: saveCafeteria is non-const (flushes archive to history.txt) — cost if wrong: none
+- Task 9: Ruling: seed packaged stock = 0 and water listed as 'Drinking water' pending [CONFIRM] — cost if wrong: staff edit in portal
+- Task 9: complete (commits aac7910..1c9b408, tests: ctest → 3/3, unit 75/75 pass)
+- Task 10: Ruling: users.txt load/save lives in src/auth/user_store (moved from Task 9) — UserList is defined here — cost if wrong: none
+- Task 10: Ruling: verification code stored as an argon2id hash and invalidated after 5 wrong tries (test verification_code_locked_after_5_wrong_attempts) — brute-forcing a 6-digit code otherwise trivial — cost if wrong: user re-registers
+- Task 10: Ruling: wrong portal (staff on public login or vice versa) returns BadCredentials without checking the password — does not reveal account type — cost if wrong: none
+- Task 10: Ruling: registration disabled while email domain is unset ([CONFIRM]) — cost if wrong: none
+- Task 10: Ruling: admin tool refuses while data/server.lock exists (server creates it in Task 12) — avoids the server overwriting users.txt — cost if wrong: none
+- Task 10: Ruling: sessions are not persisted; restart logs users out — cost if wrong: users log in again
+- Task 10: complete (commits 1c9b408..5820acc, tests: ctest → 4/4, unit 101/101 pass)
+- Task 11: Ruling: SMTP password passed to curl through a temp -K config file (deleted after send), not on the command line — keeps it out of the process list — cost if wrong: none
+- Task 11: Ruling: real SMTP delivery is untested (no account yet: [CONFIRM]); only message building and command line are unit-tested — cost if wrong: SMTP bug found at deployment
+- Task 11: Ruling: sample university list uses the reserved fake domain uni.example and the team's own IDs from the proposal cover page; real list stays [CONFIRM] — cost if wrong: none
+- Task 11: complete (commits 5820acc..e323cba, tests: ctest → 4/4, unit 107/107 pass)
+- Task 12: Ruling: POSTs require header X-Cafe: 1 (CSRF guard; cross-site forms cannot set it) in addition to SameSite=Strict cookies — cost if wrong: none
+- Task 12: Ruling: JSON escapes < and > as </>; E2E expectation corrected to the escaped form — test bug, not code — cost if wrong: none
+- Task 12: Ruling: E2E s5 must log in again after restart — test bug (sessions intentionally not persisted) — cost if wrong: none
+- Task 12: Ruling: staff use /api/staff/overview, not /api/menu (403 for staff) — cost if wrong: none
+- Task 12: Ruling: page guard redirects /home.html, /reservations.html to / and /staff/portal.html to /staff/login.html without the right session — cost if wrong: none
+- Task 12: code committed e323cba..4e3828a; E2E 64/65 — remaining check '12.2 staff can open the staff portal page' needs Task 13 web pages
+- Task 12: complete (E2E now 65/65 with web pages; tests: ctest → 5/5 pass)
+- Task 13: Ruling: requested skill 'frontend-design' not installed; used modern-web-design + design:accessibility-review — cost if wrong: none
+- Task 13: Ruling: added demo/ (fake uni.example list, demo staff account documented in demo/README.md) for browser checks — cost if wrong: delete folder
+- Task 13: Ruling: preview_start still resolves the old RES folder; demo server started via Bash and opened by URL — cost if wrong: none
+- Task 13: complete (commits 4e3828a..0334fa0, tests: ctest → 5/5 pass, browser: login/reserve/mine/staff ready/undo verified; a11y fixes: topbar focus contrast, reflow at 375px, th style)
+- Final review: fresh reviewer (general-purpose, opus) on dfec812..cd709ac — 0 Critical, 3 Important, 10 Minor.
+- Final: Ruling: Minor 3 (lock file: second instance deletes first's lock; no liveness check) re-graded Important — double start is realistic and leads to users.txt overwrite — cost if wrong: small extra code
+- Final: minor (deferred): undo of MarkCollected sets lastNoticeAt=now while entry keeps queue position; may delay others' reminders <= one interval
+- Final: minor (deferred): Argon2 runs under the global mutex; /api/register has no per-email resend cooldown
+- Final: minor (deferred): emails sent inside the request/timer thread (slow with real SMTP)
+- Final: minor (deferred): smtps:// always used; port 587 STARTTLS unsupported
+- Final: minor (deferred): history.txt appended before reservations.txt rewrite; crash between can duplicate history rows
+- Final: minor (deferred): page guard path compare is case-sensitive (APIs still guarded)
+- Final: minor (deferred): ignored qEnqueue return values at unreachable capacities
+- Final: minor (deferred): markReady with portions < front quantity reports 0 without mentioning leftover portions
+- Final: minor (deferred): E2E concurrency uses 10 threads, plan said 20
+- Final: Ruling: declined-to-judge HTTPS/Secure cookie — stands, deferred to reverse proxy per D1 — cost if wrong: plain HTTP on LAN
+- Final: Ruling: declined-to-judge real SMTP delivery — stands, [CONFIRM] account needed — cost if wrong: SMTP bug at deployment
+- Final: Ruling: declined-to-judge lockout-as-DoS on a known login — stands, standard trade-off of the approved lockout policy — cost if wrong: a user waits 15 min
+- Final: Ruling: declined-to-judge login timing enumeration — stands, low value, emails come from the university list — cost if wrong: attacker learns who registered
+- Final: Ruling: declined-to-judge placeholders, third-party code, visual design, uncommitted docs — stand, out of review scope
+- Final: fixed post-midnight reservation dropped by first tick — reserve_after_midnight_before_tick_is_kept RED→GREEN, unit 108/108
+- Final: fixed pending-registration takeover — pending_registration_cannot_be_taken_over RED(compile)→GREEN, unit 109/109, E2E 66/66
+- Final: fixed settings change rewriting deadlines of Ready food — freshness_change_after_ready_keeps_original_deadline RED(compile)→GREEN, suite 5/5 (unit 112/112)
+- Final: fixed lock file (second instance could delete live lock; stale lock blocked admin) — lock_held_by_live_other_process_refused + E2E second-server check RED→GREEN, suite 5/5 (unit 116/116, E2E 67/67)
+- Final: review complete; fix pass suite ctest 5/5 (unit 116/116, E2E 67/67)

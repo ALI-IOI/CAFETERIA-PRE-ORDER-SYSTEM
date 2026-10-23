@@ -5,11 +5,11 @@
 
 | Suite | What it is | Result |
 |---|---|---|
-| `unit_tests` | 107 unit tests: data structures, rules, storage, auth, email (fake clock) | **107 / 107 pass** |
+| `unit_tests` | 116 unit tests: data structures, rules, storage, auth, email, lock file (fake clock) | **116 / 116 pass** |
 | `no_stl_guard` | Fails the build if `vector/list/queue/stack/deque/map/set/array` appear in `src/ds`, `src/core`, `src/auth`, `src/storage`, `src/console` | **pass** (proven to fail on an injected `#include <vector>`) |
 | `console_demo` | Scripted run of the stage-2 console program, checks the transcript | **pass** |
-| `admin_tool` | Staff account creation: hashed, duplicate/short/mismatched password refused, refused while server runs | **pass** |
-| `e2e_section12` | Starts the real server (fake clock, temp data, email outbox), drives it over HTTP, crashes and restarts it | **65 / 65 checks pass** |
+| `admin_tool` | Staff account creation: hashed, duplicate/short/mismatched password refused, refused while a live server holds the lock, allowed with a stale lock | **pass** |
+| `e2e_section12` | Starts the real server (fake clock, temp data, email outbox), drives it over HTTP, crashes and restarts it | **67 / 67 checks pass** |
 
 Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit_tests_output.txt),
 [e2e_section12_output.txt](e2e_section12_output.txt).
@@ -38,6 +38,15 @@ Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit
 | Cancel someone else's reservation | E2E `cannot_cancel_others` → 404, unit `cancel_others_reservation_is_NotOwner` | Pass |
 | Cross-site POST (CSRF) | E2E `POST without X-Cafe header refused` → 403 | Pass |
 | Lower a limit below portions already reserved | Unit `limit_below_reserved_refused`, `undo_blocked_when_limit_now_below_reserved` | Pass |
+
+## Fixes from the final code review (each test seen failing first)
+
+| Finding | Regression test | Before fix | After |
+|---|---|---|---|
+| A reservation made after midnight but before the first timer tick was refused ("sold out" from yesterday) or wiped from the cooking queue by that tick | unit `reserve_after_midnight_before_tick_is_kept` | FAIL | Pass |
+| Someone knowing a student's email + ID could re-register during the pending window and have the student's code verify the stranger's password | unit `pending_registration_cannot_be_taken_over`; E2E `verify with a different password refused` | compile fail (no password check) | Pass |
+| Changing freshness/interval moved the deadline of food already Ready (against decision D7) | unit `freshness_change_after_ready_keeps_original_deadline`, `ready_deadline_and_interval_survive_restart`, `old_nine_field_reservation_lines_still_load` | compile fail (no stored deadline) | Pass |
+| A second server on the same data folder overwrote the live lock; a crash's stale lock blocked the admin tool | unit `test_lock_file.cpp` (4); admin-tool stale-lock case; E2E `second server on the same data folder refuses` | E2E FAIL against the pre-fix server (exit 259, lock overwritten) | Pass |
 
 ## Gaps (not covered automatically)
 
