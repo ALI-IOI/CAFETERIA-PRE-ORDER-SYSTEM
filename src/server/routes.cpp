@@ -643,6 +643,7 @@ static void routeRedesign(httplib::Server& svr, AppState& app) {
             j.key("cutoff").value(formatMinuteOfDay(caf.settings.cutoffMinute));
             j.key("cancelDeadline").value(formatMinuteOfDay(caf.settings.cancelDeadlineMinute));
             j.key("freshness").value(durationText(caf.settings.freshnessMinutes));
+            j.key("open").value(beforeMinuteOfDay(caf, caf.settings.cutoffMinute));  // the announcement bar
             j.endObject();
             reply(c.res, 200, j.str());
         });

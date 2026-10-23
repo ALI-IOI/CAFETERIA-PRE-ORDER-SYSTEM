@@ -149,3 +149,4 @@ document.getElementById("reserve-all").addEventListener("click", () => reserveTr
 wireLogout("logout", "/");
 loadProfile();
 load();
+fillAnnouncement();

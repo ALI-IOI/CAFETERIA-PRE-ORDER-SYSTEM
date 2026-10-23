@@ -777,6 +777,25 @@ static int realMain(int argc, char** argv) {
               "staff hidden: empty list prints the notice and the page opens");
     }
 
+    // ---- eggshell theme ---------------------------------------------------------------------
+    {
+        Browser guest;
+        auto mins = [](const std::string& hhmm) {
+            return hhmm.size() == 5 ? std::stoi(hhmm.substr(0, 2)) * 60 + std::stoi(hhmm.substr(3, 2)) : -1;
+        };
+        std::string info = body(guest.get("/api/public/info"));
+        int now = mins(jsonStr(info, "now")), cutoff = mins(jsonStr(info, "cutoff"));
+        bool openBefore = has(info, "\"open\":true");
+        if (cutoff > now) staff.post("/api/dev/advance", {{"minutes", std::to_string(cutoff - now + 1)}});
+        std::string after = body(guest.get("/api/public/info"));
+        check(now >= 0 && now < cutoff && openBefore && has(after, "\"open\":false"),
+              "theme: public info says whether orders are open", info + " / " + after);
+        std::string css = body(guest.get("/css/app.css"));
+        check(!has(css, "prefers-color-scheme") && has(css, "color-scheme: light") && has(css, "--page: #EFE9D9") &&
+                  has(css, "--bar: #FFFFFF"),
+              "theme: no dark-mode stylesheet", css.substr(0, 80));
+    }
+
     std::printf("(stopping server)\n");
     std::fflush(stdout);
     killServer(server);

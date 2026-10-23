@@ -32,3 +32,4 @@ document.getElementById("password-form").addEventListener("submit", async (e) =>
 
 wireLogout("logout", "/");
 loadDetails();
+fillAnnouncement();

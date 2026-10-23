@@ -85,6 +85,17 @@ const store = {
   },
 };
 
+// The green bar at the top of the public and student pages.
+async function fillAnnouncement(id) {
+  const bar = document.getElementById(id || "announce");
+  if (!bar) return;
+  const info = await api.get("/api/public/info");
+  if (!info.ok) return;
+  bar.textContent = info.open
+    ? "Orders open until " + info.cutoff + " \u00b7 pay at the counter"
+    : "Orders closed for today \u00b7 back tomorrow";
+}
+
 // "student" / "teacher" / "employee" as people read it.
 function roleLabel(role) {
   return role === "teacher" ? "Teacher" : role === "employee" ? "University staff" : "Student";
