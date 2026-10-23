@@ -125,6 +125,39 @@ static bool loadReservations(Cafeteria& caf, const std::string& path, std::strin
     return true;
 }
 
+// waitlist.txt: day|item|user|qty|joinedAt, active entries in queue order.
+// Only today's lines are loaded: an earlier day's waitlist has ended.
+static bool loadWaitlists(Cafeteria& caf, const std::string& path, std::string& err) {
+    for (int i = 0; i < MAX_MENU_ITEMS; i++) wqClear(caf.waitlists[i]);
+    std::ifstream in(path);
+    if (!in) return true;
+    std::string line, f[5];
+    int lineNo = 0;
+    while (std::getline(in, line)) {
+        lineNo++;
+        line = stripCR(line);
+        if (isSkippable(line)) continue;
+        int day, item;
+        long long joinedAt;
+        WaitEntry e;
+        if (splitFields(line, '|', f, 5) != 5 || !parseIntStrict(f[0], day) || !parseIntStrict(f[1], item) ||
+            f[2].empty() || !parseIntStrict(f[3], e.quantity) || e.quantity < 1 || !parseIntStrict(f[4], joinedAt) ||
+            menuAt(caf.menu, item) == nullptr || caf.menu.items[item].kind != ItemKind::Fresh) {
+            err = lineError("waitlist.txt", lineNo, "expected day|item|user|qty|joinedAt for a fresh item");
+            return false;
+        }
+        if (day != caf.currentDay) continue;
+        e.user = f[2];
+        e.joinedAt = (time_t)joinedAt;
+        e.active = true;
+        if (!wqEnqueue(caf.waitlists[item], e)) {
+            err = lineError("waitlist.txt", lineNo, "waitlist longer than its capacity");
+            return false;
+        }
+    }
+    return true;
+}
+
 // Rebuilds everything derived from the reservation list (proposal section 8).
 static void rebuild(Cafeteria& caf) {
     for (int i = 0; i < caf.menu.count; i++) {
@@ -184,7 +217,7 @@ bool loadCafeteria(Cafeteria& caf, const std::string& dataDir, const std::string
     if (caf.currentDay < 19000101) caf.currentDay = dayBefore;
     if (!loadReservations(caf, dataDir + "/reservations.txt", err)) return false;
     rebuild(caf);
-    return true;
+    return loadWaitlists(caf, dataDir + "/waitlist.txt", err);
 }
 
 static std::string reservationLine(const Reservation* r) {
@@ -217,6 +250,17 @@ bool saveCafeteria(Cafeteria& caf, const std::string& dataDir, std::string& err)
     std::string res = "# id|user|item|qty|reservedAt|status|readyAt|lastNoticeAt|day|expiresAt|reminderMinutes\n";
     for (Reservation* r = caf.reservations.head; r != nullptr; r = r->next) res += reservationLine(r);
 
+    std::string wait = "# day|item|user|qty|joinedAt  (queue order, front first)\n";
+    for (int i = 0; i < caf.menu.count; i++) {
+        const WaitQueue& q = caf.waitlists[i];
+        for (int k = 0; k < q.count; k++) {
+            const WaitEntry* e = wqAt(q, k);
+            if (!e->active) continue;  // people who left are not saved
+            wait += std::to_string(caf.currentDay) + "|" + std::to_string(i) + "|" + e->user + "|" +
+                    std::to_string(e->quantity) + "|" + std::to_string((long long)e->joinedAt) + "\n";
+        }
+    }
+
     if (caf.archive.size > 0) {
         std::string hist;
         for (Reservation* r = caf.archive.head; r != nullptr; r = r->next) hist += reservationLine(r);
@@ -225,5 +269,6 @@ bool saveCafeteria(Cafeteria& caf, const std::string& dataDir, std::string& err)
     }
     return atomicWrite(dataDir + "/menu.txt", menu, err) &&
            atomicWrite(dataDir + "/settings.txt", settings, err) &&
-           atomicWrite(dataDir + "/reservations.txt", res, err);
+           atomicWrite(dataDir + "/reservations.txt", res, err) &&
+           atomicWrite(dataDir + "/waitlist.txt", wait, err);
 }
