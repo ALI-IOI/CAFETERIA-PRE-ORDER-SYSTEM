@@ -853,6 +853,14 @@ void registerRoutes(httplib::Server& svr, AppState& app, bool devRoutes) {
 
     // Pages that need a login: send people to the right login page instead.
     svr.set_pre_routing_handler([&](const Request& req, Response& res) {
+        // First: outside the cafeteria's own computers the staff terminal does not
+        // exist - the same empty 404 httplib gives for a missing page.
+        if (isStaffPath(req.path) && !staffComputerAllowed(app.staffComputers, req.remote_addr)) {
+            res.status = 404;
+            if (req.has_header("Content-Length") || req.has_header("Transfer-Encoding"))
+                res.set_header("Connection", "close");  // the body is left unread
+            return httplib::Server::HandlerResponse::Handled;
+        }
         bool staffPage = req.path == "/staff/portal.html";
         if (req.path == "/home.html") {  // old address of the menu page
             res.set_redirect("/menu.html");

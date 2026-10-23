@@ -235,6 +235,7 @@ static void writeFixtures() {
         << "3000000000000002,guard1@uni.example,employee,Sample Guard,Security\n"
         << "3000000000000001,,employee,Rahim Driver,Transport\n";
     for (int i = 1; i <= 12; i++) uni << uniId(i) << "," << uniEmail(i) << ",student,Student " << i << ",CSE\n";
+    std::ofstream(g_config + "/staff_computers.txt") << "# the test computer is the counter PC\n127.0.0.1\n::1\n";
     std::ofstream smtp(g_config + "/smtp.cfg");
     smtp << "host=[CONFIRM]\nsender=[CONFIRM]\n";
     // Staff accounts are made by the administrator tool, never through the web.
@@ -726,6 +727,54 @@ static int realMain(int argc, char** argv) {
                   has(body(page.get("/register.html")), "university staff") &&
                   has(body(page.get("/js/api.js")), "University staff"),
               "pages: copy names university staff", copy.substr(0, 120));
+    }
+
+    // ---- hidden staff terminal ------------------------------------------------------------
+    {
+        Browser guest, student;
+        student.post("/api/login", {{"email", "ayon@uni.example"}, {"password", PW}});
+        bool noLinks = true;
+        std::string where;
+        for (const char* page : {"/", "/login.html", "/register.html"})
+            if (has(body(guest.get(page)), "/staff/")) noLinks = false, where += page;
+        for (const char* page : {"/menu.html", "/reservations.html", "/account.html"}) {
+            auto pr = student.get(page);
+            if (status(pr) != 200 || has(body(pr), "/staff/")) noLinks = false, where += page;
+        }
+        check(noLinks, "staff hidden: no public page links to /staff/", where);
+
+        killServer(server);
+        std::ofstream(g_config + "/staff_computers.txt") << "# only the counter PC\n10.20.30.40\n";
+        check(startServer(server, "2026-10-24T09:00"), "setup: restart with a counter PC that is not this computer");
+        auto missingGet = guest.get("/no-such-page.html");
+        auto missingPost = guest.post("/api/no-such-route", {{"x", "1"}});
+        bool same = true;
+        std::string seen;
+        for (const char* path : {"/staff/login.html", "/staff/portal.html", "/api/staff/overview"}) {
+            auto r2 = guest.get(path);
+            if (status(r2) != status(missingGet) || body(r2) != body(missingGet)) same = false, seen += path;
+        }
+        auto lr = guest.post("/api/staff/login", {{"login", "cafe.staff"}, {"password", "staffpass123"}});
+        if (status(lr) != status(missingPost) || body(lr) != body(missingPost)) same = false, seen += " login";
+        check(same && status(missingGet) == 404, "staff hidden: pages and APIs answer like a missing page",
+              seen + " " + std::to_string(status(missingGet)));
+        bool tricks = true;
+        seen.clear();
+        for (const char* path : {"/STAFF/login.html", "/Staff/portal.html", "/staff", "/api/staff", "/x/../staff/login.html"}) {
+            auto r2 = guest.get(path);
+            if (status(r2) != status(missingGet) || body(r2) != body(missingGet))
+                tricks = false, seen += std::string(path) + "=" + std::to_string(status(r2)) + " ";
+        }
+        check(tricks, "staff_hidden_case_and_path_tricks", seen);
+
+        killServer(server);
+        std::ofstream(g_config + "/staff_computers.txt") << "# no counter PCs listed yet\n";
+        check(startServer(server, "2026-10-24T09:00"), "setup: restart with an empty counter list");
+        std::ifstream logIn(g_work + "/server.log");
+        std::string log((std::istreambuf_iterator<char>(logIn)), std::istreambuf_iterator<char>());
+        check(has(log, "NOTICE: config/staff_computers.txt is empty - the staff terminal is reachable from any computer.") &&
+                  status(guest.get("/staff/login.html")) == 200,
+              "staff hidden: empty list prints the notice and the page opens");
     }
 
     std::printf("(stopping server)\n");
