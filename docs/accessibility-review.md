@@ -110,3 +110,19 @@ Every page measured in the browser at 375×812 (phone), 812×375 (phone on its s
 | Controls under 44 px tall | brand link 38 px, skip link 41 px, tray quantity 40 px | none |
 | Text under 12 px | brand subtitle 11.5 px | none |
 | Desktop | content capped at 1180 px and centred; 3 dish columns with the tray beside them | unchanged |
+
+## Re-check after the "linen and basil" palette (2026-10-24)
+
+The palette follows how acclaimed restaurant sites use colour (mostly warm neutral space, one
+strong brand colour saved for actions, serif display type). Headings now use the self-hosted
+serif Cormorant Garamond. All 8 pages measured in the browser at 1280×800 and 375×812, every
+visible piece of text against the background actually behind it.
+
+| Check | Result |
+|---|---|
+| Contrast, measured on the rendered pages | 0 failing text elements on any page at either width; lowest ratio 5.44:1 (terracotta prices on white), body text 15.2:1 on linen and 16.8:1 on white |
+| Contrast, colour pairs | `build/contrast_check` (ctest `contrast_check`): 24/24 pairs pass |
+| Controls | Fields and selects have a 3.5:1 edge (`#8A8174`); buttons and tabs a 7.2:1 green edge; focus ring 7.2:1 on linen |
+| Colour notation | `build/check_hex_colors` (ctest `hex_colors_only`): 25 files in `web/` and `pages-demo/`, 0 non-hex colours |
+| Reflow | No horizontal scroll on any page at 375 px |
+| Browser surfaces | Text selection uses pale basil (`#E3EDE6`, text 14.0:1 on it); the caret is basil green |

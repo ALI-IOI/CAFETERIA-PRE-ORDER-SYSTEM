@@ -60,7 +60,7 @@ Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit
 | End to end | E2E: join at position 1, join twice refused, cannot join while portions remain, place in line shown, cancellation promotes with email, portion used once, list closes at cutoff with email; outbox blocked → confirmation waits → delivered 1 minute after recovery | Pass |
 | Console demo | scripted waitlist scenario (strict FIFO, cutoff email) | Pass |
 
-**Intermittent E2E failures seen during development (now explained and fixed):** a few runs failed (a request with no response, an abnormal exit after the last check) or hung. Cause, confirmed with a gdb backtrace: heap corruption (`0xC0000374`) when a server worker thread exits. MinGW-w64 runs the destructors of `thread_local` objects after the thread's memory is already freed; cpp-httplib keeps several read-only regexes and sets as `thread_local`. Fix: those five objects are `static const` instead (`third_party/httplib/PATCHES.md`). Evidence: the new `thread_exit_stress` test crashed 5 of 5 times before the patch and passed 10 of 10 after; `tools/e2e_gdb_hunt.sh` ran the E2E suite 25 times under gdb with no crash.
+**Intermittent E2E failures seen during development (now explained and fixed):** a few runs failed (a request with no response, an abnormal exit after the last check) or hung. Cause, confirmed with a gdb backtrace: heap corruption (`0xC0000374`) when a server worker thread exits. MinGW-w64 runs the destructors of `thread_local` objects after the thread's memory is already freed; cpp-httplib keeps several read-only regexes and sets as `thread_local`. Fix: those five objects are `static const` instead (`third_party/httplib/PATCHES.md`). Evidence: the new `thread_exit_stress` test crashed 5 of 5 times before the patch and passed 10 of 10 after; a gdb loop ran the E2E suite 25 times with no crash (that shell script is gone now; `ctest -R e2e --repeat until-fail:25` repeats the suite).
 
 ## Redesign (menu items, tray, pictures, landing page)
 
@@ -119,3 +119,12 @@ Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit
 | The staff pages' scripts were public at `/js/staff-*.js` and named every staff API | E2E `staff hidden: staff scripts are served from /staff/` and the tricks list | 200 → hidden (moved to `web/staff/`) |
 | Staff without a university email who typed a personal one got "use your university email" instead of the office message | unit `blank_email_row_personal_email_gets_office_message`, `register_after_add_person_refused` | NotUniversityEmail → NoUniversityEmail |
 | Page copy left out university staff ("Student or teacher ID", "University email", "Student & teacher login") | E2E `pages: no copy that leaves out university staff` | FAIL → PASS |
+
+## "Linen and basil" palette, serif headings, C/C++-only tools
+
+| Area | Tests | Result |
+|---|---|---|
+| Hex-only colours | ctest `hex_colors_only` (`tools/check_hex_colors.cpp`): scans `web/` and `pages-demo/`; seen failing on the previous stylesheet (`color-mix()`, `transparent`, `currentColor`), passing now (0 in 25 files); a probe file confirmed it catches keywords, `rgba()`, `hsl()` and SVG keyword fills, and ignores `white-space`, `line-through`, hex with alpha and comments | Pass |
+| Contrast | ctest `contrast_check` (`tools/contrast_check.cpp`, replaces the Python script): 24/24 pairs. Rendered pages: 0 failing text elements on all 8 pages at 1280 and 375 px | Pass |
+| Online demo builder | ctest `pages_demo_build` (`pages-demo/build_demo.cpp`, replaces the Python script): byte-for-byte the same output as the old builder on the same input | Pass |
+| Theme check | E2E `theme: no dark-mode stylesheet` now expects `--page: #F7F3EC` | Pass |
