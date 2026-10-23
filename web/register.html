@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create account · BAUSTK Cafeteria</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="/">BAUSTK Cafeteria <small>Fresh food pre-order</small></a>
+      <nav aria-label="Main"><a href="/">Log in</a></nav>
+    </div>
+  </header>
+
+  <main id="main" class="narrow">
+    <h1>Create your account</h1>
+    <p class="lead">For BAUSTK students and teachers. Your role comes from the university's records.</p>
+
+    <form id="step1" class="card" novalidate>
+      <h2>Step 1 of 2 · Your details</h2>
+      <div class="field">
+        <label for="email">University email</label>
+        <input id="email" name="email" type="email" autocomplete="email" required maxlength="100">
+      </div>
+      <div class="field">
+        <label for="uid">Student or teacher ID
+          <span class="hint">Digits only, as on your university ID card.</span>
+        </label>
+        <input id="uid" name="id" inputmode="numeric" pattern="[0-9]*" required maxlength="20" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="password">Choose a password
+          <span class="hint">At least 8 characters.</span>
+        </label>
+        <input id="password" name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="128">
+      </div>
+      <button class="btn btn--block" type="submit">Send verification code</button>
+      <p id="msg1" class="msg" role="status" aria-live="polite"></p>
+    </form>
+
+    <form id="step2" class="card" novalidate hidden>
+      <h2>Step 2 of 2 · Check your email</h2>
+      <p>We sent a 6-digit code to <strong id="sent-to"></strong>. It expires in 15 minutes.</p>
+      <div class="field">
+        <label for="code">Verification code</label>
+        <input id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code">
+      </div>
+      <button class="btn btn--block" type="submit">Verify email</button>
+      <p id="msg2" class="msg" role="status" aria-live="polite"></p>
+      <p><button class="linkbtn" type="button" id="restart">Use a different email</button></p>
+    </form>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/register.js"></script>
+</body>
+</html>

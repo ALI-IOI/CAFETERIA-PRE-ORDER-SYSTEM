@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Today's food · BAUSTK Cafeteria</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="/home.html">BAUSTK Cafeteria <small>Fresh food pre-order</small></a>
+      <nav aria-label="Main">
+        <a href="/home.html" aria-current="page">Today's food</a>
+        <a href="/reservations.html">My reservations</a>
+        <button class="linkbtn" type="button" id="logout">Log out</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="profile" id="profile" aria-live="polite"></div>
+    <h1>Today's food</h1>
+    <div id="banner" class="banner" role="note"></div>
+    <p id="msg" class="msg" role="status" aria-live="polite"></p>
+
+    <h2 id="fresh-h">Fresh food <span class="hint">Reserve before the cutoff</span></h2>
+    <div class="grid" id="fresh" aria-labelledby="fresh-h"></div>
+
+    <h2 id="packaged-h">Packaged food <span class="hint">View only — buy at the counter</span></h2>
+    <div class="card packaged" id="packaged" aria-labelledby="packaged-h"></div>
+  </main>
+  <footer class="footer">Food stays fresh for a limited time after it is ready. We'll email you reminders until you collect it.</footer>
+  <script src="/js/api.js"></script>
+  <script src="/js/home.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My reservations · BAUSTK Cafeteria</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="/home.html">BAUSTK Cafeteria <small>Fresh food pre-order</small></a>
+      <nav aria-label="Main">
+        <a href="/home.html">Today's food</a>
+        <a href="/reservations.html" aria-current="page">My reservations</a>
+        <button class="linkbtn" type="button" id="logout">Log out</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <h1>My reservations</h1>
+    <p class="lead">You can cancel a reservation while its status is <strong>Reserved</strong> and before the cancellation deadline.</p>
+    <p id="msg" class="msg" role="status" aria-live="polite"></p>
+    <div class="card table-wrap">
+      <table>
+        <caption class="visually-hidden">Your reservations, newest first</caption>
+        <thead>
+          <tr><th scope="col">Reservation</th><th scope="col">Food</th><th scope="col" class="num">Qty</th>
+              <th scope="col">Reserved at</th><th scope="col">Status</th><th scope="col">Fresh until</th>
+              <th scope="col"><span class="visually-hidden">Action</span></th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <p id="empty" hidden>No reservations yet. <a href="/home.html">See today's food</a>.</p>
+    </div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/reservations.js"></script>
+</body>
+</html>

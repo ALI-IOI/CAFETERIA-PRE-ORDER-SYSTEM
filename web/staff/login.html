@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Staff login · BAUSTK Cafeteria</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="/staff/login.html">BAUSTK Cafeteria <small>Staff portal</small></a>
+      <nav aria-label="Main"><a href="/">Student &amp; teacher login</a></nav>
+    </div>
+  </header>
+  <main id="main" class="narrow">
+    <h1>Staff login</h1>
+    <p class="lead">Staff accounts are created by the administrator. There is no public sign-up.</p>
+    <form id="login-form" class="card" novalidate>
+      <div class="field">
+        <label for="login">Staff login</label>
+        <input id="login" name="login" autocomplete="username" required maxlength="32" autocapitalize="none">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="128">
+      </div>
+      <button class="btn btn--block" type="submit">Log in to the staff portal</button>
+      <p id="msg" class="msg" role="status" aria-live="polite"></p>
+    </form>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/staff-login.js"></script>
+</body>
+</html>
