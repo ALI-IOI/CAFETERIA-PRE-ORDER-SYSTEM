@@ -15,6 +15,8 @@ struct Reservation {
     ResStatus status;
     time_t readyAt;        // 0 until staff mark it ready
     time_t lastNoticeAt;   // time of the last ready/reminder email
+    time_t expiresAt;      // fixed when marked ready: readyAt + freshness window (D7)
+    int reminderMinutes;   // fixed when marked ready: reminder interval (D7)
     int day;               // YYYYMMDD the reservation belongs to
     Reservation* next;
 };
