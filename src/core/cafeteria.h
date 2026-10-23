@@ -39,6 +39,7 @@ enum class Result {
     NothingToUndo,
     UndoBlocked,
     NotReady,
+    WrongKind,
 };
 
 const char* resultMessage(Result r);
@@ -91,3 +92,31 @@ void timerTick(Cafeteria& caf, NotificationList& out);
 
 // "7 hours", "1 hour 30 minutes", "45 minutes".
 std::string durationText(int minutes);
+
+// ---- staff portal (staff.cpp) ----------------------------------------------
+// Each setter applies the change and pushes an undoable action. undoRecorded is
+// false when the stack was full (D5: the change still happens).
+
+const int MAX_STOCK = 9999;
+
+// Packaged items only; 0..MAX_STOCK.
+Result setStock(Cafeteria& caf, const std::string& staff, int itemIndex, int value,
+                bool& undoRecorded);
+
+// Fresh items only; portions already reserved today <= value <= cooking queue capacity.
+Result setDailyLimit(Cafeteria& caf, const std::string& staff, int itemIndex, int value,
+                     bool& undoRecorded);
+
+// Keys and ranges as in settingsSet().
+Result changeSetting(Cafeteria& caf, const std::string& staff, const std::string& key,
+                     int value, bool& undoRecorded);
+
+// Pops the latest action and restores its old value. If restoring would break a
+// rule (limit below portions now reserved, reservation no longer Collected) the
+// action is pushed back and UndoBlocked is returned.
+Result undoLast(Cafeteria& caf, const std::string& staff, StaffAction& undone);
+
+// Today's reservations sorted by item, then reservation time (insertion sort, O(k^2)).
+int staffReservationsSorted(const Cafeteria& caf, Reservation** outArr, int cap);
+
+Reservation* staffSearchById(const Cafeteria& caf, int id);
