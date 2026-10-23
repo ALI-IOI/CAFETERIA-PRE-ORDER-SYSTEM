@@ -37,6 +37,10 @@ void rlAppendNode(ReservationList& list, Reservation* node);
 
 Reservation* rlFindById(const ReservationList& list, int id);
 
+// Unlinks the node without freeing it (so it can be moved to another list).
+// Returns nullptr when the ID is not in the list.
+Reservation* rlUnlink(ReservationList& list, int id);
+
 // Unlinks and frees the node. Returns false when the ID is not in the list.
 bool rlDelete(ReservationList& list, int id);
 

@@ -15,6 +15,7 @@ struct Cafeteria {
     ResQueue cooking[MAX_MENU_ITEMS]; // one circular queue per menu slot (used for fresh items)
     ResQueue reminders;               // ready reservations waiting for their next reminder
     ActionStack history;              // staff actions that can be undone
+    ReservationList archive;          // finished reservations from earlier days, waiting to be written to history.txt
     Settings settings;
     Clock* clock;
     int currentDay;                   // YYYYMMDD the counters belong to
@@ -64,3 +65,29 @@ int listUserReservations(const Cafeteria& caf, const std::string& user,
 
 // True while now is before the given minute-of-day today.
 bool beforeMinuteOfDay(const Cafeteria& caf, int minuteOfDay);
+
+struct ReadyReport {
+    int madeReady;    // reservations set to Ready
+    int skipped;      // cancelled entries dequeued and dropped
+    int leftWaiting;  // entries still in the cooking queue afterwards
+};
+
+// Staff cooked `portions` portions of a fresh item (0 = everything waiting).
+// Dequeues the cooking queue in FIFO order, skips non-Reserved entries, and
+// stops when the next reservation needs more portions than are left (it stays
+// at the front). Each one becomes Ready, gets a "ready" email and joins the
+// rear of the reminder queue. Not undoable (the emails are already sent).
+Result markReady(Cafeteria& caf, const std::string& staff, int itemIndex, int portions,
+                 NotificationList& out, ReadyReport& report);
+
+// Ready -> Collected. Pushes an undoable action; undoRecorded is false when the
+// undo stack was full (the action still happens).
+Result markCollected(Cafeteria& caf, const std::string& staff, int reservationId,
+                     bool& undoRecorded);
+
+// Called by the timer every minute: day rollover, then reminders and expiry
+// from the front of the reminder queue.
+void timerTick(Cafeteria& caf, NotificationList& out);
+
+// "7 hours", "1 hour 30 minutes", "45 minutes".
+std::string durationText(int minutes);
