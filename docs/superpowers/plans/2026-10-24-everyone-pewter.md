@@ -1,8 +1,8 @@
-# Everyone at the University, Hidden Staff Terminal, Eggshell-and-Pewter Theme — Implementation Plan
+# Everyone at the University, Hidden Staff Terminal, Eggshell Theme — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Let every university employee order (self sign-up or admin-created), make the staff terminal invisible outside the cafeteria's own computers, and replace both colour themes with one eggshell-and-pewter theme.
+**Goal:** Let every university employee order (self sign-up or admin-created), make the staff terminal invisible outside the cafeteria's own computers, and replace both colour themes with one eggshell theme (white top bar, light stainless lines, deep green).
 
 **Architecture:** A new `Role::Employee` flows through the existing users and university linked lists; `addPerson` joins `addStaff` in `src/auth/auth.cpp` and the admin tool. A fixed-array `StaffComputers` list (new `src/auth/staff_computers.*`) is checked in the server's pre-routing handler, which answers like a missing page. The theme is a token rewrite of `web/css/app.css` plus an announcement bar filled from `/api/public/info`.
 
@@ -137,7 +137,7 @@
 - [ ] **Step 7: Run** `ctest --test-dir build` — Expected: 6/6; E2E all pass.
 - [ ] **Step 8: Commit** `feat(server): staff terminal answers like a missing page except from listed cafeteria computers; staff links removed`.
 
-### Task 5: Eggshell-and-pewter theme
+### Task 5: Eggshell theme
 
 **Files:**
 - Modify: `web/css/app.css`, `tools/contrast_check.py`, `src/server/routes.cpp` (`/api/public/info` gains `"open"`), `web/js/api.js` (`fillAnnouncement`), `web/index.html`, `web/menu.html`, `web/reservations.html`, `web/account.html` (bar markup), `tests/e2e/e2e_section12.cpp`
@@ -146,13 +146,13 @@
 - Consumes: `/api/public/info` (`now`, `cutoff`, …).
 - Produces: `/api/public/info` field `open` (bool, `beforeMinuteOfDay(caf, cutoffMinute)`); `fillAnnouncement(id)` in `api.js` that sets the bar's `textContent` from it; bar markup `<p class="announce" id="announce" role="note"></p>` as the first element of `<body>` after the skip link.
 
-- [ ] **Step 1: Write the failing checks.** E2E: `theme: public info says whether orders are open` (`"open":true` at 08:00, `"open":false` once the clock is past the cutoff); `theme: no dark-mode stylesheet` (`/css/app.css` has no `prefers-color-scheme`, contains `color-scheme: light` and `--page: #EFE9D9`). Contrast script: replace `PAIRS` with the spec's Part 3 pairs (18 ratios in its table) and no `dark:` entries. The script checks literal colour pairs, so it passes as soon as it is edited; the RED for this task is the two E2E checks.
+- [ ] **Step 1: Write the failing checks.** E2E: `theme: public info says whether orders are open` (`"open":true` at 08:00, `"open":false` once the clock is past the cutoff); `theme: no dark-mode stylesheet` (`/css/app.css` has no `prefers-color-scheme`, contains `color-scheme: light`, `--page: #EFE9D9` and `--bar: #FFFFFF`). Contrast script: replace `PAIRS` with the spec's Part 3 pairs (19 ratios in its table) and no `dark:` entries. The script checks literal colour pairs, so it passes as soon as it is edited; the RED for this task is the two E2E checks.
 - [ ] **Step 2: Run** the E2E binary — Expected: the two theme checks FAIL.
-- [ ] **Step 3: Implement the tokens** exactly as the spec's colour table; delete the dark block and the stainless/steel/concrete tokens; `--radius: 0`; top bar and hero use the pewter sheen `linear-gradient(180deg, #DDD6C3, #D4CCB8)`; `--line` only on cream surfaces, borders on the page use `--pewter-dark`; green text uses `--accent-text` (`#0F5C3A`), never `--accent`.
-- [ ] **Step 4: Implement the structure:** `.announce` bar (deep green, white, uppercase 0.75rem, 0.14em); hairline dish grid (`gap: 0`; grid draws left/top edges, tiles right/bottom); uppercase labels (0.75rem, 0.14em) for category, badges, table headings, nav; dish picture spotlight `radial-gradient(ellipse at 50% 40%, #FFFFFF 0%, #EDE7D7 60%, #E0D9C6 100%)`, 60% opacity when sold out; brushed rule `linear-gradient(90deg, #6E685A, #D4CCB8)` 2px under `h1`. Add `open` to `/api/public/info`; `fillAnnouncement` on the four pages.
+- [ ] **Step 3: Implement the tokens** exactly as the spec's colour table; delete the dark block and the graphite-bar/steel/concrete tokens (graphite stays only as `--ink`); `--radius: 0`; top bar white with `border-bottom: 3px solid var(--accent)`, hero panel white; `--line` (`#C8CDD2`) for decorative lines only; inputs, selects, textareas and outline/secondary buttons get `1px solid var(--edge)` on white; green text uses `--accent-text` (`#0F5C3A`), never `--accent`. No dark colour as a background anywhere (`.topbar`, `.footer`, buttons included: the former graphite button becomes a white outline button with a green edge).
+- [ ] **Step 4: Implement the structure:** `.announce` bar (deep green, white, uppercase 0.75rem, 0.14em); line grid of dish tiles (`gap: 0`, light stainless lines; grid draws left/top edges, tiles right/bottom); uppercase labels (0.75rem, 0.14em) for category, badges, table headings, nav; dish picture spotlight `radial-gradient(ellipse at 50% 40%, #FFFFFF 0%, #EDE7D7 60%, #E0D9C6 100%)`, 60% opacity when sold out; a 2px deep-green rule under `h1`. Add `open` to `/api/public/info`; `fillAnnouncement` on the four pages.
 - [ ] **Step 5: Run** `python tools/contrast_check.py` (Expected: all pairs pass, 0 failed) and `ctest --test-dir build` (Expected: 6/6).
 - [ ] **Step 6: Browser check** every page (landing, login, register, menu, reservations, account, staff login, staff portal) at desktop and 375 px, once with `colorScheme: dark` emulated: page stays eggshell, inputs light, no sideways scroll (`scrollWidth == innerWidth`), bar text matches open/closed.
-- [ ] **Step 7: Commit** `feat(web): eggshell-and-pewter theme, one theme for everyone; announcement bar, hairline grid, square corners`.
+- [ ] **Step 7: Commit** `feat(web): eggshell theme, one theme for everyone; white top bar, announcement bar, line grid, square corners`.
 
 ### Task 6: Docs, final review, clean rebuild
 

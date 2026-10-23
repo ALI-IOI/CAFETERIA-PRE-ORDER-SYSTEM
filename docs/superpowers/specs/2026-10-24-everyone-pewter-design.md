@@ -1,4 +1,4 @@
-# Everyone at the university, a hidden staff terminal, and the eggshell-and-pewter theme
+# Everyone at the university, a hidden staff terminal, and the eggshell theme
 
 **Date:** 2026-10-24 · **Status:** approved in chat, awaiting review of this written spec
 **Builds on:** `2026-10-23-industrial-redesign-design.md` (pages, tray, staff menu items)
@@ -8,9 +8,10 @@
 1. "The website should be for all students and uni staff, from the VC to the bus driver."
 2. "Only the cafeteria staff should be able to see the staff terminal."
 3. The dark theme looked bland. Take inspiration from blankedstudios.com and keep the green.
-   After three mockups the user chose an eggshell page, cream panels, deep green, and warm
-   brushed pewter instead of the cool stainless ("the SS looks bad, replace that with something good").
-   Eggshell is the **only** theme: no dark mode.
+   After several mockups the user chose an eggshell page, cream panels and deep green. The cool
+   stainless top bar ("the SS looks bad") and then a warm pewter were both replaced: "don't use the
+   dark colours, use pure white if needed". Final choice: a white top bar, light stainless grid lines,
+   and deep-green edges on buttons and fields. Eggshell is the **only** theme: no dark mode.
 
 ## Decisions taken in chat
 
@@ -18,7 +19,7 @@
 |---|---|---|
 | E1 | How people without a university email get an account | Self sign-up for anyone with a university email; the admin tool creates the account (with a personal email) for those without one |
 | E2 | How hidden the staff terminal is | No links anywhere public, **and** "not found" for staff pages and APIs unless the request comes from a listed cafeteria computer |
-| E3 | Theme | Eggshell and pewter, deep green, one theme for everyone |
+| E3 | Theme | Eggshell page, cream panels, white top bar, light stainless lines, deep green; one theme for everyone |
 
 ## Part 1 — everyone at the university can order
 
@@ -87,7 +88,7 @@ start-up with the line number. A missing file counts as an empty list.
 - **Limit, documented in the README:** behind a reverse proxy the server sees the proxy's address, so
   the list must then be enforced at the proxy instead.
 
-## Part 3 — the eggshell-and-pewter theme
+## Part 3 — the eggshell theme
 
 One stylesheet (`web/css/app.css`) for every page, the staff portal included. The
 `@media (prefers-color-scheme: dark)` block is removed. `:root { color-scheme: light; }` keeps form
@@ -99,10 +100,10 @@ controls light on devices set to dark mode.
 |---|---|---|
 | `--page` | Eggshell `#EFE9D9` | Page background |
 | `--panel` | Cream `#FAF7EF` | Cards, dish tiles, tray, tables |
-| `--pewter` | Pewter `#D4CCB8` | Top bar and hero (a soft top-to-bottom sheen, `#DDD6C3` → `#D4CCB8`) |
-| `--pewter-dark` | Dark pewter `#6E685A` | Outlines, "in tray" button, the brushed rule under headings, borders on the page |
-| `--line` | Hairline `#857F70` | 1px grid lines and borders on cream panels |
-| `--well` | `#E6DFCC` | Inset areas (search box background, empty states) |
+| `--bar` | White `#FFFFFF` | Top bar (with a 3px deep-green bottom edge), hero panel, form fields, outline buttons |
+| `--line` | Light stainless `#C8CDD2` | Decorative 1px lines only: the dish grid, table rows, card edges, dividers |
+| `--edge` | Deep green `#127A4B` | Edges that must be seen: form fields, outline buttons ("In tray", "Join waitlist", secondary buttons) |
+| `--well` | `#E6DFCC` | Inset areas (empty states) |
 | `--ink` | Graphite `#16191C` | Text |
 | `--ink-soft` | `#4A463D` | Secondary text |
 | `--accent` | Deep green `#127A4B` | Announcement bar, main buttons, selected tab, focus ring |
@@ -110,39 +111,38 @@ controls light on devices set to dark mode.
 | `--accent-text` | Deep green `#0F5C3A` | Green text and links (brand word, "Join waitlist") |
 | `--danger` / `--danger-tint` | `#A3241C` / `#F6DED8` | Errors |
 
-The cool stainless (`#C8CDD2`), steel and concrete tokens are removed.
+No dark colours anywhere: the graphite top bar, steel, concrete and pewter tokens are removed. Graphite stays only as the text colour.
 
 **Contrast (WCAG 2.2; text 4.5:1, borders and focus 3:1)**, all checked by
 `tools/contrast_check.py`, which drops its dark pairs and gains these:
 
 | Pair | Ratio |
 |---|---|
-| Ink on eggshell / cream / pewter / well | 14.6 / 16.5 / 11.0 / 13.3 |
-| Soft text on eggshell / cream / pewter | 7.8 / 8.8 / 5.9 |
+| Ink on eggshell / cream / white / well | 14.6 / 16.5 / 17.7 / 13.3 |
+| Soft text on eggshell / cream / white | 7.8 / 8.8 / 9.4 |
 | White on deep green `#127A4B` | 5.4 |
-| Green text `#0F5C3A` on eggshell / cream / pewter | 6.6 / 7.5 / 5.0 |
-| Danger on eggshell / cream / danger tint | 6.1 / 6.9 / 5.8 |
-| Dark pewter border on eggshell / cream | 4.6 / 5.2 |
-| Hairline on cream (borders) | 3.7 |
+| Green text `#0F5C3A` on eggshell / cream / white | 6.6 / 7.5 / 8.0 |
+| Danger on eggshell / cream / white / danger tint | 6.1 / 6.9 / 7.4 / 5.8 |
+| Green edge `#127A4B` on eggshell / cream / white (fields, outline buttons) | 4.4 / 5.0 / 5.4 |
 | Focus ring `#127A4B` on eggshell | 4.4 |
 
 `#127A4B` is never used for text on eggshell (4.43:1, just under 4.5); green text always uses `#0F5C3A`.
-The hairline `#857F70` is only used on cream panels (3.3:1 on eggshell is too close to the line); borders
-directly on the page use dark pewter.
+Light stainless lines are about 1.5:1, so they are decoration only (WCAG 1.4.11 does not require
+them): every line a person needs to see to find a control (field, outline button) is deep green.
 
 **Structure borrowed from Blanked Studios.**
 
 - **Announcement bar** in deep green across the top of the landing, menu, reservations and account
   pages: `Orders open until 10:00 · pay at the counter`, or `Orders closed for today · back tomorrow`
   after the cutoff. Times come from `/api/public/info`. It is a `role="note"` element, not a live region.
-- **Hairline dish grid.** Dish tiles share 1px `--line` borders with no gaps between them
+- **Line grid.** Dish tiles share 1px light stainless (`--line`) borders with no gaps between them
   (the grid draws the outer left and top edges, each tile its right and bottom).
 - **Square corners.** `--radius: 0` everywhere.
 - **Labels** (category, "New today", "Sold out", table headings, nav links): 0.75rem, uppercase,
   0.14em letter spacing. Headings keep the self-hosted Oswald; no new font.
 - **Spotlight** behind every dish picture: a radial glow from white at the centre to `#E0D9C6`
   at the edge, like Blanked's lit product shots. Sold-out dishes show it at 60% opacity.
-- **Brushed rule** under page headings: 2px, dark pewter fading to pewter.
+- **Green rule** under page headings: a 2px deep-green bar (as under the current headline).
 
 **Unchanged:** page layouts and flows from the industrial redesign (tabs, search, sort, tray,
 waitlist, staff panels), the BAUST Khulna photo placeholder, and `textContent`-only rendering.
