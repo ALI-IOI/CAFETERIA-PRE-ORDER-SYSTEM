@@ -75,3 +75,43 @@ Kept for the course report: every deviation from the approved plan, with its rea
 - Final: fixed settings change rewriting deadlines of Ready food — freshness_change_after_ready_keeps_original_deadline RED(compile)→GREEN, suite 5/5 (unit 112/112)
 - Final: fixed lock file (second instance could delete live lock; stale lock blocked admin) — lock_held_by_live_other_process_refused + E2E second-server check RED→GREEN, suite 5/5 (unit 116/116, E2E 67/67)
 - Final: review complete; fix pass suite ctest 5/5 (unit 116/116, E2E 67/67)
+
+## Additions #1 waitlist and #2 email retry (2026-10-23)
+
+- # SDD ledger — plan: docs/superpowers/plans/2026-10-23-waitlist-and-email-retry.md
+- Spec: docs/suggested-additions.md #1, #2 (user approved building both, 2026-10-23)
+- Pre-flight: A2 consumes WaitQueue from A1; A3 consumes Cafeteria.waitlists from A2; C consumes Mailer from B1 — names match the plan.
+- Task A1: complete (commits 53fafcc..dd575fa, tests: unit_tests → 121/121 pass)
+- Task A2: Ruling: cancelReservation/setDailyLimit/undoLast gained NotificationList& out so promotion emails are produced inside core (cannot be forgotten by callers) — cost if wrong: signature churn
+- Task A2: Ruling: a waiting person who reached the per-person limit meanwhile is skipped silently (no email) — they already hold their portions — cost if wrong: they might wonder why they left the list
+- Task A2: Ruling: console prints pending emails after every command and gained wait/unwait + waitlist display; console test extended — cost if wrong: none
+- Task A2: complete (commits dd575fa..c6aea25, tests: ctest → 5/5, unit 136/136)
+- Task A3: Ruling: test old_day_waitlist_not_loaded passed before implementation (nothing was saved); kept as a guard for the day check — cost if wrong: none
+- Task A3: complete (commits c6aea25..7882cbb, tests: unit 140/140)
+- Task B1: Ruling: src/email added to the no-STL guard (the retry queue is a hand-built linked FIFO) — cost if wrong: none
+- Task B1: Ruling: sending happens outside the mailer mutex; lock order is app.mu -> mailer.mu only (mailer never takes app.mu) — cost if wrong: none
+- Task B1: complete (commits 7882cbb..0e382f9, tests: unit 147/147, guard pass)
+- Task C: Ruling: OutboxSender now counts existing files the first time its folder is usable (test outbox_counts_existing_files_once_folder_is_usable) — found while designing the E2E failure injection — cost if wrong: none
+- Task C: Ruling: E2E check 'waitlist survives restart' not added (lists close at the 10:00 cutoff, before the E2E restart at 12:00); covered by unit waitlist_order_survives_restart — cost if wrong: gap at HTTP level only
+- Task C: Ruling: /api/dev/advance runs one retry pass after advancing (not one per simulated minute) — cost if wrong: multi-step retry schedules need several advance calls in demos
+- Task C: complete (commits 0e382f9..fbbf4a1, tests: ctest → 5/5, unit 148/148, E2E 78/78; browser: join waitlist, position, promotion email verified)
+- Final review: fresh reviewer (general-purpose, opus) on 026b014..fbbf4a1 - 0 Critical, 3 Important, 7 Minor.
+- Final: Ruling: Minor 4 (join/leave toggling fills the waitlist) re-graded Important - users see "waitlist full" with nobody waiting; ~100 scripted POSTs block an item - cost if wrong: small compaction code
+- Final: Ruling: Minor 6 (negative attempts in pending_emails.txt -> out-of-bounds read) re-graded Important - a damaged file must be refused, not crash the server - cost if wrong: none
+- Final: Ruling: Minor 8 (cancelling your held portion while first on the waitlist re-books you) re-graded Important - a person who cancels expects fewer portions - cost if wrong: none
+- Final: Ruling: Important 3 fixed per recipient (new mail waits behind that person's older queued mail; a queued item is sent only after that person's earlier items), not globally - one bad address must not delay everyone's email by 21 minutes - cost if wrong: different people's emails may interleave
+- Final: Ruling: retry items stay in the queue (and in pending_emails.txt) while being sent and are removed only after the pass - also closes Minor 5's lost-email window; a crash right after delivery can still resend once (at-least-once) - cost if wrong: rare duplicate email
+- Final: minor (deferred): FakeClock read outside app.mu by the mailer in dev mode (formal data race, demo only)
+- Final: minor (deferred): page offers the waitlist only at 0 portions left; the API also allows it when fewer than wanted remain
+- Final: minor (deferred): reservations.txt and waitlist.txt are separate atomic writes; a crash between can leave a promoted person also waiting
+- Final: Ruling: declined-to-judge walk-ins taking a portion while the front person needs more (W2) - stands, approved decision; holding portions could waste food - cost if wrong: a waiting person loses to a walk-in
+- Final: Ruling: declined-to-judge silent skip / one retry pass per dev advance / no HTTP restart check for the waitlist - stand, earlier rulings - cost if wrong: as recorded
+- Final: Ruling: declined-to-judge emails lost if the process dies before the first send, retried codes arriving after expiry, console-close handler, unescaped logins in waitlist.txt, fail-fast on corrupt files, one closing email per item - stand, predate this change or follow W5/validation - cost if wrong: minor
+- Final: fixed I1 direct reserve stays on waitlist — direct_reserve_leaves_the_waitlist RED→GREEN
+- Final: fixed I2 portion stuck behind full cooking queue — mark_ready_promotes_after_queue_full_stall RED→GREEN
+- Final: fixed I3 email order after recovery — new_mail_waits_behind_older_mail_for_the_same_person, newer_item_for_same_person_waits_for_older_retry RED→GREEN
+- Final: fixed M4 waitlist full of people who left — full_waitlist_compacts_entries_that_left RED→GREEN
+- Final: fixed M6 negative attempts crash — bad_attempts_in_pending_file_refused RED→GREEN
+- Final: fixed M8 cancel re-books canceller — cancel_does_not_hand_the_portion_back_to_the_canceller RED→GREEN
+- Final: Ruling: intermittent E2E failures (4 of ~25 bash-loop runs: one request with no response, a missed retry check, abnormal exit after the last check; first ctest run hung) — root cause NOT confirmed; not reproduced in 35 later runs; hardened harness (client timeouts, 180 s CTest limit, kill stray server from lock file) — cost if wrong: a real intermittent server bug remains
+- Final: fix pass suite ctest 5/5 (unit 156/156, E2E 78/78)
