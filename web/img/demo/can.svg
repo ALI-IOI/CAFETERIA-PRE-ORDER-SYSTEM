@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" role="img" aria-label="Demo picture: a soft drink can">
+  <rect width="240" height="160" fill="#E2E5E8"/>
+  <rect x="94" y="30" width="52" height="104" rx="8" fill="#C8CDD2" stroke="#16191C" stroke-width="2"/>
+  <ellipse cx="120" cy="32" rx="24" ry="5" fill="#6B737B"/>
+  <rect x="94" y="62" width="52" height="38" fill="#1F6B45"/>
+  <path d="M104 81h32" stroke="#F1F2F3" stroke-width="4" stroke-linecap="round"/>
+  <path d="M100 40v86" stroke="#F1F2F3" stroke-width="3" opacity=".6"/>
+</svg>
