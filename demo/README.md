@@ -25,3 +25,7 @@ Move the fake clock (e.g. to show reminders and expiry):
 ```bash
 curl -X POST -H "X-Cafe: 1" -d minutes=60 http://127.0.0.1:8080/api/dev/advance
 ```
+
+Order history lists earlier days only. To see it, reserve something, then move the clock past
+midnight (for example `-d minutes=960` from 08:30) and log in again — sessions end when the clock
+jumps that far. The history is under My reservations; My account is in the top bar.
