@@ -9,11 +9,11 @@ async function loadProfile() {
   const me = await api.get("/api/me");
   if (!requireLogin(me, "/login.html")) return;
   document.getElementById("profile").replaceChildren(
-    el("span", { class: "role-badge" }, me.role === "teacher" ? "Teacher" : "Student"),
+    el("span", { class: "role-badge" }, roleLabel(me.role)),
     el("strong", {}, me.name),
-    me.role === "teacher"
-      ? el("span", {}, "Department: " + (me.department || "—"))
-      : el("span", {}, "Student ID: " + me.universityId),
+    me.role === "student"
+      ? el("span", {}, "Student ID: " + me.universityId)
+      : el("span", {}, "Department: " + (me.department || "—")),
   );
 }
 

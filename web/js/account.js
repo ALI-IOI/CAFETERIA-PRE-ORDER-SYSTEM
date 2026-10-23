@@ -3,13 +3,12 @@
 async function loadDetails() {
   const me = await api.get("/api/me");
   if (!requireLogin(me, "/login.html")) return;
-  const teacher = me.role === "teacher";
   const rows = [
     ["Name", me.name],
-    ["Role", teacher ? "Teacher" : "Student"],
-    ["University email", me.login],
+    ["Role", roleLabel(me.role)],
+    ["Email", me.login],
   ];
-  if (!teacher) rows.push(["Student ID", me.universityId]);
+  if (me.role === "student") rows.push(["Student ID", me.universityId]);
   if (me.department) rows.push(["Department", me.department]);
   document.getElementById("details").replaceChildren(...rows.flatMap(([k, v]) => [el("dt", {}, k), el("dd", {}, v)]));
 }
