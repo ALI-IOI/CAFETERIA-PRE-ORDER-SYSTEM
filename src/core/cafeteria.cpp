@@ -23,6 +23,8 @@ const char* resultMessage(Result r) {
         case Result::AlreadyWaiting: return "You are already on the waitlist for this item.";
         case Result::WaitlistFull: return "The waitlist for this item is full.";
         case Result::NotWaiting: return "You are not on the waitlist for this item.";
+        case Result::NotAvailable: return "That item is not available today.";
+        case Result::MenuFull: return "The menu is full. Hide an item you no longer sell instead of adding more.";
     }
     return "Unknown error.";
 }
@@ -82,6 +84,7 @@ Result reserveWithNote(Cafeteria& caf, const std::string& user, int itemIndex, i
     MenuItem* item = menuAt(caf.menu, itemIndex);
     if (item == nullptr) return Result::BadItem;
     if (item->kind != ItemKind::Fresh) return Result::NotFresh;
+    if (!item->available) return Result::NotAvailable;
     if (quantity < 1 || quantity > caf.settings.perUserLimit) return Result::BadQuantity;
     if (!beforeMinuteOfDay(caf, caf.settings.cutoffMinute)) return Result::CutoffPassed;
     if (quantity > menuRemaining(*item)) return Result::SoldOut;

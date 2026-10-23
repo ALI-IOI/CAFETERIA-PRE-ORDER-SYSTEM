@@ -46,6 +46,8 @@ enum class Result {
     AlreadyWaiting,
     WaitlistFull,
     NotWaiting,
+    NotAvailable,
+    MenuFull,
 };
 
 const char* resultMessage(Result r);
@@ -156,3 +158,25 @@ void closeWaitlistsAtCutoff(Cafeteria& caf, NotificationList& out);
 // reserve() with an extra first line in the confirmation email (used by promotion).
 Result reserveWithNote(Cafeteria& caf, const std::string& user, int itemIndex, int quantity,
                        NotificationList& out, Reservation** created, const std::string& note);
+
+// ---- menu items managed by staff (staff.cpp, redesign) ------------------------
+// Items are never deleted: reservations refer to them by array index.
+
+const int MAX_PRICE_TAKA = 9999;
+
+// Appends a new item at the next array index (O(1)). Category and name must
+// pass validName, the name must be unused, price 0..MAX_PRICE_TAKA, and
+// `amount` is the packaged stock (0..MAX_STOCK) or the fresh daily limit
+// (0..cooking capacity). MenuFull when the array is full. Not undoable.
+Result addMenuItem(Cafeteria& caf, const std::string& staff, const std::string& category,
+                   const std::string& name, ItemKind kind, int priceTaka, int amount, int& newIndex);
+
+// Undoable.
+Result setPrice(Cafeteria& caf, const std::string& staff, int itemIndex, int priceTaka, bool& undoRecorded);
+
+// Undoable. Turning an item back on lets its waitlist move again.
+Result setAvailable(Cafeteria& caf, const std::string& staff, int itemIndex, bool available,
+                    NotificationList& out, bool& undoRecorded);
+
+// Records the picture file name chosen by the image store. Not undoable.
+Result setItemImage(Cafeteria& caf, const std::string& staff, int itemIndex, const std::string& fileName);

@@ -1,6 +1,7 @@
 // Text-file persistence for the cafeteria (proposal sections 6 and 8).
 //
-//   menu.txt          category|name|kind|stock|dailyLimit     (array order = item index)
+//   menu.txt          category|name|kind|stock|dailyLimit|priceTaka|imageFile|available
+//                     (array order = item index; older 5-field lines still load)
 //   settings.txt      key=value  (settings + current_day + next_id)
 //   reservations.txt  id|user|item|qty|reservedAt|status|readyAt|lastNoticeAt|day|expiresAt|reminderMinutes
 //                     (older 9-field lines still load; the last two are filled from settings)
