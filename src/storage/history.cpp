@@ -6,7 +6,7 @@ bool loadUserHistory(const std::string& dataDir, const std::string& user, Reserv
     std::ifstream in(dataDir + "/history.txt");
     if (!in) return true;
     std::string line, f[11];
-    int lineNo = 0;
+    int lineNo = 0, damaged = 0;
     while (std::getline(in, line)) {
         lineNo++;
         if (!line.empty() && line.back() == '\r') line.pop_back();
@@ -19,8 +19,10 @@ bool loadUserHistory(const std::string& dataDir, const std::string& user, Reserv
                   parseIntStrict(f[3], r.quantity) && parseIntStrict(f[4], reservedAt) &&
                   statusFromName(f[5], r.status) && parseIntStrict(f[8], r.day);
         if (!ok) {
-            err = "history.txt line " + std::to_string(lineNo) + ": bad record";
-            return false;
+            // A torn line (a crash during the midnight append) must not hide
+            // everyone's history: skip it and report the first one.
+            if (damaged++ == 0) err = "history.txt line " + std::to_string(lineNo) + ": bad record";
+            continue;
         }
         if (f[1] != user) continue;
         Reservation* node = new Reservation(r);
@@ -30,6 +32,7 @@ bool loadUserHistory(const std::string& dataDir, const std::string& user, Reserv
         node->reminderMinutes = 0;
         rlAppendNode(out, node);
     }
+    if (damaged > 0) err += " (" + std::to_string(damaged) + " damaged line(s) skipped)";
     rlSortNewestFirst(out);
     return true;
 }

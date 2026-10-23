@@ -50,6 +50,15 @@ TEST(item_name_validation) {
     CHECK_EQ(addMenuItem(f.caf, STAFF, "Fresh food", "<b>Haleem</b>", ItemKind::Fresh, 100, 5, idx), Result::Ok);
 }
 
+// The category starts the menu.txt line, and lines starting with '#' are comments:
+// such an item would vanish on restart and shift every later item's index.
+TEST(category_starting_with_hash_refused) {
+    CafeFixture f;
+    int idx;
+    CHECK_EQ(addMenuItem(f.caf, STAFF, "#1 Specials", "Dal", ItemKind::Fresh, 50, 5, idx), Result::InvalidValue);
+    CHECK_EQ(addMenuItem(f.caf, STAFF, "Specials #1", "Dal", ItemKind::Fresh, 50, 5, idx), Result::Ok);
+}
+
 TEST(set_price_and_undo) {
     CafeFixture f;
     bool rec;

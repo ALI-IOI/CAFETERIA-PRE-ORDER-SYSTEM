@@ -631,6 +631,9 @@ static int realMain(int argc, char** argv) {
         r = guest.post("/api/register",
                        {{"email", std::string(5000, 'a') + "@uni.example"}, {"id", "1"}, {"password", PW}});
         check(status(r) == 413, "redesign: other_routes_keep_4kb_limit", std::to_string(status(r)));
+        r = guest.postMultipart("/api/login",
+                                {{"email", std::string(1024 * 1024, 'a'), "", ""}, {"password", PW, "", ""}});
+        check(status(r) == 413, "redesign: multipart_body_keeps_4kb_limit", std::to_string(status(r)));
 
         r = staff.post("/api/staff/items", {{"category", "Fresh food"}, {"name", "<b>Halwa</b>"}, {"kind", "fresh"},
                                             {"price", "40"}, {"amount", "5"}});
