@@ -1,16 +1,16 @@
 # Test report — proposal section 12
 
-**Date:** 2026-10-24 (re-run after the redesign and order history) · **Build:** MinGW-w64 g++ 13.1, `-Wall -Wextra`, 0 warnings
+**Date:** 2026-10-24 (re-run after university staff, the hidden staff terminal and the eggshell theme) · **Build:** MinGW-w64 g++ 13.1, `-Wall -Wextra`, 0 warnings
 **Run:** `ctest --test-dir build --output-on-failure`
 
 | Suite | What it is | Result |
 |---|---|---|
-| `unit_tests` | 199 unit tests: data structures (incl. linked-list merge sort), rules, storage, auth, email, lock file, waitlist, email retry, menu items, tray, pictures, order history, password change (fake clock) | **199 / 199 pass** |
+| `unit_tests` | 219 unit tests: data structures (incl. linked-list merge sort), rules, storage, auth, email, lock file, waitlist, email retry, menu items, tray, pictures, order history, password change, university staff, staff computer list (fake clock) | **219 / 219 pass** |
 | `no_stl_guard` | Fails the build if `vector/list/queue/stack/deque/map/set/array` appear in `src/ds`, `src/core`, `src/auth`, `src/storage`, `src/console`, `src/email` | **pass** (proven to fail on an injected `#include <vector>`) |
 | `console_demo` | Scripted run of the stage-2 console program, checks the transcript | **pass** |
-| `admin_tool` | Staff account creation: hashed, duplicate/short/mismatched password refused, refused while a live server holds the lock, allowed with a stale lock | **pass** |
+| `admin_tool` | `add-staff` and `add-person`: hashed, duplicate/short/mismatched password refused, a student ID refused for `add-person`, refused while a live server holds the lock, allowed with a stale lock | **pass** |
 | `thread_exit_stress` | 640 short-lived client threads against an in-process HTTP server (guards the MinGW thread-exit crash fix below) | **pass** |
-| `e2e_section12` | Starts the real server (fake clock, temp data, email outbox), drives it over HTTP, crashes and restarts it | **99 / 99 checks pass** |
+| `e2e_section12` | Starts the real server (fake clock, temp data, email outbox), drives it over HTTP, crashes and restarts it | **111 / 111 checks pass** |
 
 Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit_tests_output.txt),
 [e2e_section12_output.txt](e2e_section12_output.txt).
@@ -90,6 +90,19 @@ Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit
 | Multipart bodies skipped the 4 KB limit (they go to `req.form`, not `req.body`); now refused from the headers, before the body is read | E2E `redesign: multipart_body_keeps_4kb_limit` | 401 → 413 |
 | One damaged line in `history.txt` broke everyone's history page; now skipped and logged | unit `history_bad_line_skipped_and_reported` | FAIL → PASS |
 | The cutoff passing between checking and booking a tray could crash the server with half the tray booked | unit `batch_cutoff_passing_mid_booking_is_all_or_nothing` | crash → PASS |
+
+## University staff, hidden staff terminal, eggshell theme
+
+| Area | Tests | Result |
+|---|---|---|
+| Employee role and university list | unit `test_employee.cpp`: role round-trip; blank email allowed only on `employee` rows (refused on a student row with the line number); duplicate email across rows refused; `users.txt` keeps the role | Pass |
+| Sign-up rules | unit: employee with a university email signs up, verifies and logs in; a blank-email row is refused with "Ask the cafeteria office to create your account."; an admin-added person cannot self-register afterwards (by ID or with the personal email) and their password is untouched | Pass |
+| `addPerson` / `add-person` | unit: active account with the list's name and department; refusals (student ID, row that has an email, unknown ID, email of another account or row, same ID twice, weak password, invalid email); mixed-case email stored lower-case, login in any case. `admin_tool`: success, refusals, live lock | Pass |
+| Same rules as teachers | unit `employee_same_limit_as_teacher`: per-person limit applies alike | Pass |
+| End to end | E2E `employee:` (3): university-email sign-up and reservation; blank-email row refused with the office message; admin-added account logs in, reserves and gets the confirmation email. `pages: copy names university staff` | Pass |
+| Staff computer list (fixed array) | unit `test_staff_computers.cpp` (8): missing file = empty; comments and blanks; bad address refused with its line; more than 16 refused; empty list allows all; exact match only; `::ffff:a.b.c.d` matches `a.b.c.d`; `isStaffPath` ignores case and matches any `staff` segment | Pass |
+| Hidden staff terminal | E2E (4): no public page links to `/staff/`; with only `10.20.30.40` listed, staff pages and APIs (GET and POST) answer exactly like a missing page; `/STAFF/login.html`, `/Staff/portal.html`, `/staff`, `/api/staff`, `/x/../staff/login.html` too (before the fix Windows served the uppercase and `..` spellings: 200); with an empty list the start-up notice is printed and the page opens | Pass |
+| Eggshell theme | E2E `theme:` (2): `/api/public/info` says whether orders are open (true before the cutoff, false after); the stylesheet has no dark-mode rules and sets `color-scheme: light`. `tools/contrast_check.py`: 19/19 pairs. Browser: 8 pages at 375 px with dark mode emulated — eggshell background, 0 dark elements, no sideways scroll | Pass |
 
 ## Gaps (not covered automatically)
 

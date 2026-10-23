@@ -78,3 +78,19 @@ Pages: landing `/`, `/login.html`, `/register.html`, `/menu.html`, `/reservation
 | Pictures | Dish pictures have alt text ("Picture of Tehari"); the decorative thumbnail in the staff table has empty alt because the item name is in the same row |
 
 Still open from the first audit: `aria-invalid` on invalid fields (minor) and a real screen-reader (NVDA) pass before the demo.
+
+## Re-check after the eggshell theme (2026-10-24)
+
+Pages: landing, login, register, menu, reservations, account, staff login, staff portal. One theme
+for everyone; the browser was set to dark mode for every check.
+
+| Check | Result |
+|---|---|
+| Contrast | `tools/contrast_check.py`: 19/19 pairs pass (body text 14.6:1 on eggshell, 17.7:1 on white; white on deep green 5.4:1; green text 6.6:1 on eggshell; field and outline-button edges 4.4:1 or more) |
+| Non-text contrast | Every control's edge (inputs, selects, outline buttons, tabs) is deep green #127A4B, 4.4:1 or more. The light stainless lines (#C8CDD2, about 1.5:1) are decoration only: dish-grid lines, table rows, card edges |
+| Dark-mode devices | `color-scheme: light`; no `prefers-color-scheme` rules. With dark mode emulated, every page kept the eggshell background and light form controls; 0 elements with a dark background |
+| Reflow at 375 px | All 8 pages: no horizontal scroll |
+| Announcement bar | `role="note"` (not a live region), text only, same text on every page that shows it |
+| Staff links | Public pages contain no link to `/staff/` (checked by the E2E suite) |
+
+Still open from the first audit: `aria-invalid` on invalid fields (minor) and a real screen-reader (NVDA) pass before the demo.
