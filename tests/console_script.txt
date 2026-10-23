@@ -1,0 +1,23 @@
+menu
+undo
+time 09:00
+reserve alice 2 1
+reserve bob 2 1
+reserve carol 2 1
+reserve alice 3 1
+cancel bob 2
+queues
+ready 2
+queues
+advance 60
+collected 1
+advance 420
+history
+stock 3 30
+history
+undo
+time 10:00
+reserve dave 0 1
+reserve dave 0 -2
+blah
+quit

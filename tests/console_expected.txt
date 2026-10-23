@@ -1,0 +1,27 @@
+[0] Khichuri
+[3] Lays
+Nothing to undo
+Reservation R-0001 confirmed: Tehari x 1
+Refused: Packaged items are view-only and cannot be reserved.
+Cancelled R-0002
+Cooking queue Tehari (front -> rear): R-0001 alice Reserved | R-0002 bob Cancelled | R-0003 carol Reserved
+Ready: 2 made ready, 1 cancelled skipped, 0 still waiting
+To alice: Your Tehari (R-0001) is ready
+To carol: Your Tehari (R-0003) is ready
+Cooking queue Tehari (front -> rear): (empty)
+Reminder queue (front -> rear): R-0001 alice Ready | R-0003 carol Ready
+Reminder: your Tehari (R-0001) is ready. About 6 hours of freshness left.
+Reminder: your Tehari (R-0003) is ready. About 6 hours of freshness left.
+Collected R-0001
+[email:expired] To carol: Your Tehari (R-0003) has expired
+Your Tehari (R-0003) was not collected within its freshness window
+Staff action stack (top first, 1/50):
+  1. Marked R-0001 (Tehari) collected
+Staff action stack (top first, 2/50):
+  1. Set Lays stock 20 -> 30
+  2. Marked R-0001 (Tehari) collected
+Undid: Set Lays stock 20 -> 30
+Refused: The reservation cutoff time has passed for today.
+Refused: Quantity must be between 1 and the per-person limit.
+Unknown command
+Bye
