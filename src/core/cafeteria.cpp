@@ -19,6 +19,10 @@ const char* resultMessage(Result r) {
         case Result::UndoBlocked: return "The last action cannot be undone because later changes depend on it.";
         case Result::NotReady: return "Only reservations with status Ready can be marked collected.";
         case Result::WrongKind: return "That action does not apply to this kind of item.";
+        case Result::NotSoldOut: return "Portions are still available - reserve instead of joining the waitlist.";
+        case Result::AlreadyWaiting: return "You are already on the waitlist for this item.";
+        case Result::WaitlistFull: return "The waitlist for this item is full.";
+        case Result::NotWaiting: return "You are not on the waitlist for this item.";
     }
     return "Unknown error.";
 }
@@ -26,7 +30,10 @@ const char* resultMessage(Result r) {
 void cafInit(Cafeteria& caf, Clock* clock, int cookingCapacity) {
     menuInit(caf.menu);
     rlInit(caf.reservations);
-    for (int i = 0; i < MAX_MENU_ITEMS; i++) qInit(caf.cooking[i], cookingCapacity);
+    for (int i = 0; i < MAX_MENU_ITEMS; i++) {
+        qInit(caf.cooking[i], cookingCapacity);
+        wqInit(caf.waitlists[i], cookingCapacity);
+    }
     // Every reservation is in the reminder queue at most once, so this can hold all of them.
     qInit(caf.reminders, cookingCapacity * MAX_MENU_ITEMS);
     stInit(caf.history);
@@ -38,7 +45,10 @@ void cafInit(Cafeteria& caf, Clock* clock, int cookingCapacity) {
 }
 
 void cafFree(Cafeteria& caf) {
-    for (int i = 0; i < MAX_MENU_ITEMS; i++) qFree(caf.cooking[i]);
+    for (int i = 0; i < MAX_MENU_ITEMS; i++) {
+        qFree(caf.cooking[i]);
+        wqFree(caf.waitlists[i]);
+    }
     qFree(caf.reminders);
     rlClear(caf.reservations);
     rlClear(caf.archive);
@@ -62,6 +72,11 @@ int userPortionsToday(const Cafeteria& caf, const std::string& user, int itemInd
 
 Result reserve(Cafeteria& caf, const std::string& user, int itemIndex, int quantity,
                NotificationList& out, Reservation** created) {
+    return reserveWithNote(caf, user, itemIndex, quantity, out, created, "");
+}
+
+Result reserveWithNote(Cafeteria& caf, const std::string& user, int itemIndex, int quantity,
+                       NotificationList& out, Reservation** created, const std::string& note) {
     cafEnsureToday(caf);
     if (created) *created = nullptr;
     MenuItem* item = menuAt(caf.menu, itemIndex);
@@ -81,7 +96,7 @@ Result reserve(Cafeteria& caf, const std::string& user, int itemIndex, int quant
 
     std::string code = resCode(r->id);
     nlAppend(out, NotifType::Confirmation, user, "Reservation " + code + " confirmed",
-             "Reservation " + code + " confirmed: " + item->name + " x " +
+             note + "Reservation " + code + " confirmed: " + item->name + " x " +
                  std::to_string(quantity) + ".\n" +
                  "We will email you when it is ready for collection.\n" +
                  "You can cancel until " + formatMinuteOfDay(caf.settings.cancelDeadlineMinute) +
@@ -91,7 +106,7 @@ Result reserve(Cafeteria& caf, const std::string& user, int itemIndex, int quant
     return Result::Ok;
 }
 
-Result cancelReservation(Cafeteria& caf, const std::string& user, int reservationId) {
+Result cancelReservation(Cafeteria& caf, const std::string& user, int reservationId, NotificationList& out) {
     cafEnsureToday(caf);
     Reservation* r = rlFindById(caf.reservations, reservationId);
     if (r == nullptr) return Result::NotFound;
@@ -104,6 +119,7 @@ Result cancelReservation(Cafeteria& caf, const std::string& user, int reservatio
     r->status = ResStatus::Cancelled;  // stays in the cooking queue; skipped at the front
     MenuItem* item = menuAt(caf.menu, r->itemIndex);
     if (item) item->reservedToday -= r->quantity;
+    promoteWaitlist(caf, r->itemIndex, out);  // the freed portion goes to the first person waiting
     return Result::Ok;
 }
 
@@ -209,6 +225,7 @@ static void rollover(Cafeteria& caf, int newDay) {
     for (int i = 0; i < caf.menu.count; i++) {
         if (caf.menu.items[i].kind == ItemKind::Fresh) caf.menu.items[i].reservedToday = 0;
         qClear(caf.cooking[i]);
+        wqClear(caf.waitlists[i]);  // yesterday's waitlist ends with the day
     }
     // Drop non-Ready entries from the reminder queue (keeping order) so no
     // queue points at a node we are about to move.
@@ -236,6 +253,7 @@ void cafEnsureToday(Cafeteria& caf) {
 void timerTick(Cafeteria& caf, NotificationList& out) {
     time_t now = caf.clock->now();
     cafEnsureToday(caf);
+    closeWaitlistsAtCutoff(caf, out);
 
     // Every reminder is due one interval after the previous notice, so the
     // front of the queue is always the next one due (proposal section 8).

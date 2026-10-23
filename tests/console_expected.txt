@@ -24,4 +24,14 @@ Undid: Set Lays stock 20 -> 30
 Refused: The reservation cutoff time has passed for today.
 Refused: Quantity must be between 1 and the per-person limit.
 Unknown command
+Reservation R-0004 confirmed: Fried Rice x 2
+Joined the Fried Rice waitlist at position 1
+Joined the Fried Rice waitlist at position 2
+Refused: You are already on the waitlist for this item.
+Waitlist Fried Rice (front -> rear): frank x2 waiting | gina x1 waiting
+Cancelled R-0004
+Good news: a portion became free and you were first on the waitlist.
+Reservation R-0005 confirmed: Fried Rice x 2
+Waitlist Fried Rice (front -> rear): gina x1 waiting
+[email:waitlist-closed] To gina
 Bye

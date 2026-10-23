@@ -38,6 +38,7 @@ const char* notifTypeName(NotifType t) {
         case NotifType::Reminder: return "reminder";
         case NotifType::Expired: return "expired";
         case NotifType::VerificationCode: return "verification";
+        case NotifType::WaitlistClosed: return "waitlist-closed";
     }
     return "unknown";
 }

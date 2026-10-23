@@ -20,4 +20,15 @@ time 10:00
 reserve dave 0 1
 reserve dave 0 -2
 blah
+time 09:30
+limit 1 2
+reserve erin 1 2
+wait frank 1 2
+wait gina 1 1
+wait gina 1 1
+queues
+cancel erin 4
+queues
+time 10:00
+advance 1
 quit

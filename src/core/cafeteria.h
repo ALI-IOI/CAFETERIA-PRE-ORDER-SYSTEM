@@ -7,6 +7,7 @@
 #include "ds/action_stack.h"
 #include "ds/menu_array.h"
 #include "ds/res_queue.h"
+#include "ds/wait_queue.h"
 #include "ds/reservation_list.h"
 
 struct Cafeteria {
@@ -14,6 +15,7 @@ struct Cafeteria {
     ReservationList reservations;     // linked list: every reservation
     ResQueue cooking[MAX_MENU_ITEMS]; // one circular queue per menu slot (used for fresh items)
     ResQueue reminders;               // ready reservations waiting for their next reminder
+    WaitQueue waitlists[MAX_MENU_ITEMS]; // people waiting for a sold-out fresh item (addition #1)
     ActionStack history;              // staff actions that can be undone
     ReservationList archive;          // finished reservations from earlier days, waiting to be written to history.txt
     Settings settings;
@@ -40,6 +42,10 @@ enum class Result {
     UndoBlocked,
     NotReady,
     WrongKind,
+    NotSoldOut,
+    AlreadyWaiting,
+    WaitlistFull,
+    NotWaiting,
 };
 
 const char* resultMessage(Result r);
@@ -54,8 +60,9 @@ Result reserve(Cafeteria& caf, const std::string& user, int itemIndex, int quant
                NotificationList& out, Reservation** created);
 
 // Allowed while the reservation is Reserved and before the cancellation deadline.
-// The node stays in the cooking queue marked Cancelled; portions go back to the array.
-Result cancelReservation(Cafeteria& caf, const std::string& user, int reservationId);
+// The node stays in the cooking queue marked Cancelled; portions go back to the
+// array and are offered to the item's waitlist (confirmation emails into `out`).
+Result cancelReservation(Cafeteria& caf, const std::string& user, int reservationId, NotificationList& out);
 
 // Portions this user holds today for one item (every status except Cancelled).
 int userPortionsToday(const Cafeteria& caf, const std::string& user, int itemIndex);
@@ -109,8 +116,9 @@ Result setStock(Cafeteria& caf, const std::string& staff, int itemIndex, int val
                 bool& undoRecorded);
 
 // Fresh items only; portions already reserved today <= value <= cooking queue capacity.
+// A raise offers the new portions to the waitlist.
 Result setDailyLimit(Cafeteria& caf, const std::string& staff, int itemIndex, int value,
-                     bool& undoRecorded);
+                     NotificationList& out, bool& undoRecorded);
 
 // Keys and ranges as in settingsSet().
 Result changeSetting(Cafeteria& caf, const std::string& staff, const std::string& key,
@@ -119,9 +127,32 @@ Result changeSetting(Cafeteria& caf, const std::string& staff, const std::string
 // Pops the latest action and restores its old value. If restoring would break a
 // rule (limit below portions now reserved, reservation no longer Collected) the
 // action is pushed back and UndoBlocked is returned.
-Result undoLast(Cafeteria& caf, const std::string& staff, StaffAction& undone);
+Result undoLast(Cafeteria& caf, const std::string& staff, NotificationList& out, StaffAction& undone);
 
 // Today's reservations sorted by item, then reservation time (insertion sort, O(k^2)).
 int staffReservationsSorted(const Cafeteria& caf, Reservation** outArr, int cap);
 
 Reservation* staffSearchById(const Cafeteria& caf, int id);
+
+// ---- waitlist for sold-out fresh items (waitlist.cpp, addition #1) -----------
+// Join only when the item cannot cover `quantity`, before the cutoff, within the
+// per-person limit (counting portions already held), once per person per item.
+// Checks in order: BadItem, NotFresh, BadQuantity, CutoffPassed, NotSoldOut,
+// UserLimit, AlreadyWaiting, WaitlistFull. position = 1-based place in line.
+Result joinWaitlist(Cafeteria& caf, const std::string& user, int itemIndex, int quantity, int& position);
+Result leaveWaitlist(Cafeteria& caf, const std::string& user, int itemIndex);
+int waitlistPosition(const Cafeteria& caf, const std::string& user, int itemIndex);  // 0 = not waiting
+int waitlistActiveCount(const Cafeteria& caf, int itemIndex);
+
+// Gives free portions to people at the front, strictly first come first served:
+// a person who now exceeds the per-person limit is skipped; if the front person
+// needs more portions than are free, nobody behind them goes first. Only before
+// the cutoff. Returns how many reservations were made.
+int promoteWaitlist(Cafeteria& caf, int itemIndex, NotificationList& out);
+
+// At or after the cutoff: everyone still waiting gets one email and leaves.
+void closeWaitlistsAtCutoff(Cafeteria& caf, NotificationList& out);
+
+// reserve() with an extra first line in the confirmation email (used by promotion).
+Result reserveWithNote(Cafeteria& caf, const std::string& user, int itemIndex, int quantity,
+                       NotificationList& out, Reservation** created, const std::string& note);
