@@ -18,6 +18,7 @@ const char* resultMessage(Result r) {
         case Result::NothingToUndo: return "There is no staff action to undo.";
         case Result::UndoBlocked: return "The last action cannot be undone because later changes depend on it.";
         case Result::NotReady: return "Only reservations with status Ready can be marked collected.";
+        case Result::WrongKind: return "That action does not apply to this kind of item.";
     }
     return "Unknown error.";
 }
