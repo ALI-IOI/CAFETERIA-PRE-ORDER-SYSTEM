@@ -10,6 +10,8 @@ four hand-built data structures** — no STL containers for them (checked by a b
 | Linked list | `src/ds/reservation_list.*`, `src/auth/users.*` | Reservations (tail insert O(1), search/cancel O(n)); user accounts; university list; sessions |
 | Circular queue | `src/ds/res_queue.*` | One cooking queue per fresh item (FIFO "ready" emails, cancelled entries skipped); the reminder queue (front = next reminder due) |
 | Array stack | `src/ds/action_stack.*` | Staff action history; "undo the latest action" (LIFO) |
+| Circular queue (addition) | `src/ds/wait_queue.*` | Waitlist per sold-out fresh item: a freed portion goes to the first person waiting |
+| Linked queue (addition) | `src/email/mailer.*` | Emails that failed to send, retried after 1, 5 and 15 minutes |
 
 Rules live in `src/core/` (`cafeteria.cpp`, `staff.cpp`), storage in `src/storage/`,
 security in `src/auth/`, email in `src/email/`, the HTTP server in `src/server/`, pages in `web/`.
@@ -56,6 +58,10 @@ saved as files in `data/outbox/`.
 
 **HTTPS:** for deployment, put the server behind a reverse proxy that terminates HTTPS (e.g.
 Caddy or nginx) and start it with `--behind-https` so cookies are marked `Secure`.
+
+## Additions beyond the proposal
+- **Waitlist** — when a fresh item is sold out, students and teachers can join its waitlist. A cancellation, or staff raising the daily limit, gives the freed portions to the people waiting, first come first served, with a confirmation email. At the cutoff, anyone still waiting gets one "no portion became free" email.
+- **Email retry** — an email that fails to send is retried after 1, 5 and 15 minutes, then logged in `data/email_failed.log`. Waiting emails are kept in `data/pending_emails.txt` across restarts. The staff portal shows how many are waiting.
 
 ## Known limits (documented, proposal §10)
 - Sessions are kept in memory; a restart logs everyone out.

@@ -12,6 +12,7 @@ struct FlakySender : EmailSender {
     bool failAlways = false;
     int attempts = 0;
     std::string delivered;  // "to," in delivery order
+    std::string lastSubjects;  // "subject," in delivery order
     bool send(const Notification& n) override {
         attempts++;
         if (failAlways) return false;
@@ -20,6 +21,7 @@ struct FlakySender : EmailSender {
             return false;
         }
         delivered += n.to + ",";
+        lastSubjects += n.subject + ",";
         return true;
     }
     const char* modeName() const override { return "fake"; }
@@ -191,5 +193,65 @@ TEST(body_with_newlines_and_pipes_round_trips) {
     CHECK_EQ(cap.got.subject, std::string("Subject | x"));
     CHECK_EQ(cap.got.type, NotifType::Reminder);
     CHECK_EQ(cap.got.reservationId, 3);
+    mailerFree(m);
+}
+
+// ---- final review fixes ------------------------------------------------------
+
+TEST(new_mail_waits_behind_older_mail_for_the_same_person) {
+    MailFixture f("mail_behind");
+    f.sender.failNext = 1;
+    nlAppend(f.out, NotifType::Confirmation, "a@uni.example", "1-confirmed", "b", 1);
+    mailerSendAll(f.mailer, f.out);                   // fails at 10:00:00
+    f.clock.t += 20;                                  // SMTP is back
+    nlAppend(f.out, NotifType::Ready, "a@uni.example", "2-ready", "b", 1);
+    mailerSendAll(f.mailer, f.out);
+    CHECK_EQ(f.sender.delivered, std::string(""));   // must not overtake the confirmation
+    CHECK_EQ(mailerWaiting(f.mailer), 2);
+    f.clock.t += 40;                                  // 10:01:00
+    CHECK_EQ(mailerRetryDue(f.mailer), 2);
+    CHECK_EQ(f.sender.lastSubjects, std::string("1-confirmed,2-ready,"));
+}
+
+TEST(other_peoples_mail_is_not_held_up) {
+    MailFixture f("mail_others");
+    f.sender.failNext = 1;
+    f.queueMail("a@uni.example");
+    mailerSendAll(f.mailer, f.out);
+    f.queueMail("b@uni.example");
+    mailerSendAll(f.mailer, f.out);
+    CHECK_EQ(f.sender.delivered, std::string("b@uni.example,"));
+}
+
+TEST(newer_item_for_same_person_waits_for_older_retry) {
+    MailFixture f("mail_inqueue");
+    f.sender.failAlways = true;
+    nlAppend(f.out, NotifType::Confirmation, "a@uni.example", "1-confirmed", "b", 1);
+    mailerSendAll(f.mailer, f.out);   // 10:00 attempt 1
+    f.clock.t += 60;
+    mailerRetryDue(f.mailer);         // 10:01 attempt 2 fails -> next try 10:06
+    f.sender.failAlways = false;
+    nlAppend(f.out, NotifType::Ready, "a@uni.example", "2-ready", "b", 1);
+    mailerSendAll(f.mailer, f.out);   // queued behind; due at once
+    f.clock.t += 60;                  // 10:02: "2-ready" is due, "1-confirmed" is not
+    CHECK_EQ(mailerRetryDue(f.mailer), 0);
+    f.clock.set(2026, 10, 23, 10, 6, 0);
+    CHECK_EQ(mailerRetryDue(f.mailer), 2);
+    CHECK_EQ(f.sender.lastSubjects, std::string("1-confirmed,2-ready,"));
+}
+
+TEST(bad_attempts_in_pending_file_refused) {
+    std::string dir = freshDir("mail_bad_attempts");
+    {
+        std::ofstream o(dir + "/pending_emails.txt");
+        o << "ready|a@uni.example|s|b|1|-5|0\n";
+    }
+    FakeClock clock;
+    FlakySender sender;
+    Mailer m;
+    mailerInit(m, &sender, &clock, dir);
+    std::string err;
+    CHECK(!mailerLoad(m, err));
+    CHECK(err.find("line 1") != std::string::npos);
     mailerFree(m);
 }

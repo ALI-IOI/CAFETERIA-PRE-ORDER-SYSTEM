@@ -213,3 +213,63 @@ TEST(cancel_and_promote_use_portion_once) {
     CHECK_EQ(reserve(f.caf, CAROL, FRIED_RICE, 1, f.out, &r), Result::SoldOut);
     CHECK_EQ(f.caf.menu.items[FRIED_RICE].reservedToday, 1);
 }
+
+// ---- final review fixes ------------------------------------------------------
+
+TEST(direct_reserve_leaves_the_waitlist) {
+    CafeFixture f;
+    f.caf.menu.items[FRIED_RICE].dailyLimit = 2;
+    Reservation* a = f.reserveOk(ALICE, FRIED_RICE, 1);
+    Reservation* b = f.reserveOk(BOB, FRIED_RICE, 1);
+    int pos;
+    joinWaitlist(f.caf, CAROL, FRIED_RICE, 2, pos);
+    joinWaitlist(f.caf, DAVE, FRIED_RICE, 1, pos);
+    cancelReservation(f.caf, ALICE, a->id, f.out);        // 1 free, CAROL needs 2: nobody promoted
+    CHECK(f.reserveOk(DAVE, FRIED_RICE, 1) != nullptr);  // DAVE takes it himself
+    CHECK_EQ(waitlistPosition(f.caf, DAVE, FRIED_RICE), 0);  // ...and is off the waitlist
+    leaveWaitlist(f.caf, CAROL, FRIED_RICE);
+    cancelReservation(f.caf, BOB, b->id, f.out);
+    CHECK_EQ(userPortionsToday(f.caf, DAVE, FRIED_RICE), 1);  // never booked a second time
+}
+
+TEST(mark_ready_promotes_after_queue_full_stall) {
+    CafeFixture f(3);  // cooking queue capacity 3
+    f.caf.menu.items[FRIED_RICE].dailyLimit = 3;
+    Reservation* a = f.reserveOk(ALICE, FRIED_RICE, 1);
+    f.reserveOk(BOB, FRIED_RICE, 1);
+    f.reserveOk(CAROL, FRIED_RICE, 1);
+    int pos;
+    joinWaitlist(f.caf, DAVE, FRIED_RICE, 1, pos);
+    cancelReservation(f.caf, ALICE, a->id, f.out);  // portion free, but the queue still holds 3 entries
+    CHECK_EQ(waitlistPosition(f.caf, DAVE, FRIED_RICE), 1);
+    ReadyReport rep;
+    markReady(f.caf, STAFF, FRIED_RICE, 0, f.out, rep);  // empties the cooking queue
+    CHECK_EQ(userPortionsToday(f.caf, DAVE, FRIED_RICE), 1);
+    CHECK_EQ(waitlistPosition(f.caf, DAVE, FRIED_RICE), 0);
+}
+
+TEST(cancel_does_not_hand_the_portion_back_to_the_canceller) {
+    CafeFixture f;
+    f.caf.menu.items[FRIED_RICE].dailyLimit = 1;
+    Reservation* b = f.reserveOk(BOB, FRIED_RICE, 1);
+    int pos;
+    joinWaitlist(f.caf, BOB, FRIED_RICE, 1, pos);    // BOB wants one more, first in line
+    joinWaitlist(f.caf, CAROL, FRIED_RICE, 1, pos);
+    cancelReservation(f.caf, BOB, b->id, f.out);
+    CHECK_EQ(userPortionsToday(f.caf, BOB, FRIED_RICE), 0);   // cancelling means fewer, not a new booking
+    CHECK_EQ(waitlistPosition(f.caf, BOB, FRIED_RICE), 0);
+    CHECK_EQ(userPortionsToday(f.caf, CAROL, FRIED_RICE), 1); // next person gets it
+}
+
+TEST(full_waitlist_compacts_entries_that_left) {
+    CafeFixture f(3);
+    f.caf.menu.items[FRIED_RICE].dailyLimit = 1;
+    f.reserveOk(ALICE, FRIED_RICE, 1);
+    int pos;
+    for (int i = 0; i < 3; i++) {
+        CHECK_EQ(joinWaitlist(f.caf, BOB, FRIED_RICE, 1, pos), Result::Ok);
+        CHECK_EQ(leaveWaitlist(f.caf, BOB, FRIED_RICE), Result::Ok);
+    }
+    CHECK_EQ(joinWaitlist(f.caf, CAROL, FRIED_RICE, 1, pos), Result::Ok);  // nobody is really waiting
+    CHECK_EQ(pos, 1);
+}

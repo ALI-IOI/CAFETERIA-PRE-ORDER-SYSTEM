@@ -20,12 +20,15 @@ struct RetryItem {
     NotifType type;
     std::string to, subject, body;
     int reservationId;
-    int attempts;      // sends tried so far
+    int attempts;      // sends tried so far (0 = queued behind older mail, not tried yet)
     time_t nextTryAt;
+    bool inFlight;     // being sent right now by a retry pass (still saved in the file)
     RetryItem* next;
 };
 
 // Linked FIFO queue: enqueue at the tail, dequeue at the head, both O(1).
+// Items keep their place while they wait, so each person's emails leave in
+// the order they were written; a delivered item is removed where it stands.
 struct RetryQueue {
     RetryItem* head;
     RetryItem* tail;
@@ -34,7 +37,8 @@ struct RetryQueue {
 
 void rqInit(RetryQueue& q);
 void rqEnqueue(RetryQueue& q, RetryItem* item);
-RetryItem* rqDequeue(RetryQueue& q);  // nullptr when empty; caller owns the item
+RetryItem* rqDequeue(RetryQueue& q);           // nullptr when empty; caller owns the item
+bool rqRemove(RetryQueue& q, RetryItem* item);  // unlink from anywhere, O(n); caller owns it
 void rqClear(RetryQueue& q);
 
 const int RETRY_STEPS = 3;
@@ -53,11 +57,14 @@ void mailerInit(Mailer& m, EmailSender* sender, Clock* clock, const std::string&
 void mailerFree(Mailer& m);
 bool mailerLoad(Mailer& m, std::string& err);  // reads pending_emails.txt (missing file = empty)
 
-// Sends every notification now; failures go to the retry queue. Empties `out`.
+// Sends every notification now, except that mail to someone who still has
+// older mail waiting joins the back of the queue instead (so "ready" never
+// overtakes "confirmed"). Failures go to the retry queue. Empties `out`.
 void mailerSendAll(Mailer& m, NotificationList& out);
 
-// One pass over the queue: due items are sent (or rescheduled / given up),
-// others keep their place. Returns how many were delivered.
+// One pass over the queue: an item is sent when it is due and every older
+// item for the same person is also being sent in this pass; failures are
+// rescheduled in place or given up. Returns how many were delivered.
 int mailerRetryDue(Mailer& m);
 
 int mailerWaiting(Mailer& m);

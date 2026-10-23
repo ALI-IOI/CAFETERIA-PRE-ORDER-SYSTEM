@@ -37,7 +37,18 @@ Result joinWaitlist(Cafeteria& caf, const std::string& user, int itemIndex, int 
     if (quantity <= menuRemaining(*item)) return Result::NotSoldOut;
     if (userPortionsToday(caf, user, itemIndex) + quantity > caf.settings.perUserLimit) return Result::UserLimit;
     if (waitlistPosition(caf, user, itemIndex) != 0) return Result::AlreadyWaiting;
-    if (wqIsFull(caf.waitlists[itemIndex])) return Result::WaitlistFull;
+    if (wqIsFull(caf.waitlists[itemIndex])) {
+        // Compact: people who left still occupy slots until they reach the
+        // front. Rotate once through the queue keeping only active entries.
+        WaitQueue& q = caf.waitlists[itemIndex];
+        int n = q.count;
+        WaitEntry e;
+        for (int i = 0; i < n; i++) {
+            wqDequeue(q, e);
+            if (e.active) wqEnqueue(q, e);
+        }
+        if (wqIsFull(q)) return Result::WaitlistFull;
+    }
 
     WaitEntry e;
     e.user = user;

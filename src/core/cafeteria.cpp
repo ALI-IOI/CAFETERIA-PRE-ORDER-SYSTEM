@@ -102,6 +102,10 @@ Result reserveWithNote(Cafeteria& caf, const std::string& user, int itemIndex, i
                  "You can cancel until " + formatMinuteOfDay(caf.settings.cancelDeadlineMinute) +
                  " today.",
              r->id);
+    // Reserving it yourself means you are no longer waiting for it (promotion
+    // has already taken the entry off the front, so this only matters for a
+    // direct reservation).
+    leaveWaitlist(caf, user, itemIndex);
     if (created) *created = r;
     return Result::Ok;
 }
@@ -119,6 +123,7 @@ Result cancelReservation(Cafeteria& caf, const std::string& user, int reservatio
     r->status = ResStatus::Cancelled;  // stays in the cooking queue; skipped at the front
     MenuItem* item = menuAt(caf.menu, r->itemIndex);
     if (item) item->reservedToday -= r->quantity;
+    leaveWaitlist(caf, user, r->itemIndex);   // cancelling means fewer portions, never a re-booking
     promoteWaitlist(caf, r->itemIndex, out);  // the freed portion goes to the first person waiting
     return Result::Ok;
 }
@@ -192,6 +197,9 @@ Result markReady(Cafeteria& caf, const std::string& staff, int itemIndex, int po
                  r->id);
     }
     report.leftWaiting = q.count;
+    // The cooking queue has room now: a portion freed earlier may have been
+    // stuck behind a full queue (cancelled entries stay until dequeued).
+    promoteWaitlist(caf, itemIndex, out);
     return Result::Ok;
 }
 

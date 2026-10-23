@@ -31,6 +31,20 @@ RetryItem* rqDequeue(RetryQueue& q) {
     return item;
 }
 
+bool rqRemove(RetryQueue& q, RetryItem* item) {
+    RetryItem* prev = nullptr;
+    for (RetryItem* cur = q.head; cur != nullptr; prev = cur, cur = cur->next) {
+        if (cur != item) continue;
+        if (prev == nullptr) q.head = cur->next;
+        else prev->next = cur->next;
+        if (q.tail == cur) q.tail = prev;
+        cur->next = nullptr;
+        q.count--;
+        return true;
+    }
+    return false;
+}
+
 void rqClear(RetryQueue& q) {
     RetryItem* item;
     while ((item = rqDequeue(q)) != nullptr) delete item;
@@ -117,7 +131,7 @@ bool mailerLoad(Mailer& m, std::string& err) {
         long long next;
         if (splitFields(line, '|', f, 7) != 7 || !typeFromName(f[0], it->type) ||
             !parseIntStrict(f[4], it->reservationId) || !parseIntStrict(f[5], it->attempts) ||
-            !parseIntStrict(f[6], next)) {
+            it->attempts < 0 || it->attempts > RETRY_STEPS || !parseIntStrict(f[6], next)) {
             delete it;
             err = "pending_emails.txt line " + std::to_string(lineNo) + ": bad record";
             return false;
@@ -126,6 +140,7 @@ bool mailerLoad(Mailer& m, std::string& err) {
         it->subject = unescapeField(f[2]);
         it->body = unescapeField(f[3]);
         it->nextTryAt = (time_t)next;
+        it->inFlight = false;
         rqEnqueue(m.retry, it);
     }
     return true;
@@ -151,79 +166,139 @@ static void logGivenUp(Mailer& m, const RetryItem* it) {
     m.givenUp++;
 }
 
-// After a failed attempt: schedule the next try, or give up. Call with m.mu held.
-static void afterFailure(Mailer& m, RetryItem* it, time_t now) {
-    if (it->attempts > RETRY_STEPS) {
-        logGivenUp(m, it);
-        std::fprintf(stderr, "EMAIL GIVEN UP after %d attempts: %s to %s\n", it->attempts,
-                     notifTypeName(it->type), it->to.c_str());
-        delete it;
-        return;
-    }
+// Next try time after a failed attempt; false = give up. (it->attempts >= 1)
+static bool reschedule(RetryItem* it, time_t now) {
+    if (it->attempts > RETRY_STEPS) return false;
     it->nextTryAt = now + (time_t)RETRY_DELAY_MINUTES[it->attempts - 1] * 60;
-    rqEnqueue(m.retry, it);
+    return true;
+}
+
+// True if the queue still holds mail for this person (call with m.mu held).
+static bool waitingFor(const RetryQueue& q, const std::string& to) {
+    for (RetryItem* it = q.head; it != nullptr; it = it->next) {
+        if (it->to == to) return true;
+    }
+    return false;
+}
+
+static RetryItem* newItem(const Notification& n, int attempts, time_t nextTryAt) {
+    RetryItem* it = new RetryItem;
+    it->type = n.type;
+    it->to = n.to;
+    it->subject = n.subject;
+    it->body = n.body;
+    it->reservationId = n.reservationId;
+    it->attempts = attempts;
+    it->nextTryAt = nextTryAt;
+    it->inFlight = false;
+    it->next = nullptr;
+    return it;
 }
 
 void mailerSendAll(Mailer& m, NotificationList& out) {
-    RetryQueue failed;
-    rqInit(failed);
-    for (Notification* n = out.head; n != nullptr; n = n->next) {
-        if (m.sender->send(*n)) continue;
-        RetryItem* it = new RetryItem;
-        it->type = n->type;
-        it->to = n->to;
-        it->subject = n->subject;
-        it->body = n->body;
-        it->reservationId = n->reservationId;
-        it->attempts = 1;
-        rqEnqueue(failed, it);
+    if (out.count == 0) return;
+    // Decide under the lock which emails must wait behind older mail.
+    bool* behind = new bool[out.count];
+    {
+        std::lock_guard<std::mutex> lock(m.mu);
+        int i = 0;
+        for (Notification* n = out.head; n != nullptr; n = n->next) behind[i++] = waitingFor(m.retry, n->to);
     }
+    // Send the others without holding it. A failure also makes later mail in
+    // this batch for the same person wait behind it.
+    RetryQueue later;  // in batch order: failures and mail held behind them
+    rqInit(later);
+    int i = 0;
+    for (Notification* n = out.head; n != nullptr; n = n->next, i++) {
+        if (behind[i] || waitingFor(later, n->to)) {
+            rqEnqueue(later, newItem(*n, 0, 0));  // due at once, but behind the older mail
+            continue;
+        }
+        if (!m.sender->send(*n)) rqEnqueue(later, newItem(*n, 1, 0));
+    }
+    delete[] behind;
     nlClear(out);
-    if (failed.count == 0) return;
+    if (later.count == 0) return;
 
     std::lock_guard<std::mutex> lock(m.mu);
     time_t now = m.clock->now();
     RetryItem* it;
-    while ((it = rqDequeue(failed)) != nullptr) afterFailure(m, it, now);
+    while ((it = rqDequeue(later)) != nullptr) {
+        if (it->attempts == 0) it->nextTryAt = now;
+        else reschedule(it, now);  // first failure: always schedulable
+        rqEnqueue(m.retry, it);
+    }
     savePending(m);
 }
 
 int mailerRetryDue(Mailer& m) {
-    // Take the due items out under the lock, keeping the others in order...
-    RetryQueue due;
-    rqInit(due);
+    // 1. Under the lock, pick what to send: due, not already being sent, and
+    //    every older item for the same person is picked too (keeps order).
+    //    Picked items stay in the queue (and in the file) marked inFlight.
+    RetryItem** picked = nullptr;
+    int n = 0;
     time_t now;
     {
         std::lock_guard<std::mutex> lock(m.mu);
         now = m.clock->now();
-        int n = m.retry.count;
-        for (int i = 0; i < n; i++) {  // one full pass: due items out, the rest back to the rear
-            RetryItem* it = rqDequeue(m.retry);
-            if (now >= it->nextTryAt) rqEnqueue(due, it);
-            else rqEnqueue(m.retry, it);
+        if (m.retry.count == 0) return 0;
+        picked = new RetryItem*[m.retry.count];
+        for (RetryItem* it = m.retry.head; it != nullptr; it = it->next) {
+            bool olderBlocked = false;
+            for (RetryItem* o = m.retry.head; o != it; o = o->next) {
+                if (o->to == it->to) {
+                    // an older item for this person blocks unless it is picked in this pass
+                    bool oPicked = false;
+                    for (int k = 0; k < n; k++) oPicked = oPicked || picked[k] == o;
+                    if (!oPicked) olderBlocked = true;
+                }
+            }
+            if (!it->inFlight && now >= it->nextTryAt && !olderBlocked) picked[n++] = it;
         }
+        for (int k = 0; k < n; k++) picked[k]->inFlight = true;
     }
-    if (due.count == 0) return 0;
 
-    // ...send them without holding it...
+    // 2. Send without the lock, oldest first. If one fails, later picks for
+    //    the same person are not tried in this pass.
+    bool* sent = new bool[n > 0 ? n : 1];
+    bool* tried = new bool[n > 0 ? n : 1];
     int delivered = 0;
-    RetryQueue failed;
-    rqInit(failed);
-    RetryItem* it;
-    while ((it = rqDequeue(due)) != nullptr) {
-        it->attempts++;
-        if (m.sender->send(asNotification(it))) {
-            delivered++;
-            delete it;
-        } else {
-            rqEnqueue(failed, it);
+    for (int k = 0; k < n; k++) {
+        sent[k] = tried[k] = false;
+        bool blocked = false;
+        for (int j = 0; j < k; j++) {
+            if (picked[j]->to == picked[k]->to && !sent[j]) blocked = true;
         }
+        if (blocked) continue;
+        tried[k] = true;
+        sent[k] = m.sender->send(asNotification(picked[k]));
+        if (sent[k]) delivered++;
     }
 
-    // ...then reschedule the failures and save.
-    std::lock_guard<std::mutex> lock(m.mu);
-    while ((it = rqDequeue(failed)) != nullptr) afterFailure(m, it, now);
-    savePending(m);
+    // 3. Under the lock again: remove what was delivered or given up,
+    //    reschedule failures in place, save.
+    {
+        std::lock_guard<std::mutex> lock(m.mu);
+        for (int k = 0; k < n; k++) {
+            RetryItem* it = picked[k];
+            it->inFlight = false;
+            if (!tried[k]) continue;
+            it->attempts++;
+            if (sent[k] || !reschedule(it, now)) {
+                if (!sent[k]) {
+                    logGivenUp(m, it);
+                    std::fprintf(stderr, "EMAIL GIVEN UP after %d attempts: %s to %s\n", it->attempts,
+                                 notifTypeName(it->type), it->to.c_str());
+                }
+                rqRemove(m.retry, it);
+                delete it;
+            }
+        }
+        savePending(m);
+    }
+    delete[] picked;
+    delete[] sent;
+    delete[] tried;
     return delivered;
 }
 
