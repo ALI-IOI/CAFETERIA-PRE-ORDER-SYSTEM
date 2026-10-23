@@ -94,3 +94,19 @@ for everyone; the browser was set to dark mode for every check.
 | Staff links | Public pages contain no link to `/staff/` (checked by the E2E suite) |
 
 Still open from the first audit: `aria-invalid` on invalid fields (minor) and a real screen-reader (NVDA) pass before the demo.
+
+## Phone, tablet and desktop check (2026-10-24)
+
+Every page measured in the browser at 375×812 (phone), 812×375 (phone on its side), 768×1024
+(tablet), 1280×800, 1440×900 and 1920×1080 (desktop), logged in as a student-side account and as staff.
+
+| Check | Before | After |
+|---|---|---|
+| Sideways scrolling | none on any page | none on any page |
+| Tray on phones and tablets (below 1000 px the tray sits under every dish: 5,100 px down on a phone) | reached only by scrolling to the end or the top-bar link | a deep-green bar fixed to the bottom of the screen shows "2 dishes · ৳ 180 · Review tray" and jumps to the tray; hidden at 1000 px and wider, where the tray sits beside the dishes |
+| Tables on phones (My reservations, order history, staff menu items, reservations, stock) | scrolled sideways inside a box (up to 652 px wide in a 341 px space) | each row is a card with the column names as labels (copied from the header row by `labelTableCells`); 341/341 px |
+| Top bar height, phone (student pages / staff portal) | 164 / 212 px | 147 / 191 px |
+| Top bar height, tablet (staff portal) | 164 px | 147 px |
+| Controls under 44 px tall | brand link 38 px, skip link 41 px, tray quantity 40 px | none |
+| Text under 12 px | brand subtitle 11.5 px | none |
+| Desktop | content capped at 1180 px and centred; 3 dish columns with the tray beside them | unchanged |
