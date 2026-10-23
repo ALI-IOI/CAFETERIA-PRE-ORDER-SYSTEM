@@ -5,6 +5,7 @@
 //   reservations.txt  id|user|item|qty|reservedAt|status|readyAt|lastNoticeAt|day|expiresAt|reminderMinutes
 //                     (older 9-field lines still load; the last two are filled from settings)
 //   history.txt       same format, append-only archive of earlier days
+//   waitlist.txt      day|item|user|qty|joinedAt  (today's active waitlist entries, front first)
 //
 // Lines starting with '#' and blank lines are ignored.
 #pragma once

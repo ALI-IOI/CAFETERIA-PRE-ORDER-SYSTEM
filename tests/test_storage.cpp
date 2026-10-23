@@ -285,3 +285,70 @@ TEST(old_nine_field_reservation_lines_still_load) {
     CHECK_EQ(a->expiresAt, (time_t)(2000 + 420 * 60));  // filled in from the settings
     CHECK_EQ(a->reminderMinutes, 60);
 }
+
+TEST(waitlist_order_survives_restart) {
+    std::string dir = tempDir("waitlist");
+    CafeFixture f;
+    f.caf.menu.items[FRIED_RICE].dailyLimit = 1;
+    f.reserveOk(ALICE, FRIED_RICE, 1);
+    int pos;
+    joinWaitlist(f.caf, BOB, FRIED_RICE, 2, pos);
+    joinWaitlist(f.caf, CAROL, FRIED_RICE, 1, pos);
+    std::string err;
+    CHECK(saveCafeteria(f.caf, dir, err));
+    Restarted r(dir, f.clock.now());
+    CHECK(r.ok);
+    CHECK_EQ(waitlistActiveCount(r.caf, FRIED_RICE), 2);
+    CHECK_EQ(waitlistPosition(r.caf, BOB, FRIED_RICE), 1);
+    CHECK_EQ(waitlistPosition(r.caf, CAROL, FRIED_RICE), 2);
+    CHECK_EQ(wqAt(r.caf.waitlists[FRIED_RICE], 0)->quantity, 2);
+    CHECK_EQ(wqAt(r.caf.waitlists[FRIED_RICE], 0)->joinedAt, f.clock.now());
+}
+
+TEST(left_entries_not_saved) {
+    std::string dir = tempDir("waitlist_left");
+    CafeFixture f;
+    f.caf.menu.items[FRIED_RICE].dailyLimit = 1;
+    f.reserveOk(ALICE, FRIED_RICE, 1);
+    int pos;
+    joinWaitlist(f.caf, BOB, FRIED_RICE, 1, pos);
+    joinWaitlist(f.caf, CAROL, FRIED_RICE, 1, pos);
+    leaveWaitlist(f.caf, BOB, FRIED_RICE);
+    std::string err;
+    saveCafeteria(f.caf, dir, err);
+    Restarted r(dir, f.clock.now());
+    CHECK_EQ(r.caf.waitlists[FRIED_RICE].count, 1);
+    CHECK_EQ(waitlistPosition(r.caf, CAROL, FRIED_RICE), 1);
+}
+
+TEST(old_day_waitlist_not_loaded) {
+    std::string dir = tempDir("waitlist_old");
+    CafeFixture f;
+    f.caf.menu.items[FRIED_RICE].dailyLimit = 1;
+    f.reserveOk(ALICE, FRIED_RICE, 1);
+    int pos;
+    joinWaitlist(f.caf, BOB, FRIED_RICE, 1, pos);
+    std::string err;
+    saveCafeteria(f.caf, dir, err);
+    f.clock.set(2026, 10, 24, 8, 0, 0);
+    Restarted r(dir, f.clock.now());
+    NotificationList out;
+    nlInit(out);
+    timerTick(r.caf, out);  // rollover to the 24th
+    CHECK_EQ(waitlistActiveCount(r.caf, FRIED_RICE), 0);
+    nlClear(out);
+}
+
+TEST(corrupt_waitlist_line_refuses_start) {
+    std::string dir = tempDir("waitlist_bad");
+    CafeFixture f;
+    std::string err;
+    saveCafeteria(f.caf, dir, err);
+    {
+        std::ofstream o(dir + "/waitlist.txt");
+        o << "20261023|1|bob@uni.example|zero|0\n";
+    }
+    Restarted r(dir, f.clock.now());
+    CHECK(!r.ok);
+    CHECK(r.err.find("waitlist.txt line 1") != std::string::npos);
+}
