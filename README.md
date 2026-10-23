@@ -1,6 +1,7 @@
 # University Cafeteria Food Pre-Order System (BAUSTK, DSA I)
 
-A C++ web system in which students and teachers reserve freshly cooked food before a
+A C++ web system in which everyone at the university (students, teachers and university
+staff, from the VC's office to the bus drivers) reserves freshly cooked food before a
 cutoff, staff mark food ready, and everyone gets emails. **All reservation logic runs on
 four hand-built data structures** — no STL containers for them (checked by a build test).
 
@@ -35,7 +36,7 @@ ctest --test-dir build --output-on-failure
 |---|---|
 | `build/cafeteria_console` | Stage-2 console demo: drive the structures directly, see queues and the stack, move a fake clock (`help` lists commands) |
 | `build/cafeteria_server` | The web server (default http://127.0.0.1:8080) |
-| `build/cafeteria_admin` | Creates staff accounts (stop the server first) |
+| `build/cafeteria_admin` | Creates cafeteria staff accounts (`add-staff`) and accounts for university staff with no university email (`add-person`); stop the server first |
 | `build/e2e_section12` | End-to-end test of the proposal's section 12 plan (run by `ctest`) |
 
 ## Try it locally
@@ -47,37 +48,45 @@ staff account and a fake clock you can move forward to show reminders and expiry
 
 1. Fill every `[CONFIRM]` placeholder — the server prints the remaining ones at start-up:
    - `config/app.cfg` — university email domain, session/lockout times
-   - `config/university_list.csv` — the official student/teacher list (format in `config/university_list.sample.csv`)
+   - `config/university_list.csv` — the official list of students, teachers and university staff (`student`, `teacher` or `employee`; format in `config/university_list.sample.csv`). Only `employee` rows may leave the email blank
+   - `config/staff_computers.txt` — the cafeteria counter computers' IP addresses (one per line). Once it lists any, every other computer gets "not found" for the staff terminal
    - `config/smtp.cfg` — the sender account; set the password in the `CAFE_SMTP_PASSWORD` environment variable
    - `seed/menu.txt`, `seed/settings.txt` — menu, daily limits, cutoff, freshness, reminder interval (used on first start only; staff change them in the portal later)
-2. Create staff: `build/cafeteria_admin add-staff <login> "<full name>"`
+2. Create cafeteria staff: `build/cafeteria_admin add-staff <login> "<full name>"`.
+   University staff with no university email (bus drivers, guards, cleaners): `build/cafeteria_admin add-person <university ID> <personal email>`; they change the starting password on My account
 3. Start: `build/cafeteria_server` (options: `--port`, `--host`, `--data`, `--config`, `--behind-https`)
 
 Data lives in `data/` (text files, written atomically). Until SMTP is configured, emails are
 saved as files in `data/outbox/`.
 
 **HTTPS:** for deployment, put the server behind a reverse proxy that terminates HTTPS (e.g.
-Caddy or nginx) and start it with `--behind-https` so cookies are marked `Secure`.
+Caddy or nginx) and start it with `--behind-https` so cookies are marked `Secure`. Behind a proxy
+the server sees the proxy's address, not the counter PC's, so `staff_computers.txt` cannot tell
+them apart: restrict `/staff/` and `/api/staff/` to the counter PCs at the proxy instead.
 
 ## Additions beyond the proposal
-- **Waitlist** — when a fresh item is sold out, students and teachers can join its waitlist. A cancellation, or staff raising the daily limit, gives the freed portions to the people waiting, first come first served, with a confirmation email. At the cutoff, anyone still waiting gets one "no portion became free" email.
+- **University staff** — every employee on the university list can order. Those with a university email sign up like students; the admin tool creates accounts for those without one.
+- **Hidden staff terminal** — no public page links to it, and with `config/staff_computers.txt` filled in it answers "not found" to every computer except the cafeteria's own.
+- **Waitlist** — when a fresh item is sold out, anyone ordering can join its waitlist. A cancellation, or staff raising the daily limit, gives the freed portions to the people waiting, first come first served, with a confirmation email. At the cutoff, anyone still waiting gets one "no portion became free" email.
 - **Order history and My account** — every finished day is kept in `data/history.txt`; a person's own orders are read into a linked list and merge-sorted newest first. My account shows their details and lets them change their password.
 - **Email retry** — an email that fails to send is retried after 1, 5 and 15 minutes, then logged in `data/email_failed.log`. Waiting emails are kept in `data/pending_emails.txt` across restarts. The staff portal shows how many are waiting.
 
-## Pages (industrial "green and stainless" redesign)
+## Pages (eggshell theme)
 
 | Page | Who | What |
 |---|---|---|
 | `/` | everyone | Landing page: BAUST Khulna photo (save the real one as `web/img/campus-hero.jpg`; a placeholder shows until then), how it works, today's times |
-| `/login.html`, `/register.html` | students and teachers | Log in; register with university email + ID and an emailed code |
-| `/menu.html` | students and teachers | Menu with category tabs, search and sort; dish cards with picture and price; a tray that reserves several dishes at once (all or nothing); waitlist for sold-out dishes |
-| `/reservations.html` | students and teachers | Today's reservations (cancel before the deadline) and your order history from earlier days, newest first |
-| `/account.html` | students and teachers | Your university details; change your password (signs you out on other devices) |
-| `/staff/portal.html` | staff | Kitchen (mark ready), menu items (add, price, picture, available today), reservations, packaged stock, settings, undo |
+| `/login.html`, `/register.html` | students, teachers, university staff | Log in; register with university email + ID and an emailed code |
+| `/menu.html` | students, teachers, university staff | Menu with category tabs, search and sort; dish cards with picture and price; a tray that reserves several dishes at once (all or nothing); waitlist for sold-out dishes |
+| `/reservations.html` | students, teachers, university staff | Today's reservations (cancel before the deadline) and your order history from earlier days, newest first |
+| `/account.html` | students, teachers, university staff | Your university details; change your password (signs you out on other devices) |
+| `/staff/portal.html` | cafeteria staff (not linked from any public page; only from the listed counter computers) | Kitchen (mark ready), menu items (add, price, picture, available today), reservations, packaged stock, settings, undo |
 
 Prices are shown only; people pay at the counter. Staff pictures must be JPEG, PNG or WebP up to 2 MB.
 Demo food pictures are simple drawings in `web/img/demo/`. Headings use Oswald (SIL Open Font
-License, `web/fonts/`). `python tools/contrast_check.py` checks every colour pair.
+License, `web/fonts/`). One theme for everyone, whatever the device's dark-mode setting: an
+eggshell page, cream panels, a white top bar, light stainless lines and deep green, with a green
+announcement bar showing whether orders are open. `python tools/contrast_check.py` checks every colour pair.
 
 ## Known limits (documented, proposal §10)
 - Sessions are kept in memory; a restart logs everyone out.

@@ -10,13 +10,18 @@ printf 'demo-staff-pass\ndemo-staff-pass\n' | build/cafeteria_admin --data demo/
 build/cafeteria_server --config demo/config --data demo/data --fake-clock 2026-10-23T08:30 --tick-seconds 0
 ```
 
-Open http://127.0.0.1:8080 for the landing page; students log in at `/login.html`, staff at `/staff/login.html`.
+Open http://127.0.0.1:8080 for the landing page; students, teachers and university staff log in at
+`/login.html`. Cafeteria staff open `/staff/login.html` directly: no public page links to it.
+`demo/config/staff_computers.txt` is empty, so any computer can reach it in the demo (the server
+says so at start-up); list addresses there to see the terminal disappear for everyone else.
 
 | Account | Login | Password (test only) |
 |---|---|---|
 | Staff | `demo.staff` | `demo-staff-pass` |
 | Student | register `ayon@uni.example`, ID `1072520005101030` | `demo-student-pass` |
 | Teacher | register `teacher1@uni.example`, ID `2000000000000001` | `demo-teacher-pass` |
+| University staff | register `guard1@uni.example`, ID `3000000000000002` | `demo-guard-pass` |
+| University staff, no university email | `printf 'demo-driver-pass\ndemo-driver-pass\n' \| build/cafeteria_admin --data demo/data --config demo/config add-person 3000000000000001 rahim@example.com` (server stopped), then log in as `rahim@example.com` | `demo-driver-pass` |
 
 The verification code is in the newest `*_verification.txt` file in `demo/data/outbox/`.
 

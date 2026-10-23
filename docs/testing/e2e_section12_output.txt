@@ -97,7 +97,19 @@ PASS account: wrong current password refused
 PASS account: password changed, this session stays signed in
 PASS account: old password no longer works, new one does
 PASS account: staff use the admin tool, not this page
+PASS employee: registers with a university email and reserves
+PASS employee: blank-email row refused with the office message
+PASS employee: admin-added account logs in, reserves, gets the confirmation email
+PASS pages: copy names university staff
+PASS staff hidden: no public page links to /staff/
+PASS setup: restart with a counter PC that is not this computer
+PASS staff hidden: pages and APIs answer like a missing page
+PASS staff_hidden_case_and_path_tricks
+PASS setup: restart with an empty counter list
+PASS staff hidden: empty list prints the notice and the page opens
+PASS theme: public info says whether orders are open
+PASS theme: no dark-mode stylesheet
 (stopping server)
 (server stopped)
 
-99 checks, 99 passed, 0 failed
+111 checks, 111 passed, 0 failed
