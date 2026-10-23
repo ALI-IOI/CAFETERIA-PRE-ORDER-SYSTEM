@@ -43,7 +43,7 @@ TEST(ready_skips_cancelled) {
     f.reserveOk(ALICE, TEHARI, 1);
     Reservation* b = f.reserveOk(BOB, TEHARI, 1);
     f.reserveOk(CAROL, TEHARI, 1);
-    cancelReservation(f.caf, BOB, b->id);
+    cancelReservation(f.caf, BOB, b->id, f.out);
     nlClear(f.out);
     ReadyReport rep;
     markReady(f.caf, STAFF, TEHARI, 0, f.out, rep);
@@ -166,7 +166,7 @@ TEST(rollover_expires_uncooked_and_resets_counts) {
     Reservation* waiting = f.reserveOk(ALICE, TEHARI, 1);
     Reservation* cancelled = f.reserveOk(BOB, KHICHURI, 1);
     Reservation* ready = f.reserveOk(CAROL, FRIED_RICE, 1);
-    cancelReservation(f.caf, BOB, cancelled->id);
+    cancelReservation(f.caf, BOB, cancelled->id, f.out);
     f.clock.set(2026, 10, 23, 22, 0, 0);
     ReadyReport rep;
     markReady(f.caf, STAFF, FRIED_RICE, 0, f.out, rep);  // ready late, fresh until 05:00

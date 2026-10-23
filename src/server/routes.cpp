@@ -332,7 +332,7 @@ static void routeUser(httplib::Server& svr, AppState& app) {
                 fail(c, 404, resultMessage(Result::NotFound));
                 return;
             }
-            Result r = cancelReservation(c.app.caf, c.session->login, id);
+            Result r = cancelReservation(c.app.caf, c.session->login, id, c.out);
             if (r != Result::Ok) {
                 fail(c, httpStatus(r), resultMessage(r));
                 return;
@@ -445,7 +445,7 @@ static void routeStaff(httplib::Server& svr, AppState& app) {
                 fail(c, 400, "Enter a whole number.");
                 return;
             }
-            Result r = setDailyLimit(c.app.caf, c.session->login, item, value, rec);
+            Result r = setDailyLimit(c.app.caf, c.session->login, item, value, c.out, rec);
             if (r == Result::InvalidValue) {
                 const MenuItem* m = menuAt(c.app.caf.menu, item);
                 fail(c, 400, "The limit must be between portions already reserved (" +
@@ -509,7 +509,7 @@ static void routeStaff(httplib::Server& svr, AppState& app) {
     svr.Post("/api/staff/undo", [&](const Request& req, Response& res) {
         handle(app, req, res, Access::Staff, [](Ctx& c) {
             StaffAction undone;
-            Result r = undoLast(c.app.caf, c.session->login, undone);
+            Result r = undoLast(c.app.caf, c.session->login, c.out, undone);
             if (r != Result::Ok) {
                 fail(c, httpStatus(r), resultMessage(r));
                 return;

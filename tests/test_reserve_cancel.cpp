@@ -63,7 +63,7 @@ TEST(per_user_limit_across_two_reservations) {
     // a different item has its own limit
     CHECK(f.reserveOk(ALICE, TEHARI, 2) != nullptr);
     // cancelling frees one portion of the user's allowance
-    CHECK_EQ(cancelReservation(f.caf, ALICE, first->id), Result::Ok);
+    CHECK_EQ(cancelReservation(f.caf, ALICE, first->id, f.out), Result::Ok);
     CHECK_EQ(userPortionsToday(f.caf, ALICE, KHICHURI), 1);
     CHECK(f.reserveOk(ALICE, KHICHURI, 1) != nullptr);
 }
@@ -73,7 +73,7 @@ TEST(queue_full_rejects_reservation) {
     Reservation* a = f.reserveOk(ALICE, TEHARI, 1);
     CHECK(f.reserveOk(BOB, TEHARI, 1) != nullptr);
     // cancelled entries stay in the queue, so the queue is still full
-    CHECK_EQ(cancelReservation(f.caf, ALICE, a->id), Result::Ok);
+    CHECK_EQ(cancelReservation(f.caf, ALICE, a->id, f.out), Result::Ok);
     Reservation* r = nullptr;
     CHECK_EQ(reserve(f.caf, CAROL, TEHARI, 1, f.out, &r), Result::QueueFull);
     CHECK_EQ(f.caf.menu.items[TEHARI].reservedToday, 1);  // nothing leaked
@@ -97,7 +97,7 @@ TEST(cancel_before_deadline_returns_portion) {
     Reservation* r = f.reserveOk(ALICE, TEHARI, 2);
     CHECK_EQ(menuRemaining(f.caf.menu.items[TEHARI]), 8);
     f.clock.set(2026, 10, 23, 9, 59, 59);
-    CHECK_EQ(cancelReservation(f.caf, ALICE, r->id), Result::Ok);
+    CHECK_EQ(cancelReservation(f.caf, ALICE, r->id, f.out), Result::Ok);
     CHECK_EQ(r->status, ResStatus::Cancelled);
     CHECK_EQ(menuRemaining(f.caf.menu.items[TEHARI]), 10);
 }
@@ -106,7 +106,7 @@ TEST(cancel_after_deadline_keeps_portion) {
     CafeFixture f;
     Reservation* r = f.reserveOk(ALICE, TEHARI, 2);
     f.clock.set(2026, 10, 23, 10, 0, 0);
-    CHECK_EQ(cancelReservation(f.caf, ALICE, r->id), Result::DeadlinePassed);
+    CHECK_EQ(cancelReservation(f.caf, ALICE, r->id, f.out), Result::DeadlinePassed);
     CHECK_EQ(r->status, ResStatus::Reserved);
     CHECK_EQ(menuRemaining(f.caf.menu.items[TEHARI]), 8);
 }
@@ -114,16 +114,16 @@ TEST(cancel_after_deadline_keeps_portion) {
 TEST(cancel_twice_refused) {
     CafeFixture f;
     Reservation* r = f.reserveOk(ALICE, TEHARI, 1);
-    CHECK_EQ(cancelReservation(f.caf, ALICE, r->id), Result::Ok);
-    CHECK_EQ(cancelReservation(f.caf, ALICE, r->id), Result::NotCancellable);
+    CHECK_EQ(cancelReservation(f.caf, ALICE, r->id, f.out), Result::Ok);
+    CHECK_EQ(cancelReservation(f.caf, ALICE, r->id, f.out), Result::NotCancellable);
     CHECK_EQ(menuRemaining(f.caf.menu.items[TEHARI]), 10);  // returned only once
 }
 
 TEST(cancel_others_reservation_is_NotOwner) {
     CafeFixture f;
     Reservation* r = f.reserveOk(ALICE, TEHARI, 1);
-    CHECK_EQ(cancelReservation(f.caf, BOB, r->id), Result::NotOwner);
-    CHECK_EQ(cancelReservation(f.caf, BOB, 999), Result::NotFound);
+    CHECK_EQ(cancelReservation(f.caf, BOB, r->id, f.out), Result::NotOwner);
+    CHECK_EQ(cancelReservation(f.caf, BOB, 999, f.out), Result::NotFound);
     CHECK_EQ(r->status, ResStatus::Reserved);
 }
 
@@ -131,7 +131,7 @@ TEST(cancel_ready_reservation_refused) {
     CafeFixture f;
     Reservation* r = f.reserveOk(ALICE, TEHARI, 1);
     r->status = ResStatus::Ready;  // markReady is Task 6; set directly here
-    CHECK_EQ(cancelReservation(f.caf, ALICE, r->id), Result::NotCancellable);
+    CHECK_EQ(cancelReservation(f.caf, ALICE, r->id, f.out), Result::NotCancellable);
 }
 
 TEST(settings_change_moves_cutoff) {

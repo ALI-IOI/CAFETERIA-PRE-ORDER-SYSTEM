@@ -41,7 +41,7 @@ Result setStock(Cafeteria& caf, const std::string& staff, int itemIndex, int val
 }
 
 Result setDailyLimit(Cafeteria& caf, const std::string& staff, int itemIndex, int value,
-                     bool& undoRecorded) {
+                     NotificationList& out, bool& undoRecorded) {
     undoRecorded = false;
     cafEnsureToday(caf);  // the limit is checked against today's reserved count
     MenuItem* item = menuAt(caf.menu, itemIndex);
@@ -57,6 +57,7 @@ Result setDailyLimit(Cafeteria& caf, const std::string& staff, int itemIndex, in
                     std::to_string(value);
     item->dailyLimit = value;
     undoRecorded = stPush(caf.history, a);
+    promoteWaitlist(caf, itemIndex, out);  // a raise frees portions for people waiting
     return Result::Ok;
 }
 
@@ -114,13 +115,14 @@ static bool restore(Cafeteria& caf, const StaffAction& a) {
     return false;
 }
 
-Result undoLast(Cafeteria& caf, const std::string& staff, StaffAction& undone) {
+Result undoLast(Cafeteria& caf, const std::string& staff, NotificationList& out, StaffAction& undone) {
     (void)staff;
     if (!stPop(caf.history, undone)) return Result::NothingToUndo;
     if (!restore(caf, undone)) {
         stPush(caf.history, undone);  // cannot fail: we just popped
         return Result::UndoBlocked;
     }
+    if (undone.type == ActionType::SetDailyLimit) promoteWaitlist(caf, undone.itemIndex, out);
     return Result::Ok;
 }
 

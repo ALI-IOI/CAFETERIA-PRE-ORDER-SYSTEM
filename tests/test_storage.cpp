@@ -72,7 +72,7 @@ TEST(restart_rebuilds_cooking_queue_skipping_cancelled) {
     f.reserveOk(ALICE, TEHARI, 1);
     Reservation* b = f.reserveOk(BOB, TEHARI, 1);
     f.reserveOk(CAROL, TEHARI, 1);
-    cancelReservation(f.caf, BOB, b->id);
+    cancelReservation(f.caf, BOB, b->id, f.out);
     std::string err;
     saveCafeteria(f.caf, dir, err);
 
@@ -139,7 +139,7 @@ TEST(ids_continue_after_archive) {
     std::string dir = tempDir("ids_archive");
     CafeFixture f;
     Reservation* a = f.reserveOk(ALICE, TEHARI, 1);
-    cancelReservation(f.caf, ALICE, a->id);
+    cancelReservation(f.caf, ALICE, a->id, f.out);
     f.clock.set(2026, 10, 24, 0, 1, 0);
     timerTick(f.caf, f.out);  // rollover moves R-0001 to the archive
     std::string err;

@@ -3,7 +3,7 @@
 #pragma once
 #include <string>
 
-enum class NotifType { Confirmation, Ready, Reminder, Expired, VerificationCode };
+enum class NotifType { Confirmation, Ready, Reminder, Expired, VerificationCode, WaitlistClosed };
 
 struct Notification {
     NotifType type;

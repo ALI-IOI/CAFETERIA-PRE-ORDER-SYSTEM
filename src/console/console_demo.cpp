@@ -115,6 +115,8 @@ static void printHelp() {
         "  reserve <user> <item> <qty>  reserve a fresh item\n"
         "  cancel <user> <id>           cancel your reservation\n"
         "  mine <user>                  your reservations (linked list traversal)\n"
+        "  wait <user> <item> <qty>     join the waitlist of a sold-out item (queue)\n"
+        "  unwait <user> <item>         leave that waitlist\n"
         "  ready <item> [portions]      staff: mark cooked portions ready (FIFO)\n"
         "  collected <id>               staff: mark a reservation collected\n"
         "  stock <item> <n>             staff: set packaged stock\n"
@@ -123,7 +125,7 @@ static void printHelp() {
         "                               freshness_minutes, reminder_minutes, per_user_limit\n"
         "  undo                         staff: undo the latest action (stack pop)\n"
         "  history                      show the staff action stack\n"
-        "  queues                       show cooking and reminder queues\n"
+        "  queues                       show cooking, waitlist and reminder queues\n"
         "  list                         staff: today's reservations sorted by item and time\n"
         "  time <HH:MM>                 set the demo clock (same day)\n"
         "  advance <minutes>            move the clock forward, running the timer each minute\n"
@@ -172,9 +174,26 @@ int main() {
                 std::printf("Usage: cancel <user> <id>\n");
                 continue;
             }
-            Result r = cancelReservation(caf, a, x);
+            Result r = cancelReservation(caf, a, x, out);
             if (r == Result::Ok) std::printf("Cancelled %s\n", resCode(x).c_str());
             else std::printf("Refused: %s\n", resultMessage(r));
+        } else if (cmd == "wait") {
+            int pos = 0;
+            if (a.empty() || !toInt(b, x) || !toInt(c, y)) {
+                std::printf("Usage: wait <user> <item> <qty>\n");
+                continue;
+            }
+            Result r = joinWaitlist(caf, a, x, y, pos);
+            if (r == Result::Ok)
+                std::printf("Joined the %s waitlist at position %d\n", caf.menu.items[x].name.c_str(), pos);
+            else std::printf("Refused: %s\n", resultMessage(r));
+        } else if (cmd == "unwait") {
+            if (a.empty() || !toInt(b, x)) {
+                std::printf("Usage: unwait <user> <item>\n");
+                continue;
+            }
+            Result r = leaveWaitlist(caf, a, x);
+            std::printf("%s\n", r == Result::Ok ? "Left the waitlist" : resultMessage(r));
         } else if (cmd == "mine") {
             Reservation* arr[256];
             int n = listUserReservations(caf, a, arr, 256);
@@ -210,7 +229,7 @@ int main() {
                 continue;
             }
             Result r = cmd == "stock" ? setStock(caf, staff, x, y, recorded)
-                                      : setDailyLimit(caf, staff, x, y, recorded);
+                                      : setDailyLimit(caf, staff, x, y, out, recorded);
             if (r == Result::Ok) {
                 std::printf("Done: %s\n", stIsEmpty(caf.history) ? "" : stPeek(caf.history)->description.c_str());
                 reportUndo(recorded);
@@ -231,7 +250,7 @@ int main() {
             }
         } else if (cmd == "undo") {
             StaffAction undone;
-            Result r = undoLast(caf, staff, undone);
+            Result r = undoLast(caf, staff, out, undone);
             if (r == Result::Ok) std::printf("Undid: %s\n", undone.description.c_str());
             else if (r == Result::NothingToUndo) std::printf("Nothing to undo (stack is empty)\n");
             else std::printf("Refused: %s\n", resultMessage(r));
@@ -242,6 +261,17 @@ int main() {
                 if (caf.menu.items[i].kind != ItemKind::Fresh) continue;
                 std::string title = "Cooking queue " + caf.menu.items[i].name;
                 printQueue(title.c_str(), caf.cooking[i]);
+            }
+            for (int i = 0; i < caf.menu.count; i++) {
+                const WaitQueue& w = caf.waitlists[i];
+                if (wqIsEmpty(w)) continue;
+                std::printf("Waitlist %s (front -> rear): ", caf.menu.items[i].name.c_str());
+                for (int k = 0; k < w.count; k++) {
+                    const WaitEntry* e = wqAt(w, k);
+                    std::printf("%s%s x%d %s", k ? " | " : "", e->user.c_str(), e->quantity,
+                                e->active ? "waiting" : "left");
+                }
+                std::printf("   [%d/%d]\n", w.count, w.capacity);
             }
             printQueue("Reminder queue", caf.reminders);
         } else if (cmd == "list") {
@@ -274,6 +304,7 @@ int main() {
         } else {
             std::printf("Unknown command: %s (type help)\n", cmd.c_str());
         }
+        printNotifications(out);  // e.g. a cancellation that promoted someone from the waitlist
     }
     std::printf("Bye\n");
     nlClear(out);
