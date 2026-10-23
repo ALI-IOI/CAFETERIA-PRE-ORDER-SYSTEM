@@ -190,3 +190,23 @@ TEST(rollover_expires_uncooked_and_resets_counts) {
     f.clock.set(2026, 10, 24, 8, 0, 0);
     CHECK(f.reserveOk(ALICE, TEHARI, 2) != nullptr);
 }
+
+// Review finding 1: a reservation made after midnight but before the first
+// timer tick must not be wiped by the rollover that tick would run.
+TEST(reserve_after_midnight_before_tick_is_kept) {
+    CafeFixture f;
+    f.caf.menu.items[TEHARI].dailyLimit = 2;
+    f.reserveOk(ALICE, TEHARI, 2);                 // yesterday: sold out
+    f.clock.set(2026, 10, 24, 0, 0, 20);            // 20 s after midnight, no tick yet
+    Reservation* r = f.reserveOk(BOB, TEHARI, 1);   // must not see yesterday's count
+    CHECK(r != nullptr);
+    if (r == nullptr) return;
+    CHECK_EQ(f.caf.menu.items[TEHARI].reservedToday, 1);
+    timerTick(f.caf, f.out);                        // the first tick of the day
+    CHECK_EQ(f.caf.menu.items[TEHARI].reservedToday, 1);
+    CHECK_EQ(f.caf.cooking[TEHARI].count, 1);
+    ReadyReport rep;
+    markReady(f.caf, STAFF, TEHARI, 0, f.out, rep);
+    CHECK_EQ(rep.madeReady, 1);
+    CHECK_EQ(r->status, ResStatus::Ready);
+}

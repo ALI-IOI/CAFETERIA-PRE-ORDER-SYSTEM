@@ -130,7 +130,8 @@ int main(int argc, char** argv) {
     if (cfg.emailDomain.empty() || app.auth.uni.count == 0)
         std::printf("NOTE: registration is disabled until email_domain in %s/app.cfg and %s are set.\n",
                     configDir.c_str(), uniPath.c_str());
-    saveAll(app);  // first start: writes the seed into data/
+    cafEnsureToday(app.caf);  // started on a new day: roll over before serving anyone
+    saveAll(app);             // first start: writes the seed into data/
 
     app.email = makeSender(smtp, dataDir + "/outbox");
     bool outbox = std::string(app.email->modeName()) == "outbox";

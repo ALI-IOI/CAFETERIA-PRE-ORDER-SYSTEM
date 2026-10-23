@@ -58,6 +58,7 @@ static void handle(AppState& app, const Request& req, Response& res, Access acce
     nlInit(c.out);
     {
         std::lock_guard<std::mutex> lock(app.mu);
+        cafEnsureToday(app.caf);  // menus and counters never show yesterday's numbers
         c.session = sessionGet(app.auth, cookieValue(req, "session"));
         bool allowed = true;
         if (access == Access::User || access == Access::Staff) {

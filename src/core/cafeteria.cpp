@@ -62,6 +62,7 @@ int userPortionsToday(const Cafeteria& caf, const std::string& user, int itemInd
 
 Result reserve(Cafeteria& caf, const std::string& user, int itemIndex, int quantity,
                NotificationList& out, Reservation** created) {
+    cafEnsureToday(caf);
     if (created) *created = nullptr;
     MenuItem* item = menuAt(caf.menu, itemIndex);
     if (item == nullptr) return Result::BadItem;
@@ -91,6 +92,7 @@ Result reserve(Cafeteria& caf, const std::string& user, int itemIndex, int quant
 }
 
 Result cancelReservation(Cafeteria& caf, const std::string& user, int reservationId) {
+    cafEnsureToday(caf);
     Reservation* r = rlFindById(caf.reservations, reservationId);
     if (r == nullptr) return Result::NotFound;
     if (r->user != user) return Result::NotOwner;
@@ -135,6 +137,7 @@ static const std::string& itemName(const Cafeteria& caf, const Reservation* r) {
 Result markReady(Cafeteria& caf, const std::string& staff, int itemIndex, int portions,
                  NotificationList& out, ReadyReport& report) {
     (void)staff;
+    cafEnsureToday(caf);
     report.madeReady = 0;
     report.skipped = 0;
     report.leftWaiting = 0;
@@ -222,10 +225,14 @@ static void rollover(Cafeteria& caf, int newDay) {
     caf.currentDay = newDay;
 }
 
+void cafEnsureToday(Cafeteria& caf) {
+    int today = dayKeyOf(caf.clock->now());
+    if (today != caf.currentDay) rollover(caf, today);
+}
+
 void timerTick(Cafeteria& caf, NotificationList& out) {
     time_t now = caf.clock->now();
-    int today = dayKeyOf(now);
-    if (today != caf.currentDay) rollover(caf, today);
+    cafEnsureToday(caf);
 
     const time_t interval = (time_t)caf.settings.reminderIntervalMinutes * 60;
     const time_t window = (time_t)caf.settings.freshnessMinutes * 60;

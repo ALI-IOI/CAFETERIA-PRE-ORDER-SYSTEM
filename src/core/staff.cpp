@@ -43,6 +43,7 @@ Result setStock(Cafeteria& caf, const std::string& staff, int itemIndex, int val
 Result setDailyLimit(Cafeteria& caf, const std::string& staff, int itemIndex, int value,
                      bool& undoRecorded) {
     undoRecorded = false;
+    cafEnsureToday(caf);  // the limit is checked against today's reserved count
     MenuItem* item = menuAt(caf.menu, itemIndex);
     if (item == nullptr) return Result::BadItem;
     if (item->kind != ItemKind::Fresh) return Result::WrongKind;
