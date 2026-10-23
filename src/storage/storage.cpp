@@ -1,5 +1,6 @@
 #include "storage/storage.h"
 #include "storage/file_util.h"
+#include "storage/image_store.h"
 #include <fstream>
 
 static std::string lineError(const char* file, int lineNo, const std::string& why) {
@@ -34,8 +35,7 @@ static bool loadMenu(Cafeteria& caf, const std::string& path, std::string& err) 
         }
         if (n == 8) {
             int avail;
-            bool badImage = f[6].find('/') != std::string::npos || f[6].find('\\') != std::string::npos ||
-                            f[6].find("..") != std::string::npos;
+            bool badImage = !f[6].empty() && !validImageFileName(f[6]);  // only server-chosen names
             if (!parseIntStrict(f[5], m.priceTaka) || m.priceTaka < 0 || m.priceTaka > MAX_PRICE_TAKA ||
                 badImage || !parseIntStrict(f[7], avail) || (avail != 0 && avail != 1)) {
                 err = lineError("menu.txt", lineNo, "bad price, picture name or availability");
