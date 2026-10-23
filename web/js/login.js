@@ -12,7 +12,7 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
   });
   button.disabled = false;
   if (r.ok) {
-    window.location.href = "/home.html";
+    window.location.href = "/menu.html";
   } else {
     say("msg", r.error);
     form.password.value = "";

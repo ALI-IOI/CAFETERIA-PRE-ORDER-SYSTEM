@@ -54,6 +54,50 @@ function freshPanel(item) {
     limitForm);
 }
 
+// One row of the "Menu items" table: picture, price, availability, upload.
+function itemRow(item) {
+  const priceId = "price-" + item.index, availId = "avail-" + item.index, fileId = "file-" + item.index;
+  const priceForm = el("form", { class: "row" },
+    el("div", { class: "field" },
+      el("label", { for: priceId, class: "visually-hidden" }, "Price of " + item.name + " in taka"),
+      el("input", { id: priceId, type: "number", min: 0, max: 9999, value: item.price, required: true })),
+    el("button", { class: "btn btn--ghost", type: "submit" }, "Save"));
+  priceForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    action("/api/staff/items/price", { item: item.index, price: document.getElementById(priceId).value });
+  });
+
+  const avail = el("input", { id: availId, type: "checkbox", checked: item.available });
+  avail.addEventListener("change", () =>
+    action("/api/staff/items/available", { item: item.index, available: avail.checked ? "1" : "0" }));
+
+  const fileInput = el("input", { id: fileId, type: "file", accept: "image/jpeg,image/png,image/webp" });
+  const uploadForm = el("form", { class: "row" },
+    el("div", { class: "field" }, el("label", { for: fileId, class: "visually-hidden" }, "New picture for " + item.name), fileInput),
+    el("button", { class: "btn btn--ghost", type: "submit" }, "Upload"));
+  uploadForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!fileInput.files.length) {
+      say("msg", "Choose a picture first.");
+      return;
+    }
+    const data = new FormData();
+    data.append("item", String(item.index));
+    data.append("image", fileInput.files[0]);
+    const r = await api.upload("/api/staff/items/image", data);
+    if (!requireLogin(r, "/staff/login.html")) return;
+    report(r);
+    refresh();
+  });
+
+  return el("tr", {},
+    el("td", {}, el("img", { class: "thumb", src: item.image, alt: "" })),
+    el("th", { scope: "row" }, item.name, el("br"), el("span", { class: "hint" }, item.category + " · " + item.kind)),
+    el("td", {}, priceForm),
+    el("td", {}, el("label", { for: availId, class: "visually-hidden" }, item.name + " available today"), avail),
+    el("td", {}, uploadForm));
+}
+
 function stockRow(item) {
   const id = "stock-" + item.index;
   const form = el("form", { class: "row" },
@@ -115,6 +159,9 @@ async function refresh() {
     " · " + o.reminderQueue + " ready order(s) waiting for collection";
   const fresh = o.items.filter((i) => i.kind === "fresh");
   document.getElementById("fresh").replaceChildren(...fresh.map(freshPanel));
+  document.getElementById("item-rows").replaceChildren(...o.items.map(itemRow));
+  document.getElementById("ni-cats").replaceChildren(
+    ...[...new Set(o.items.map((i) => i.category))].map((c) => el("option", { value: c })));
   document.getElementById("stock-rows").replaceChildren(
     ...o.items.filter((i) => i.kind === "packaged").map(stockRow));
   fillSettings(o.settings);
@@ -165,3 +212,17 @@ document.getElementById("settings-form").addEventListener("submit", async (e) =>
 
 wireLogout("logout", "/staff/login.html");
 refresh();
+
+document.getElementById("add-item").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const r = await api.post("/api/staff/items", {
+    name: document.getElementById("ni-name").value.trim(),
+    category: document.getElementById("ni-cat").value.trim(),
+    kind: document.getElementById("ni-kind").value,
+    price: document.getElementById("ni-price").value,
+    amount: document.getElementById("ni-amount").value,
+  });
+  if (!requireLogin(r, "/staff/login.html")) return;
+  if (report(r)) e.target.reset();
+  refresh();
+});

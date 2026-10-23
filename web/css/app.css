@@ -66,6 +66,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }  /* component display rules must not override the hidden attribute */
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--page); color: var(--ink); font: 1rem/1.55 var(--font-body); }
 a { color: var(--accent-text); text-underline-offset: 3px; }
@@ -117,13 +118,13 @@ main { max-width: 1180px; margin: 0 auto; padding: var(--space); }
   background-size: cover, cover; background-position: center, center;
   border-bottom: 1px solid var(--steel);
 }
-.hero__inner { max-width: 1180px; margin: 0 auto; padding: clamp(3rem, 8vw, 7rem) var(--space); }
+.hero__inner { max-width: 1180px; margin: 0 auto; padding: clamp(3rem, 8vw, 7rem) var(--space) clamp(6rem, 12vw, 8rem); }
 .hero__panel { max-width: 640px; background: color-mix(in srgb, var(--hero-bg) 88%, transparent); padding: clamp(1rem, 3vw, 2rem); border-left: 6px solid var(--accent); }
 .hero__eyebrow { color: var(--hero-accent-text); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 0.5rem; }
 .hero p { color: var(--hero-soft); }
 .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; }
 
-.steps { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); counter-reset: step; }
+.steps { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); list-style: none; padding: 0; margin: 0; }
 .step { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--steel); padding: 1.25rem; }
 .step__num { font-size: 2.4rem; color: var(--accent-text); display: block; margin-bottom: 0.25rem; }
 

@@ -10,6 +10,10 @@
     <path d="M900 330h520M900 410h520M900 490h520M1030 250v300M1160 250v300M1290 250v300"/>
     <path d="M860 250l300-120 300 120"/>
   </g>
-  <rect x="1060" y="600" width="480" height="56" fill="#F1F2F3" stroke="#6B737B" stroke-width="2" stroke-dasharray="10 6"/>
-  <text x="1300" y="636" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" fill="#3A4046">BAUST Khulna photo goes here (web/img/campus-hero.jpg)</text>
+  <!-- label kept inside the area that stays visible when the picture is cropped -->
+  <g transform="translate(800 630)">
+    <rect x="-200" y="-30" width="400" height="66" fill="#F1F2F3" stroke="#6B737B" stroke-width="2" stroke-dasharray="10 6"/>
+    <text y="-4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="600" fill="#3A4046">BAUST Khulna photo goes here</text>
+    <text y="22" text-anchor="middle" font-family="Consolas, monospace" font-size="16" fill="#3A4046">web/img/campus-hero.jpg</text>
+  </g>
 </svg>

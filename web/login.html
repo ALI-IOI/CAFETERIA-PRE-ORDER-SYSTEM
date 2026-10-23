@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log in · BAUSTK Cafeteria</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="/">BAUSTK Cafeteria <small>Fresh food pre-order</small></a>
+      <nav aria-label="Main">
+        <a href="/register.html">Create account</a>
+        <a href="/staff/login.html">Staff portal</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="narrow">
+    <h1>Log in</h1>
+    <span class="rule" aria-hidden="true"></span>
+    <p class="lead">For BAUSTK students and teachers.</p>
+    <form id="login-form" class="card" novalidate>
+      <div class="field">
+        <label for="email">University email</label>
+        <input id="email" name="email" type="email" autocomplete="username" required maxlength="100">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="128">
+      </div>
+      <button class="btn btn--primary btn--block" type="submit">Log in</button>
+      <p id="msg" class="msg" role="status" aria-live="polite"></p>
+      <p>New here? <a href="/register.html">Create an account with your university email</a>.</p>
+    </form>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/login.js"></script>
+</body>
+</html>

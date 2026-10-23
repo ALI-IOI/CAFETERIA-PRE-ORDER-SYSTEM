@@ -37,7 +37,7 @@ step2.addEventListener("submit", async (e) => {
     return;
   }
   say("msg2", r.message + " Taking you to the login page…", true);
-  setTimeout(() => (window.location.href = "/"), 1500);
+  setTimeout(() => (window.location.href = "/login.html"), 1500);
 });
 
 document.getElementById("restart").addEventListener("click", () => {

@@ -16,6 +16,16 @@ const api = {
     });
     return api._handle(res);
   },
+  // Multipart upload (staff pictures). The browser sets the multipart boundary.
+  async upload(path, formData) {
+    const res = await fetch(path, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "X-Cafe": "1" },
+      body: formData,
+    });
+    return api._handle(res);
+  },
   async _handle(res) {
     let data;
     try {
@@ -50,6 +60,30 @@ function say(target, text, ok) {
   node.textContent = text || "";
   node.className = "msg " + (ok ? "msg--ok" : "msg--error");
 }
+
+// "৳ 120", or a note when staff have not set a price yet.
+function taka(amount) {
+  return amount > 0 ? "৳ " + amount : "Price at counter";
+}
+
+// sessionStorage can be unavailable (private mode, blocked storage).
+const store = {
+  get(key, fallback) {
+    try {
+      const v = sessionStorage.getItem(key);
+      return v === null ? fallback : JSON.parse(v);
+    } catch (e) {
+      return fallback;
+    }
+  },
+  set(key, value) {
+    try {
+      sessionStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      /* the tray then lasts only until the page is reloaded */
+    }
+  },
+};
 
 function statusChip(status) {
   return el("span", { class: "chip chip--" + status }, status);
