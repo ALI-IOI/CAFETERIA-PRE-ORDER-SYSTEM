@@ -213,3 +213,36 @@ AuthResult addStaff(AuthState& a, const std::string& login, const std::string& n
     u->verified = true;
     return AuthResult::Ok;
 }
+
+AuthResult changePassword(AuthState& a, const std::string& loginName, const std::string& current,
+                          const std::string& next, const std::string& keepToken) {
+    User* u = ulFind(a.users, loginName);
+    if (u == nullptr || current.size() > (size_t)MAX_PASSWORD_LEN) return AuthResult::BadCredentials;
+    time_t now = a.clock->now();
+    if (now < u->lockedUntil) return AuthResult::Locked;
+    if (!verifyPassword(u->passwordHash, current)) {
+        u->failedLogins++;
+        if (u->failedLogins >= a.cfg.lockoutFailures) {
+            u->failedLogins = 0;
+            u->lockedUntil = now + (time_t)a.cfg.lockoutMinutes * 60;
+            return AuthResult::Locked;
+        }
+        return AuthResult::BadCredentials;
+    }
+    u->failedLogins = 0;
+    if (!validPassword(next) || next == current) return AuthResult::WeakPassword;
+    std::string hash = hashPassword(next);
+    if (hash.empty()) return AuthResult::CryptoError;
+    u->passwordHash = hash;
+
+    // Sign the account out everywhere else (linked-list removal).
+    Session* prev = nullptr;
+    Session* s = a.sessions.head;
+    while (s != nullptr) {
+        Session* following = s->next;
+        if (s->login == loginName && s->token != keepToken) removeAfter(a.sessions, prev, s);
+        else prev = s;
+        s = following;
+    }
+    return AuthResult::Ok;
+}

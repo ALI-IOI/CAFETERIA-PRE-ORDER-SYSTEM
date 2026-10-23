@@ -103,7 +103,11 @@ p { margin: 0 0 0.75rem; }
 /* ---- layout ------------------------------------------------------------- */
 main { max-width: 1180px; margin: 0 auto; padding: var(--space); }
 .narrow { max-width: 480px; margin: clamp(1rem, 5vw, 3rem) auto; }
+.details { display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1.25rem; margin: 0; }
+.details dt { color: var(--ink-soft); }
+.details dd { margin: 0; overflow-wrap: anywhere; }
 .card, .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--space); }
+section.card + form.card { margin-top: var(--space); }  /* My account: details, then the password form */
 .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
 .split { display: grid; gap: 1.25rem; grid-template-columns: 1fr; }
 .split > * { min-width: 0; }

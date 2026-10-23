@@ -34,5 +34,24 @@ async function load() {
   document.getElementById("empty").hidden = rows.length > 0;
 }
 
+async function loadHistory() {
+  const h = await api.get("/api/reservations/history");
+  if (!requireLogin(h, "/login.html")) return;
+  if (!h.ok) {
+    say("msg", h.error);
+    return;
+  }
+  const rows = h.orders.map((o) => el("tr", {},
+    el("th", { scope: "row" }, o.code),
+    el("td", {}, dayText(o.day)),
+    el("td", {}, o.item),
+    el("td", { class: "num" }, o.quantity),
+    el("td", {}, o.reservedAt),
+    el("td", {}, statusChip(o.status))));
+  document.getElementById("history-rows").replaceChildren(...rows);
+  document.getElementById("history-empty").hidden = rows.length > 0;
+}
+
 wireLogout("logout", "/");
 load();
+loadHistory();
