@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Log in · BAUSTK Cafeteria</title>
+  <title>BAUSTK Cafeteria · Fresh food pre-order</title>
   <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
@@ -12,33 +12,58 @@
     <div class="topbar__inner">
       <a class="brand" href="/">BAUSTK Cafeteria <small>Fresh food pre-order</small></a>
       <nav aria-label="Main">
+        <a href="/login.html">Log in</a>
         <a href="/register.html">Create account</a>
         <a href="/staff/login.html">Staff portal</a>
       </nav>
     </div>
   </header>
 
-  <main id="main" class="narrow">
-    <h1>Reserve today's fresh food</h1>
-    <p class="lead">Khichuri, Fried Rice and Tehari are cooked to order. Reserve before the cutoff and we'll email you when it's ready.</p>
+  <section class="hero" aria-labelledby="hero-h">
+    <div class="hero__inner">
+      <div class="hero__panel">
+        <p class="hero__eyebrow">BAUST Khulna cafeteria</p>
+        <h1 id="hero-h">Fresh food, reserved before <span id="hero-cutoff">the cutoff</span></h1>
+        <span class="rule" aria-hidden="true"></span>
+        <p>Khichuri, Fried Rice and Tehari are cooked to order. Reserve your portion, and we email you the moment it is ready.</p>
+        <div class="actions">
+          <a class="btn btn--primary" href="/login.html">Log in</a>
+          <a class="btn btn--ghost" href="/register.html">Create account</a>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <form id="login-form" class="card" novalidate>
-      <h2 class="visually-hidden">Log in</h2>
-      <div class="field">
-        <label for="email">University email</label>
-        <input id="email" name="email" type="email" autocomplete="username" required maxlength="100">
-      </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="128">
-      </div>
-      <button class="btn btn--block" type="submit">Log in</button>
-      <p id="msg" class="msg" role="status" aria-live="polite"></p>
-      <p>New here? <a href="/register.html">Create an account with your university email</a>.</p>
-    </form>
+  <main id="main">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li class="step">
+        <span class="step__num" aria-hidden="true">01</span>
+        <h3>Reserve before the cutoff</h3>
+        <p>Pick your dishes on the menu and reserve them before <span class="js-cutoff">the cutoff</span>. Up to 2 portions of each per person.</p>
+      </li>
+      <li class="step">
+        <span class="step__num" aria-hidden="true">02</span>
+        <h3>We cook and email you</h3>
+        <p>The kitchen cooks what was reserved and emails you when your food is ready, first come, first served.</p>
+      </li>
+      <li class="step">
+        <span class="step__num" aria-hidden="true">03</span>
+        <h3>Collect while it's fresh</h3>
+        <p>Pay at the counter when you collect. Food stays fresh for about <span class="js-freshness">7 hours</span>; we remind you every hour.</p>
+      </li>
+    </ol>
+
+    <h2 class="visually-hidden">Today's info</h2>
+    <dl class="info-strip" aria-label="Today's info">
+      <div><dt>Reserve before</dt><dd id="info-cutoff">—</dd></div>
+      <div><dt>Cancel until</dt><dd id="info-cancel">—</dd></div>
+      <div><dt>Stays fresh</dt><dd id="info-fresh">—</dd></div>
+      <div><dt>Server time</dt><dd id="info-now">—</dd></div>
+    </dl>
   </main>
-  <footer class="footer">Students and teachers only · Staff use the <a href="/staff/login.html">staff portal</a></footer>
+  <footer class="footer">For BAUSTK students and teachers · Staff use the <a href="/staff/login.html">staff portal</a></footer>
   <script src="/js/api.js"></script>
-  <script src="/js/login.js"></script>
+  <script src="/js/landing.js"></script>
 </body>
 </html>

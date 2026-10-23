@@ -7,7 +7,7 @@ function dayText(day) {
 
 async function load() {
   const r = await api.get("/api/reservations/mine");
-  if (!requireLogin(r, "/")) return;
+  if (!requireLogin(r, "/login.html")) return;
   const rows = r.reservations.map((res) => {
     const cancel = res.canCancel
       ? el("button", {

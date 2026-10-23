@@ -11,7 +11,7 @@
   <header class="topbar">
     <div class="topbar__inner">
       <a class="brand" href="/">BAUSTK Cafeteria <small>Fresh food pre-order</small></a>
-      <nav aria-label="Main"><a href="/">Log in</a></nav>
+      <nav aria-label="Main"><a href="/login.html">Log in</a></nav>
     </div>
   </header>
 
@@ -37,7 +37,7 @@
         </label>
         <input id="password" name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="128">
       </div>
-      <button class="btn btn--block" type="submit">Send verification code</button>
+      <button class="btn btn--primary btn--block" type="submit">Send verification code</button>
       <p id="msg1" class="msg" role="status" aria-live="polite"></p>
     </form>
 
@@ -48,7 +48,7 @@
         <label for="code">Verification code</label>
         <input id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code">
       </div>
-      <button class="btn btn--block" type="submit">Verify email</button>
+      <button class="btn btn--primary btn--block" type="submit">Verify email</button>
       <p id="msg2" class="msg" role="status" aria-live="polite"></p>
       <p><button class="linkbtn" type="button" id="restart">Use a different email</button></p>
     </form>

@@ -13,6 +13,7 @@
       <a class="brand" href="/staff/portal.html">BAUSTK Cafeteria <small>Staff portal</small></a>
       <nav aria-label="Portal sections">
         <a href="#kitchen">Kitchen</a>
+        <a href="#items">Menu items</a>
         <a href="#reservations">Reservations</a>
         <a href="#stock">Packaged stock</a>
         <a href="#settings">Settings</a>
@@ -33,6 +34,28 @@
           <h2 id="kitchen-h">Fresh food</h2>
           <p class="hint">"Mark ready" emails people in the order they reserved (first come, first served), skipping cancellations. Leave portions empty to serve everyone waiting.</p>
           <div class="kpis" id="fresh"></div>
+        </section>
+
+        <section id="items" aria-labelledby="items-h">
+          <h2 id="items-h">Menu items</h2>
+          <p class="hint">Items are never deleted (reservations refer to them). Switch one off to hide it from students. Prices are shown only; people pay at the counter.</p>
+          <div class="card table-wrap">
+            <table>
+              <caption class="visually-hidden">Menu items with price, availability and picture</caption>
+              <thead><tr><th scope="col">Picture</th><th scope="col">Item</th><th scope="col">Price (taka)</th><th scope="col">Available</th><th scope="col">New picture</th></tr></thead>
+              <tbody id="item-rows"></tbody>
+            </table>
+          </div>
+          <form id="add-item" class="card grid" novalidate>
+            <h3 class="visually-hidden">Add an item</h3>
+            <div class="field"><label for="ni-name">New item name</label><input id="ni-name" required maxlength="60"></div>
+            <div class="field"><label for="ni-cat">Category <span class="hint">e.g. Fresh food, Chips, Soft drinks</span></label><input id="ni-cat" required maxlength="60" list="ni-cats"><datalist id="ni-cats"></datalist></div>
+            <div class="field"><label for="ni-kind">Kind</label>
+              <select id="ni-kind"><option value="fresh">Fresh (reservable)</option><option value="packaged">Packaged (view only)</option></select></div>
+            <div class="field"><label for="ni-price">Price (taka)</label><input id="ni-price" type="number" min="0" max="9999" value="0" required></div>
+            <div class="field"><label for="ni-amount">Daily portions / stock</label><input id="ni-amount" type="number" min="0" max="9999" value="10" required></div>
+            <div class="field"><button class="btn btn--primary btn--block" type="submit">Add item</button></div>
+          </form>
         </section>
 
         <section id="reservations" aria-labelledby="res-h">
