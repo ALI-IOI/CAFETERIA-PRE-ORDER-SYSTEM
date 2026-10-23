@@ -659,6 +659,34 @@ static int realMain(int argc, char** argv) {
               "redesign: tray reserves every dish with one confirmation email", body(r));
     }
 
+    // ---- order history and My account --------------------------------------------------
+    {
+        r = staff.post("/api/dev/advance", {{"minutes", "420"}});  // 17:11 + 7 h = 00:11 next day
+        check(jsonStr(body(r), "now") == "00:11", "setup: clock moved past midnight (day rollover)", body(r));
+        teacher.post("/api/login", {{"email", "teacher1@uni.example"}, {"password", PW}});
+        std::string th = body(teacher.get("/api/reservations/history"));
+        check(has(th, "\"ok\":true") && has(th, "Tehari") && has(th, "Fried Rice") && has(th, "\"status\":\"Expired\""),
+              "history: yesterday's orders listed after midnight", th.substr(0, 300));
+        check(th.find("Tehari") < th.find("Fried Rice"), "history: newest first (merge sort)", th.substr(0, 300));
+        check(!has(th, "Biryani"), "history: only your own orders");
+        r = anon.get("/api/reservations/history");
+        check(status(r) == 401, "history: needs a login", body(r));
+
+        s[10].post("/api/login", {{"email", uniEmail(10)}, {"password", PW}});
+        r = s[10].post("/api/account/password", {{"current", "not-my-password"}, {"password", "another-pass-1"}});
+        check(status(r) == 401, "account: wrong current password refused", body(r));
+        r = s[10].post("/api/account/password", {{"current", PW}, {"password", "another-pass-1"}});
+        check(status(r) == 200 && status(s[10].get("/api/me")) == 200,
+              "account: password changed, this session stays signed in", body(r));
+        Browser other;
+        r = other.post("/api/login", {{"email", uniEmail(10)}, {"password", PW}});
+        auto r2 = other.post("/api/login", {{"email", uniEmail(10)}, {"password", "another-pass-1"}});
+        check(status(r) == 401 && status(r2) == 200, "account: old password no longer works, new one does",
+              body(r) + " / " + body(r2));
+        r = staff.post("/api/account/password", {{"current", "staffpass123"}, {"password", "x-new-pass-1"}});
+        check(status(r) == 403, "account: staff use the admin tool, not this page", body(r));
+    }
+
     std::printf("(stopping server)\n");
     std::fflush(stdout);
     killServer(server);

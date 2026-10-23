@@ -79,6 +79,13 @@ AuthResult registerVerify(AuthState& a, const std::string& email, const std::str
 AuthResult login(AuthState& a, const std::string& login, const std::string& password, bool staffPortal,
                  std::string& tokenOut);
 
+// My account: needs the current password (a wrong one counts toward the same
+// lockout as logins). The new one must pass validPassword and differ from the
+// current one. On success every other session of this account ends; the
+// session `keepToken` stays signed in.
+AuthResult changePassword(AuthState& a, const std::string& login, const std::string& current,
+                          const std::string& next, const std::string& keepToken);
+
 // nullptr for unknown or expired tokens (expired ones are removed).
 Session* sessionGet(AuthState& a, const std::string& token);
 void logout(AuthState& a, const std::string& token);

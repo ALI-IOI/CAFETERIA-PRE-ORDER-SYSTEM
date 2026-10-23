@@ -10,6 +10,7 @@
 #include "server/json.h"
 #include "storage/file_util.h"
 #include "storage/image_store.h"
+#include "storage/history.h"
 
 static const size_t SMALL_BODY_LIMIT = 4096;
 static const char* const IMAGE_UPLOAD_PATH = "/api/staff/items/image";
@@ -677,6 +678,55 @@ static void routeRedesign(httplib::Server& svr, AppState& app) {
         });
     });
 
+    // Order history: earlier days' reservations from history.txt, newest first
+    // (loaded into a linked list and merge-sorted), plus nothing from today
+    // (today's are on /api/reservations/mine).
+    svr.Get("/api/reservations/history", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::User, [](Ctx& c) {
+            ReservationList past;
+            rlInit(past);
+            std::string err;
+            if (!loadUserHistory(c.app.dataDir, c.session->login, past, err)) {
+                std::fprintf(stderr, "HISTORY: %s\n", err.c_str());
+                fail(c, 500, "Your order history could not be read.");
+                return;
+            }
+            Json j;
+            j.beginObject().key("ok").value(true).key("count").value(past.size).key("orders").beginArray();
+            for (Reservation* r = past.head; r != nullptr; r = r->next) {
+                const MenuItem* m = menuAt(c.app.caf.menu, r->itemIndex);
+                j.beginObject().key("code").value(resCode(r->id)).key("item").value(m ? m->name : "?");
+                j.key("quantity").value(r->quantity).key("status").value(statusName(r->status));
+                j.key("day").value(r->day).key("reservedAt").value(formatClock(r->reservedAt)).endObject();
+            }
+            j.endArray().endObject();
+            rlClear(past);
+            reply(c.res, 200, j.str());
+        });
+    });
+
+    svr.Post("/api/account/password", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::User, [](Ctx& c) {
+            AuthResult r = changePassword(c.app.auth, c.session->login, param(c.req, "current"),
+                                          param(c.req, "password"), c.session->token);
+            c.changed = true;  // failed-attempt counter or new hash
+            if (r == AuthResult::BadCredentials) {
+                fail(c, 401, "Your current password is not correct.");
+                return;
+            }
+            if (r == AuthResult::WeakPassword) {
+                fail(c, 400, "Choose a new password of 8 to 128 characters, different from the current one.");
+                return;
+            }
+            if (r != AuthResult::Ok) {
+                fail(c, httpStatus(r), authMessage(r));
+                return;
+            }
+            reply(c.res, 200,
+                  "{\"ok\":true,\"message\":\"Password changed. You were signed out on your other devices.\"}");
+        });
+    });
+
     svr.Post("/api/staff/items", [&](const Request& req, Response& res) {
         handle(app, req, res, Access::Staff, [](Ctx& c) {
             std::string kind = param(c.req, "kind");
@@ -810,7 +860,7 @@ void registerRoutes(httplib::Server& svr, AppState& app, bool devRoutes) {
             res.set_redirect("/menu.html");
             return httplib::Server::HandlerResponse::Handled;
         }
-        bool userPage = req.path == "/menu.html" || req.path == "/reservations.html";
+        bool userPage = req.path == "/menu.html" || req.path == "/reservations.html" || req.path == "/account.html";
         if ((staffPage || userPage) && !pageAllowed(app, req, staffPage)) {
             res.set_redirect(staffPage ? "/staff/login.html" : "/");
             return httplib::Server::HandlerResponse::Handled;

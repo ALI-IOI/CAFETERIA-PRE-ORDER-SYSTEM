@@ -271,3 +271,40 @@ TEST(pending_registration_cannot_be_taken_over) {
     CHECK_EQ(registerVerify(f.auth, "orpheus@uni.example", f.lastCode(), "victim-password"), AuthResult::Ok);
     CHECK_EQ(login(f.auth, "orpheus@uni.example", "victim-password", false, token), AuthResult::Ok);
 }
+
+TEST(change_password_success_signs_out_other_sessions) {
+    AuthFixture f;
+    f.registerAndVerify("orpheus@uni.example", "1000000000000030", "studentpass1");
+    std::string here, there;
+    login(f.auth, "orpheus@uni.example", "studentpass1", false, here);
+    login(f.auth, "orpheus@uni.example", "studentpass1", false, there);
+    CHECK_EQ(changePassword(f.auth, "orpheus@uni.example", "studentpass1", "brand-new-pass", here), AuthResult::Ok);
+    CHECK(sessionGet(f.auth, here) != nullptr);    // the session that changed it stays
+    CHECK(sessionGet(f.auth, there) == nullptr);   // every other session ends
+    std::string t;
+    CHECK_EQ(login(f.auth, "orpheus@uni.example", "studentpass1", false, t), AuthResult::BadCredentials);
+    CHECK_EQ(login(f.auth, "orpheus@uni.example", "brand-new-pass", false, t), AuthResult::Ok);
+}
+
+TEST(change_password_wrong_current_counts_toward_lockout) {
+    AuthFixture f;
+    f.registerAndVerify("orpheus@uni.example", "1000000000000030", "studentpass1");
+    std::string tok;
+    login(f.auth, "orpheus@uni.example", "studentpass1", false, tok);
+    for (int i = 0; i < 4; i++)
+        CHECK_EQ(changePassword(f.auth, "orpheus@uni.example", "guess-" + std::to_string(i), "newpassword1", tok),
+                 AuthResult::BadCredentials);
+    CHECK_EQ(changePassword(f.auth, "orpheus@uni.example", "guess-5", "newpassword1", tok), AuthResult::Locked);
+    CHECK_EQ(changePassword(f.auth, "orpheus@uni.example", "studentpass1", "newpassword1", tok), AuthResult::Locked);
+}
+
+TEST(change_password_weak_new_refused) {
+    AuthFixture f;
+    f.registerAndVerify("orpheus@uni.example", "1000000000000030", "studentpass1");
+    std::string tok;
+    login(f.auth, "orpheus@uni.example", "studentpass1", false, tok);
+    CHECK_EQ(changePassword(f.auth, "orpheus@uni.example", "studentpass1", "short", tok), AuthResult::WeakPassword);
+    CHECK_EQ(changePassword(f.auth, "orpheus@uni.example", "studentpass1", "studentpass1", tok), AuthResult::WeakPassword);
+    std::string t;
+    CHECK_EQ(login(f.auth, "orpheus@uni.example", "studentpass1", false, t), AuthResult::Ok);  // unchanged
+}

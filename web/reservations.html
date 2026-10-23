@@ -14,6 +14,7 @@
       <nav aria-label="Main">
         <a href="/menu.html">Menu</a>
         <a href="/reservations.html" aria-current="page">My reservations</a>
+        <a href="/account.html">My account</a>
         <button class="linkbtn" type="button" id="logout">Log out</button>
       </nav>
     </div>
@@ -34,6 +35,19 @@
         <tbody id="rows"></tbody>
       </table>
       <p id="empty" hidden>No reservations yet. <a href="/menu.html">See today's menu</a>.</p>
+    </div>
+
+    <h2 id="history-h">Order history</h2>
+    <p class="hint">Earlier days, newest first.</p>
+    <div class="card table-wrap">
+      <table aria-labelledby="history-h">
+        <thead>
+          <tr><th scope="col">Reservation</th><th scope="col">Date</th><th scope="col">Food</th>
+              <th scope="col" class="num">Qty</th><th scope="col">Reserved at</th><th scope="col">Status</th></tr>
+        </thead>
+        <tbody id="history-rows"></tbody>
+      </table>
+      <p id="history-empty" hidden>No earlier orders yet.</p>
     </div>
   </main>
   <script src="/js/api.js"></script>
