@@ -43,14 +43,14 @@ Reservation* rlFindById(const ReservationList& list, int id) {
     return nullptr;
 }
 
-bool rlDelete(ReservationList& list, int id) {
+Reservation* rlUnlink(ReservationList& list, int id) {
     Reservation* prev = nullptr;
     Reservation* cur = list.head;
     while (cur != nullptr && cur->id != id) {
         prev = cur;
         cur = cur->next;
     }
-    if (cur == nullptr) return false;
+    if (cur == nullptr) return nullptr;
 
     if (prev == nullptr) {
         list.head = cur->next;
@@ -58,8 +58,15 @@ bool rlDelete(ReservationList& list, int id) {
         prev->next = cur->next;
     }
     if (list.tail == cur) list.tail = prev;
-    delete cur;
+    cur->next = nullptr;
     list.size--;
+    return cur;
+}
+
+bool rlDelete(ReservationList& list, int id) {
+    Reservation* node = rlUnlink(list, id);
+    if (node == nullptr) return false;
+    delete node;
     return true;
 }
 
