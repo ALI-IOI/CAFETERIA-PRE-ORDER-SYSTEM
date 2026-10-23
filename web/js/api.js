@@ -85,6 +85,24 @@ const store = {
   },
 };
 
+// Phones show table rows as cards (CSS, max-width 640px); each cell then needs its
+// column name, copied here from the table's header row whenever rows change.
+function labelTableCells(table) {
+  const heads = [...table.querySelectorAll("thead th")].map((th) =>
+    th.querySelector(".visually-hidden") ? "" : th.textContent.trim());
+  for (const row of table.querySelectorAll("tbody tr")) {
+    [...row.children].forEach((cell, i) => {
+      if (heads[i]) cell.setAttribute("data-label", heads[i]);
+    });
+  }
+}
+document.addEventListener("DOMContentLoaded", () => {
+  for (const table of document.querySelectorAll(".table-wrap table")) {
+    labelTableCells(table);
+    new MutationObserver(() => labelTableCells(table)).observe(table, { childList: true, subtree: true });
+  }
+});
+
 // The green bar at the top of the public and student pages.
 async function fillAnnouncement(id) {
   const bar = document.getElementById(id || "announce");

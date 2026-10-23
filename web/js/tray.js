@@ -78,6 +78,13 @@ function renderTray(menu, onChange) {
   reserveAll.hidden = rows.length === 0;
   reserveAll.disabled = !menu.open;
   document.getElementById("tray-count").textContent = String(count);
+  // Phones and tablets: the tray is below every dish, so a bar at the bottom of
+  // the screen shows what is in it and jumps there (CSS hides it on wide screens).
+  const bar = document.getElementById("tray-bar");
+  bar.hidden = count === 0;
+  document.getElementById("tray-bar-text").textContent =
+    count + (count === 1 ? " dish" : " dishes") + " \u00b7 \u09f3 " + total + " \u00b7 ";
+  bar.setAttribute("aria-label", "Review tray: " + count + (count === 1 ? " dish" : " dishes") + ", " + total + " taka");
 }
 
 async function reserveTray(onDone) {

@@ -47,7 +47,7 @@ a { color: var(--accent-text); text-underline-offset: 3px; }
 img { max-width: 100%; display: block; }
 
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-.skip-link { position: absolute; left: -999px; top: 0.5rem; background: var(--panel); color: var(--ink); padding: 0.5rem 1rem; z-index: 10; }
+.skip-link { position: absolute; left: -999px; top: 0.5rem; background: var(--panel); color: var(--ink); padding: 0.75rem 1rem; z-index: 10; }
 .skip-link:focus { left: 0.5rem; }
 .visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
@@ -69,8 +69,8 @@ p { margin: 0 0 0.75rem; }
 /* ---- top bar ------------------------------------------------------------ */
 .topbar { background: var(--bar); color: var(--ink); border-bottom: 3px solid var(--accent); }
 .topbar__inner { max-width: 1180px; margin: 0 auto; padding: 0.75rem var(--space); display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.5rem; }
-.brand { color: inherit; text-decoration: none; font-size: 1.35rem; margin-right: auto; }
-.brand small { display: block; font: 500 0.72rem/1.2 var(--font-body); letter-spacing: 0.12em; opacity: 0.85; }
+.brand { color: inherit; text-decoration: none; font-size: 1.35rem; margin-right: auto; min-height: 44px; display: flex; flex-direction: column; justify-content: center; }
+.brand small { display: block; font: 500 0.75rem/1.2 var(--font-body); letter-spacing: 0.12em; color: var(--ink-soft); }
 .topbar nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1.1rem; align-items: center; }
 .topbar nav a, .topbar .linkbtn {
   color: inherit; font: 600 0.8rem/1.2 var(--font-body); text-transform: uppercase; letter-spacing: 0.14em;
@@ -192,7 +192,7 @@ input:focus-visible, select:focus-visible { border-color: var(--focus); }
 .tray { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 0; padding: var(--space); position: sticky; top: 1rem; }
 .tray ul { list-style: none; padding: 0; margin: 0 0 0.75rem; }
 .tray li { display: grid; grid-template-columns: 1fr auto auto; gap: 0.5rem; align-items: center; padding: 0.5rem 0; border-bottom: 1px dashed var(--line); }
-.tray li select { min-height: 40px; width: auto; padding: 0.3rem 0.5rem; }
+.tray li select { min-height: 44px; width: auto; padding: 0.3rem 0.5rem; }
 .tray__total { display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; margin: 0.5rem 0 1rem; font-variant-numeric: tabular-nums; }
 .menu-layout { display: grid; gap: 1.5rem; grid-template-columns: 1fr; }
 .menu-layout > * { min-width: 0; }
@@ -234,6 +234,45 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .packaged section { break-inside: avoid; margin-bottom: 1rem; }
 .packaged ul { list-style: none; padding: 0; margin: 0; }
 .packaged li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; border-bottom: 1px dashed var(--line); }
+
+/* ---- phones and tablets ---------------------------------------------------- */
+/* The tray bar: fixed to the bottom of the screen while the tray is below the dishes. */
+.tray-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  min-height: 56px; padding: 0.6rem var(--space) calc(0.6rem + env(safe-area-inset-bottom, 0px));
+  background: var(--accent); color: var(--accent-ink); text-decoration: none;
+  font: 600 0.85rem/1.3 var(--font-body); text-transform: uppercase; letter-spacing: 0.08em;
+}
+.tray-bar:focus-visible { outline: 3px solid var(--ink); outline-offset: -5px; }
+body:has(.tray-bar:not([hidden])) .footer { padding-bottom: calc(2rem + 64px); }
+@media (min-width: 1000px) { .tray-bar { display: none !important; } }
+
+/* Phones and tablets: a tighter top bar (still 44 px tap targets) */
+@media (max-width: 1000px) {
+  .topbar__inner { padding: 0.4rem var(--space); gap: 0 1rem; }
+  .topbar nav { gap: 0 0.9rem; }
+  .topbar nav a, .topbar .linkbtn { letter-spacing: 0.06em; }
+}
+@media (max-width: 760px) { .brand { font-size: 1.15rem; } }
+
+/* Phones: table rows become labelled cards (labels come from labelTableCells in api.js) */
+@media (max-width: 640px) {
+  .table-wrap { overflow-x: visible; }
+  .table-wrap table, .table-wrap tbody, .table-wrap tr { display: block; width: 100%; }
+  .table-wrap thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .table-wrap tr { padding: 0.6rem 0; border-bottom: 1px solid var(--line); }
+  .table-wrap tr:last-child { border-bottom: 0; }
+  .table-wrap th, .table-wrap td { display: block; position: relative; border: 0; padding: 0.35rem 0; text-align: left; min-height: 2rem; }
+  .table-wrap td.num, .table-wrap th.num { text-align: left; }
+  .table-wrap [data-label] { padding-left: calc(35% + 0.75rem); }
+  .table-wrap [data-label]::before {
+    content: attr(data-label); position: absolute; left: 0; top: 0.5rem; width: 35%;
+    color: var(--ink-soft); font: 600 0.75rem/1.3 var(--font-body); text-transform: uppercase; letter-spacing: 0.1em;
+    overflow-wrap: anywhere;
+  }
+  .table-wrap td .btn { width: 100%; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
