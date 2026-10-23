@@ -2,8 +2,8 @@
 # [CONFIRM] The real list comes from the university. Save it as
 # config/university_list.csv in this format (one person per line):
 id,email,role,name,department
-1072520005101030,ayon@uni.example,student,Ayon Das,CSE
-1072520005101050,ali@uni.example,student,Mohammad Ali Gazi,CSE
+9990000000000101,ayon@uni.example,student,Ayon Das,CSE
+9990000000000102,ali@uni.example,student,Mohammad Ali Gazi,CSE
 2000000000000001,teacher1@uni.example,teacher,Sample Teacher,CSE
 # University staff (role employee). The email may be left blank for staff with no university email;
 # their account is created with: cafeteria_admin add-person <ID> <personal email>

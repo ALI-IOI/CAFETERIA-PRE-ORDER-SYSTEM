@@ -56,7 +56,7 @@ endif()
 file(REMOVE "${WORK}/server.lock")
 file(MAKE_DIRECTORY "${WORK}/config")
 file(WRITE "${WORK}/config/university_list.csv"
-     "id,email,role,name,department\n1072520005101030,ayon@uni.example,student,Ayon Das,CSE\n3000000000000001,,employee,Rahim Driver,Transport\n")
+     "id,email,role,name,department\n9990000000000101,ayon@uni.example,student,Ayon Das,CSE\n3000000000000001,,employee,Rahim Driver,Transport\n")
 file(WRITE "${WORK}/driver.txt" "driverpass1\ndriverpass1\n")
 execute_process(COMMAND "${EXE}" --data "${WORK}" --config "${WORK}/config" add-person 3000000000000001 rahim@example.com
                 INPUT_FILE "${WORK}/driver.txt" OUTPUT_VARIABLE out ERROR_VARIABLE out RESULT_VARIABLE rc)
@@ -73,7 +73,7 @@ string(FIND "${users}" "driverpass1" plain)
 if(NOT plain EQUAL -1)
   message(FATAL_ERROR "plain-text password found in users.txt")
 endif()
-foreach(case "1072520005101030;other@example.com;driver.txt;student ID"
+foreach(case "9990000000000101;other@example.com;driver.txt;student ID"
              "3000000000000001;again@example.com;driver.txt;same ID twice"
              "3000000000000001;new@example.com;short.txt;short password")
   list(GET case 0 pid)

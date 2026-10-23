@@ -18,7 +18,7 @@ says so at start-up); list addresses there to see the terminal disappear for eve
 | Account | Login | Password (test only) |
 |---|---|---|
 | Staff | `demo.staff` | `demo-staff-pass` |
-| Student | register `ayon@uni.example`, ID `1072520005101030` | `demo-student-pass` |
+| Student | register `ayon@uni.example`, ID `9990000000000101` | `demo-student-pass` |
 | Teacher | register `teacher1@uni.example`, ID `2000000000000001` | `demo-teacher-pass` |
 | University staff | register `guard1@uni.example`, ID `3000000000000002` | `demo-guard-pass` |
 | University staff, no university email | `printf 'demo-driver-pass\ndemo-driver-pass\n' \| build/cafeteria_admin --data demo/data --config demo/config add-person 3000000000000001 rahim@example.com` (server stopped), then log in as `rahim@example.com` | `demo-driver-pass` |

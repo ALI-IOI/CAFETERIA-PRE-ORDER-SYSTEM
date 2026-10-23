@@ -14,8 +14,8 @@ static std::string writeUniList(const char* name) {
     std::ofstream o(path);
     o << "# fixture university list\n"
       << "id,email,role,name,department\n"
-      << "1072520005101030,ayon@uni.example,student,Ayon Das,CSE\n"
-      << "1072520005101050,ali@uni.example,student,Mohammad Ali Gazi,CSE\n"
+      << "9990000000000101,ayon@uni.example,student,Ayon Das,CSE\n"
+      << "9990000000000102,ali@uni.example,student,Mohammad Ali Gazi,CSE\n"
       << "2000000000000001,khalid@uni.example,teacher,Md. Mahamudul Hasan Khalid,CSE\n";
     return path;
 }
@@ -52,7 +52,7 @@ struct AuthFixture {
 
 TEST(non_university_email_rejected) {
     AuthFixture f;
-    CHECK_EQ(registerStart(f.auth, "ayon@gmail.com", "1072520005101030", "longpassword", f.out),
+    CHECK_EQ(registerStart(f.auth, "ayon@gmail.com", "9990000000000101", "longpassword", f.out),
              AuthResult::NotUniversityEmail);
     CHECK_EQ(f.out.count, 0);
 }
@@ -63,7 +63,7 @@ TEST(registration_disabled_until_domain_configured) {
     authInit(a, &clock, authDefaults());  // domain not set
     NotificationList out;
     nlInit(out);
-    CHECK_EQ(registerStart(a, "ayon@uni.example", "1072520005101030", "longpassword", out),
+    CHECK_EQ(registerStart(a, "ayon@uni.example", "9990000000000101", "longpassword", out),
              AuthResult::NotUniversityEmail);
     authFree(a);
 }
@@ -76,7 +76,7 @@ TEST(unlisted_id_rejected) {
 
 TEST(id_email_mismatch_rejected) {
     AuthFixture f;
-    CHECK_EQ(registerStart(f.auth, "ali@uni.example", "1072520005101030", "longpassword", f.out),
+    CHECK_EQ(registerStart(f.auth, "ali@uni.example", "9990000000000101", "longpassword", f.out),
              AuthResult::EmailIdMismatch);
 }
 
@@ -87,13 +87,13 @@ TEST(role_comes_from_list) {
     CHECK(u != nullptr);
     CHECK_EQ(u->role, Role::Teacher);
     CHECK_EQ(u->department, std::string("CSE"));
-    f.registerAndVerify("ayon@uni.example", "1072520005101030", "studentpass1");
+    f.registerAndVerify("ayon@uni.example", "9990000000000101", "studentpass1");
     CHECK_EQ(ulFind(f.auth.users, "ayon@uni.example")->role, Role::Student);
 }
 
 TEST(verification_code_correct_wrong_expired) {
     AuthFixture f;
-    CHECK_EQ(registerStart(f.auth, "ayon@uni.example", "1072520005101030", "longpassword", f.out),
+    CHECK_EQ(registerStart(f.auth, "ayon@uni.example", "9990000000000101", "longpassword", f.out),
              AuthResult::Ok);
     CHECK_EQ(f.out.tail->type, NotifType::VerificationCode);
     CHECK_EQ(f.out.tail->to, std::string("ayon@uni.example"));
@@ -106,7 +106,7 @@ TEST(verification_code_correct_wrong_expired) {
     CHECK_EQ(registerVerify(f.auth, "ayon@uni.example", code, "longpassword"), AuthResult::AlreadyRegistered);
 
     // expired code
-    registerStart(f.auth, "ali@uni.example", "1072520005101050", "longpassword", f.out);
+    registerStart(f.auth, "ali@uni.example", "9990000000000102", "longpassword", f.out);
     std::string code2 = f.lastCode();
     f.clock.advanceMinutes(16);
     CHECK_EQ(registerVerify(f.auth, "ali@uni.example", code2, "longpassword"), AuthResult::CodeExpired);
@@ -114,7 +114,7 @@ TEST(verification_code_correct_wrong_expired) {
 
 TEST(verification_code_locked_after_5_wrong_attempts) {
     AuthFixture f;
-    registerStart(f.auth, "ayon@uni.example", "1072520005101030", "longpassword", f.out);
+    registerStart(f.auth, "ayon@uni.example", "9990000000000101", "longpassword", f.out);
     std::string code = f.lastCode();
     std::string wrong = code == "000000" ? "111111" : "000000";
     for (int i = 0; i < 5; i++) registerVerify(f.auth, "ayon@uni.example", wrong, "longpassword");
@@ -123,7 +123,7 @@ TEST(verification_code_locked_after_5_wrong_attempts) {
 
 TEST(login_before_verify_refused) {
     AuthFixture f;
-    registerStart(f.auth, "ayon@uni.example", "1072520005101030", "longpassword", f.out);
+    registerStart(f.auth, "ayon@uni.example", "9990000000000101", "longpassword", f.out);
     std::string token;
     CHECK_EQ(login(f.auth, "ayon@uni.example", "longpassword", false, token), AuthResult::NotVerified);
     CHECK(token.empty());
@@ -142,7 +142,7 @@ TEST(hash_is_salted) {
 
 TEST(login_success_creates_session) {
     AuthFixture f;
-    f.registerAndVerify("ayon@uni.example", "1072520005101030", "studentpass1");
+    f.registerAndVerify("ayon@uni.example", "9990000000000101", "studentpass1");
     std::string token;
     CHECK_EQ(login(f.auth, "AYON@uni.example", "studentpass1", false, token), AuthResult::Ok);
     Session* s = sessionGet(f.auth, token);
@@ -153,7 +153,7 @@ TEST(login_success_creates_session) {
 
 TEST(lockout_after_5_failures_then_unlock_after_15min) {
     AuthFixture f;
-    f.registerAndVerify("ayon@uni.example", "1072520005101030", "studentpass1");
+    f.registerAndVerify("ayon@uni.example", "9990000000000101", "studentpass1");
     std::string token;
     for (int i = 0; i < 4; i++)
         CHECK_EQ(login(f.auth, "ayon@uni.example", "wrongpass", false, token), AuthResult::BadCredentials);
@@ -174,7 +174,7 @@ TEST(staff_cannot_use_public_login_and_vice_versa) {
     AuthFixture f;
     CHECK_EQ(addStaff(f.auth, "cafe.staff", "Cafeteria Staff", "staffpass123"), AuthResult::Ok);
     CHECK_EQ(addStaff(f.auth, "cafe.staff", "Again", "staffpass123"), AuthResult::AlreadyRegistered);
-    f.registerAndVerify("ayon@uni.example", "1072520005101030", "studentpass1");
+    f.registerAndVerify("ayon@uni.example", "9990000000000101", "studentpass1");
     std::string token;
     CHECK_EQ(login(f.auth, "cafe.staff", "staffpass123", false, token), AuthResult::BadCredentials);
     CHECK_EQ(login(f.auth, "ayon@uni.example", "studentpass1", true, token), AuthResult::BadCredentials);
@@ -185,13 +185,13 @@ TEST(staff_cannot_use_public_login_and_vice_versa) {
 TEST(staff_login_cannot_be_registered_publicly) {
     AuthFixture f;
     // there is no public path that creates Role::Staff: registerStart only uses list roles
-    CHECK_EQ(registerStart(f.auth, "cafe.staff", "1072520005101030", "longpassword", f.out),
+    CHECK_EQ(registerStart(f.auth, "cafe.staff", "9990000000000101", "longpassword", f.out),
              AuthResult::NotUniversityEmail);
 }
 
 TEST(session_expires) {
     AuthFixture f;
-    f.registerAndVerify("ayon@uni.example", "1072520005101030", "studentpass1");
+    f.registerAndVerify("ayon@uni.example", "9990000000000101", "studentpass1");
     std::string token;
     login(f.auth, "ayon@uni.example", "studentpass1", false, token);
     f.clock.advanceMinutes(8 * 60);
@@ -201,7 +201,7 @@ TEST(session_expires) {
 
 TEST(logout_removes_session) {
     AuthFixture f;
-    f.registerAndVerify("ayon@uni.example", "1072520005101030", "studentpass1");
+    f.registerAndVerify("ayon@uni.example", "9990000000000101", "studentpass1");
     std::string token;
     login(f.auth, "ayon@uni.example", "studentpass1", false, token);
     logout(f.auth, token);
@@ -219,7 +219,7 @@ TEST(tokens_unique_and_32_bytes) {
 
 TEST(users_round_trip_through_file) {
     AuthFixture f;
-    f.registerAndVerify("ayon@uni.example", "1072520005101030", "studentpass1");
+    f.registerAndVerify("ayon@uni.example", "9990000000000101", "studentpass1");
     addStaff(f.auth, "cafe.staff", "Cafeteria Staff", "staffpass123");
     fs::path dir = fs::temp_directory_path() / "cafeteria_tests" / "users_rt";
     fs::remove_all(dir);
@@ -244,7 +244,7 @@ TEST(bad_university_list_line_reported) {
     fs::path p = fs::temp_directory_path() / "cafeteria_tests" / "bad_uni.csv";
     {
         std::ofstream o(p);
-        o << "id,email,role,name,department\n1072520005101030,ayon@uni.example,admin,Ayon,CSE\n";
+        o << "id,email,role,name,department\n9990000000000101,ayon@uni.example,admin,Ayon,CSE\n";
     }
     UniList list;
     uniInit(list);
@@ -259,22 +259,22 @@ TEST(bad_university_list_line_reported) {
 // the newest code from their inbox. That must NOT verify the attacker's password.
 TEST(pending_registration_cannot_be_taken_over) {
     AuthFixture f;
-    CHECK_EQ(registerStart(f.auth, "ayon@uni.example", "1072520005101030", "victim-password", f.out), AuthResult::Ok);
-    CHECK_EQ(registerStart(f.auth, "ayon@uni.example", "1072520005101030", "attacker-password", f.out), AuthResult::Ok);
+    CHECK_EQ(registerStart(f.auth, "ayon@uni.example", "9990000000000101", "victim-password", f.out), AuthResult::Ok);
+    CHECK_EQ(registerStart(f.auth, "ayon@uni.example", "9990000000000101", "attacker-password", f.out), AuthResult::Ok);
     std::string newestCode = f.lastCode();  // arrives in the victim's inbox
     CHECK_EQ(registerVerify(f.auth, "ayon@uni.example", newestCode, "victim-password"), AuthResult::BadCode);
     CHECK(!ulFind(f.auth.users, "ayon@uni.example")->verified);
     std::string token;
     CHECK(login(f.auth, "ayon@uni.example", "attacker-password", false, token) != AuthResult::Ok);
     // the victim simply registers again and completes it
-    CHECK_EQ(registerStart(f.auth, "ayon@uni.example", "1072520005101030", "victim-password", f.out), AuthResult::Ok);
+    CHECK_EQ(registerStart(f.auth, "ayon@uni.example", "9990000000000101", "victim-password", f.out), AuthResult::Ok);
     CHECK_EQ(registerVerify(f.auth, "ayon@uni.example", f.lastCode(), "victim-password"), AuthResult::Ok);
     CHECK_EQ(login(f.auth, "ayon@uni.example", "victim-password", false, token), AuthResult::Ok);
 }
 
 TEST(change_password_success_signs_out_other_sessions) {
     AuthFixture f;
-    f.registerAndVerify("ayon@uni.example", "1072520005101030", "studentpass1");
+    f.registerAndVerify("ayon@uni.example", "9990000000000101", "studentpass1");
     std::string here, there;
     login(f.auth, "ayon@uni.example", "studentpass1", false, here);
     login(f.auth, "ayon@uni.example", "studentpass1", false, there);
@@ -288,7 +288,7 @@ TEST(change_password_success_signs_out_other_sessions) {
 
 TEST(change_password_wrong_current_counts_toward_lockout) {
     AuthFixture f;
-    f.registerAndVerify("ayon@uni.example", "1072520005101030", "studentpass1");
+    f.registerAndVerify("ayon@uni.example", "9990000000000101", "studentpass1");
     std::string tok;
     login(f.auth, "ayon@uni.example", "studentpass1", false, tok);
     for (int i = 0; i < 4; i++)
@@ -300,7 +300,7 @@ TEST(change_password_wrong_current_counts_toward_lockout) {
 
 TEST(change_password_weak_new_refused) {
     AuthFixture f;
-    f.registerAndVerify("ayon@uni.example", "1072520005101030", "studentpass1");
+    f.registerAndVerify("ayon@uni.example", "9990000000000101", "studentpass1");
     std::string tok;
     login(f.auth, "ayon@uni.example", "studentpass1", false, tok);
     CHECK_EQ(changePassword(f.auth, "ayon@uni.example", "studentpass1", "short", tok), AuthResult::WeakPassword);
