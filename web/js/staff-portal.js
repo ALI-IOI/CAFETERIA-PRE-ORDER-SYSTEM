@@ -48,7 +48,8 @@ function freshPanel(item) {
     meter,
     el("p", { class: "food__meta" },
       item.reserved + " of " + item.limit + " reserved · " + item.waitingPortions +
-      " portion(s) waiting to cook · queue " + item.queueEntries + "/" + item.queueCapacity),
+      " portion(s) waiting to cook · queue " + item.queueEntries + "/" + item.queueCapacity +
+      (item.waitlist > 0 ? " · " + item.waitlist + " on the waitlist (raising the limit serves them first)" : "")),
     readyForm,
     limitForm);
 }
@@ -123,9 +124,12 @@ async function refresh() {
   document.getElementById("undo").disabled = o.historySize === 0;
   document.getElementById("history").replaceChildren(...o.history.map((a) =>
     el("li", {}, a.description, el("br"), el("span", { class: "when" }, a.at + " · " + a.staff))));
-  document.getElementById("email-mode").textContent = o.emailMode === "outbox"
+  document.getElementById("email-mode").textContent = (o.emailMode === "outbox"
     ? "SMTP is not configured yet: emails are saved in data/outbox on the server."
-    : "Emails are sent through the cafeteria's SMTP account.";
+    : "Emails are sent through the cafeteria's SMTP account.") +
+    (o.emailsWaiting > 0
+      ? " " + o.emailsWaiting + " email(s) failed and will be retried automatically (after 1, 5 and 15 minutes)."
+      : " No emails waiting to retry.");
   await loadReservations(document.getElementById("q").value.trim());
 }
 

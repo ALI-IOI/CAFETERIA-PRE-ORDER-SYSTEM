@@ -301,3 +301,7 @@ tbody tr:hover { background: var(--grey-tint); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
+
+/* ---- waitlist (addition #1) ------------------------------------------------- */
+.waitlist { border-top: 1px dashed var(--line); padding-top: 0.6rem; }
+.waitlist .btn--ghost { width: 100%; }

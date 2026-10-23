@@ -112,3 +112,22 @@ TEST(smtp_config_with_placeholder_uses_outbox) {
     CHECK(dynamic_cast<OutboxSender*>(s) != nullptr);
     delete s;
 }
+
+// The outbox folder may be missing (or blocked) when the sender is created and
+// appear later: numbering must continue after the files already there.
+TEST(outbox_counts_existing_files_once_folder_is_usable) {
+    fs::path dir = fs::temp_directory_path() / "cafeteria_tests" / "outbox_late";
+    fs::remove_all(dir);
+    fs::create_directories(dir.parent_path());
+    { std::ofstream blocker(dir.string()); blocker << "not a folder"; }  // a file where the folder should be
+    OutboxSender s(dir.string());
+    CHECK(!s.send(note(NotifType::Ready, "a@uni.example", "s", "b")));   // cannot write
+    fs::remove(dir);
+    fs::create_directories(dir);
+    {
+        std::ofstream idx((dir / "index.log").string());
+        idx << "000001|ready|x@uni.example|1|old\n000002|ready|y@uni.example|2|old\n";
+    }
+    CHECK(s.send(note(NotifType::Ready, "a@uni.example", "s", "b")));
+    CHECK(slurp(dir / "index.log").find("000003|ready|a@uni.example") != std::string::npos);
+}

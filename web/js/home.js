@@ -50,8 +50,47 @@ function freshCard(item, menu) {
     el("p", { class: "food__meta" },
       item.yours > 0 ? "You have reserved " + item.yours + " today." : "Up to " + menu.perUserLimit + " per person."),
     reason ? el("p", { class: "food__meta" }, el("strong", {}, reason)) : null,
-    form,
+    soldOut ? waitlistBox(item, menu) : form,
   );
+}
+
+// Sold out: join the waitlist, or show your place in line (addition #1).
+function waitlistBox(item, menu) {
+  const box = el("div", { class: "waitlist" });
+  if (item.yourPosition > 0) {
+    box.append(
+      el("p", { class: "food__meta" },
+        el("strong", {}, "You are #" + item.yourPosition + " on the waitlist."),
+        " If a portion becomes free before " + menu.cutoff + ", it is reserved for you and we email you."),
+      el("button", {
+        class: "btn btn--ghost", type: "button",
+        onclick: async () => {
+          const r = await api.post("/api/waitlist/leave", { item: item.index });
+          say("msg", r.ok ? r.message : r.error, r.ok);
+          loadMenu();
+        },
+      }, "Leave waitlist"));
+    return box;
+  }
+  const room = menu.perUserLimit - item.yours;
+  if (!menu.open || room < 1) return box;
+  const id = "wait-" + item.index;
+  const select = el("select", { id, name: "quantity" });
+  for (let q = 1; q <= room; q++) select.append(el("option", { value: q }, q));
+  const form = el("form", { class: "row", "aria-label": "Join the " + item.name + " waitlist" },
+    el("div", { class: "field" }, el("label", { for: id }, "Portions wanted"), select),
+    el("button", { class: "btn", type: "submit" }, "Join waitlist"));
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const r = await api.post("/api/waitlist/join", { item: item.index, quantity: select.value });
+    say("msg", r.ok ? r.message : r.error, r.ok);
+    loadMenu();
+  });
+  box.append(
+    el("p", { class: "food__meta" },
+      item.waiting > 0 ? item.waiting + " already waiting (first come, first served)." : "Nobody is waiting yet."),
+    form);
+  return box;
 }
 
 function packagedList(items) {

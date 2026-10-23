@@ -5,6 +5,7 @@
 #include "auth/auth.h"
 #include "core/cafeteria.h"
 #include "email/email.h"
+#include "email/mailer.h"
 #include <mutex>
 #include <string>
 
@@ -27,6 +28,7 @@ struct AppState {
     Cafeteria caf;
     AuthState auth;
     EmailSender* email = nullptr;
+    Mailer mailer;  // own mutex; lock order is always mu -> mailer.mu, never the reverse
     std::string dataDir;
     bool secureCookies = false;  // --behind-https
 };

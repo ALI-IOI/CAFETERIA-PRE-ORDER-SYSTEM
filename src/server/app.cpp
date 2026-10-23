@@ -41,10 +41,5 @@ void saveAll(AppState& app) {
 }
 
 void sendAll(AppState& app, NotificationList& out) {
-    for (Notification* n = out.head; n != nullptr; n = n->next) {
-        if (!app.email->send(*n))
-            std::fprintf(stderr, "EMAIL FAILED (%s) to %s: %s\n", notifTypeName(n->type), n->to.c_str(),
-                         n->subject.c_str());
-    }
-    nlClear(out);
+    mailerSendAll(app.mailer, out);  // failures wait in the retry queue (addition #2)
 }

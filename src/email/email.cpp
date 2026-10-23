@@ -47,18 +47,27 @@ bool smtpConfigured(const SmtpConfig& cfg) {
 
 // ---- outbox -------------------------------------------------------------------
 
-OutboxSender::OutboxSender(const std::string& dir) : dir_(dir), seq_(0) {
+OutboxSender::OutboxSender(const std::string& dir) : dir_(dir), seq_(0), counted_(false) {
+    std::lock_guard<std::mutex> lock(mu_);
+    ready();
+}
+
+bool OutboxSender::ready() {
+    if (counted_) return true;
     std::string err;
-    ensureDir(dir_, err);
+    if (!ensureDir(dir_, err)) return false;  // e.g. blocked: try again on the next send
     std::ifstream idx(dir_ + "/index.log");
     std::string line;
     while (std::getline(idx, line)) {
         if (!line.empty()) seq_++;
     }
+    counted_ = true;
+    return true;
 }
 
 bool OutboxSender::send(const Notification& n) {
     std::lock_guard<std::mutex> lock(mu_);
+    if (!ready()) return false;
     seq_++;
     char num[16];
     std::snprintf(num, sizeof num, "%06d", seq_);

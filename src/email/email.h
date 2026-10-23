@@ -34,9 +34,11 @@ struct OutboxSender : EmailSender {
     const char* modeName() const override { return "outbox"; }
 
   private:
+    bool ready();      // folder usable and existing files counted (call with mu_ held)
     std::string dir_;
     int seq_;
-    std::mutex mu_;  // send() is called from several request threads
+    bool counted_;     // seq_ continues after the emails already in index.log
+    std::mutex mu_;    // send() is called from several request threads
 };
 
 struct SmtpCurlSender : EmailSender {

@@ -142,14 +142,22 @@ int main(int argc, char** argv) {
     saveAll(app);             // first start: writes the seed into data/
 
     app.email = makeSender(smtp, dataDir + "/outbox");
+    mailerInit(app.mailer, app.email, app.clock, dataDir);
+    if (!mailerLoad(app.mailer, err)) {  // emails still waiting from before the restart
+        std::fprintf(stderr, "Cannot load pending emails: %s\n", err.c_str());
+        releaseLock(lockPath);
+        return 1;
+    }
     bool outbox = std::string(app.email->modeName()) == "outbox";
     std::printf("Email mode: %s%s%s\n", app.email->modeName(),
                 outbox ? " - SMTP not configured, emails are files in " : "", outbox ? (dataDir + "/outbox").c_str() : "");
     std::string placeholderFiles[] = {configDir + "/app.cfg", configDir + "/smtp.cfg", seedDir + "/menu.txt",
                                       seedDir + "/settings.txt"};
     printPlaceholders(placeholderFiles, 4);
-    std::printf("Loaded %d menu items, %d users, %d reservations (%d ready awaiting reminders).\n",
-                app.caf.menu.count, app.auth.users.count, app.caf.reservations.size, app.caf.reminders.count);
+    std::printf("Loaded %d menu items, %d users, %d reservations (%d ready awaiting reminders), "
+                "%d email(s) waiting to retry.\n",
+                app.caf.menu.count, app.auth.users.count, app.caf.reservations.size, app.caf.reminders.count,
+                mailerWaiting(app.mailer));
 
 #ifdef _WIN32
     SetConsoleCtrlHandler(onCtrl, TRUE);
@@ -178,6 +186,7 @@ int main(int argc, char** argv) {
                     saveAll(app);
                 }
                 sendAll(app, out);
+                mailerRetryDue(app.mailer);  // outside app.mu: SMTP can be slow
             }
         });
     }
@@ -191,6 +200,7 @@ int main(int argc, char** argv) {
         std::lock_guard<std::mutex> lock(app.mu);
         saveAll(app);
     }
+    mailerFree(app.mailer);  // anything still waiting is already in pending_emails.txt
     releaseLock(lockPath);  // only removes it if it is ours
     if (!ok) {
         std::fprintf(stderr, "Could not listen on %s:%d\n", host.c_str(), port);
