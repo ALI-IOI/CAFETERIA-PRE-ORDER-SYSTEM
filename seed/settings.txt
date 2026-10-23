@@ -1,0 +1,8 @@
+# Starting rules, copied into data/ on first start. Staff change them in the
+# portal. Times are minutes after midnight (600 = 10:00).
+# [CONFIRM] All five values are the proposal's assumptions (section 4).
+cutoff=600
+cancel_deadline=600
+freshness_minutes=420
+reminder_minutes=60
+per_user_limit=2
