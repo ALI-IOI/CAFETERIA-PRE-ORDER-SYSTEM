@@ -1,0 +1,46 @@
+# Checks the staff-account tool: creates a staff account in a temp data dir,
+# refuses a duplicate, a short password, and refuses while the server runs.
+# Usage: cmake -DEXE=... -DWORK=... -P tools/run_admin_test.cmake
+file(REMOVE_RECURSE "${WORK}")
+file(MAKE_DIRECTORY "${WORK}")
+file(WRITE "${WORK}/pw.txt" "staffpass123\nstaffpass123\n")
+file(WRITE "${WORK}/short.txt" "short\nshort\n")
+file(WRITE "${WORK}/mismatch.txt" "staffpass123\nstaffpass999\n")
+
+execute_process(COMMAND "${EXE}" --data "${WORK}" add-staff cafe.staff "Cafeteria Staff"
+                INPUT_FILE "${WORK}/pw.txt" OUTPUT_VARIABLE out ERROR_VARIABLE out RESULT_VARIABLE rc)
+message("${out}")
+if(NOT rc EQUAL 0)
+  message(FATAL_ERROR "add-staff failed: ${rc}")
+endif()
+file(READ "${WORK}/users.txt" users)
+string(FIND "${users}" "cafe.staff||staff|Cafeteria Staff||$argon2id$" pos)
+if(pos EQUAL -1)
+  message(FATAL_ERROR "users.txt does not contain the hashed staff account:\n${users}")
+endif()
+string(FIND "${users}" "staffpass123" plain)
+if(NOT plain EQUAL -1)
+  message(FATAL_ERROR "plain-text password found in users.txt")
+endif()
+
+foreach(case "pw.txt;duplicate" "short.txt;short password" "mismatch.txt;passwords differ")
+  list(GET case 0 input)
+  list(GET case 1 label)
+  execute_process(COMMAND "${EXE}" --data "${WORK}" add-staff other.staff "Other"
+                  INPUT_FILE "${WORK}/${input}" OUTPUT_QUIET ERROR_QUIET RESULT_VARIABLE rc)
+  if(label STREQUAL "duplicate")
+    execute_process(COMMAND "${EXE}" --data "${WORK}" add-staff cafe.staff "Again"
+                    INPUT_FILE "${WORK}/pw.txt" OUTPUT_QUIET ERROR_QUIET RESULT_VARIABLE rc)
+  endif()
+  if(rc EQUAL 0)
+    message(FATAL_ERROR "expected failure for ${label}")
+  endif()
+endforeach()
+
+file(WRITE "${WORK}/server.lock" "running")
+execute_process(COMMAND "${EXE}" --data "${WORK}" add-staff locked.staff "Locked"
+                INPUT_FILE "${WORK}/pw.txt" OUTPUT_VARIABLE out ERROR_VARIABLE out RESULT_VARIABLE rc)
+if(rc EQUAL 0)
+  message(FATAL_ERROR "add-staff must refuse while server.lock exists")
+endif()
+message("admin_tool: OK")
