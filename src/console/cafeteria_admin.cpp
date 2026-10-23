@@ -8,6 +8,7 @@
 #include "auth/auth.h"
 #include "auth/user_store.h"
 #include "storage/file_util.h"
+#include "storage/lock_file.h"
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -50,7 +51,7 @@ int main(int argc, char** argv) {
     if (argc - i != 3 || std::string(argv[i]) != "add-staff") return usage();
     std::string login = argv[i + 1], name = argv[i + 2];
 
-    if (fileExists(dataDir + "/server.lock")) {
+    if (lockStatus(dataDir + "/server.lock") == LockState::Live) {
         std::fprintf(stderr, "The server is running (%s/server.lock exists). Stop it first.\n", dataDir.c_str());
         return 1;
     }

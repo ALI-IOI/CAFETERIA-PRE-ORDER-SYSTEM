@@ -68,6 +68,7 @@ static bool startServer(ServerProc& sp, const std::string& fakeTime) {
     sp.running = true;
     httplib::Client c("127.0.0.1", g_port);
     for (int i = 0; i < 100; i++) {
+        if (WaitForSingleObject(sp.pi.hProcess, 0) == WAIT_OBJECT_0) return false;  // exited at start-up
         auto r = c.Get("/api/health");
         if (r && r->status == 200) return true;
         Sleep(100);
@@ -424,6 +425,28 @@ int main(int argc, char** argv) {
     check(startServer(server, "2026-10-23T12:00"), "12.10 server restarts on the same data");
     r = ayon.get("/api/me");
     check(status(r) == 401, "12.10 sessions are not kept across restart (log in again)", body(r));
+    {
+        std::ifstream lk(g_data + "/server.lock");
+        std::string before((std::istreambuf_iterator<char>(lk)), std::istreambuf_iterator<char>());
+        int savedPort = g_port;
+        g_port = freePort();
+        ServerProc second;
+        bool started = startServer(second, "2026-10-23T12:00");
+        DWORD code = STILL_ACTIVE;
+        if (second.running) {
+            WaitForSingleObject(second.pi.hProcess, 5000);
+            GetExitCodeProcess(second.pi.hProcess, &code);
+        }
+        killServer(second);
+        g_port = savedPort;
+        std::ifstream lk2(g_data + "/server.lock");
+        std::string after((std::istreambuf_iterator<char>(lk2)), std::istreambuf_iterator<char>());
+        httplib::Client c("127.0.0.1", g_port);
+        auto h = c.Get("/api/health");
+        check(!started && code == 1 && !before.empty() && after == before && h && h->status == 200,
+              "review: second server on the same data folder refuses, first keeps its lock",
+              "exit=" + std::to_string(code) + " lock " + before + " -> " + after);
+    }
     ayon.post("/api/login", {{"email", "ayon@uni.example"}, {"password", PW}});
     teacher.post("/api/login", {{"email", "teacher1@uni.example"}, {"password", PW}});
     staff.post("/api/staff/login", {{"login", "cafe.staff"}, {"password", "staffpass123"}});
