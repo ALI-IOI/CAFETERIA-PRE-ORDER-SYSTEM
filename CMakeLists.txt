@@ -60,6 +60,13 @@ if(EXISTS ${CMAKE_SOURCE_DIR}/tests/console_script.txt AND TARGET cafeteria_cons
             -P ${CMAKE_SOURCE_DIR}/tools/run_console_script.cmake)
 endif()
 
+if(TARGET cafeteria_admin)
+  add_test(NAME admin_tool
+    COMMAND ${CMAKE_COMMAND} -DEXE=$<TARGET_FILE:cafeteria_admin>
+            -DWORK=${CMAKE_BINARY_DIR}/admin_test
+            -P ${CMAKE_SOURCE_DIR}/tools/run_admin_test.cmake)
+endif()
+
 file(GLOB E2E_SOURCES CONFIGURE_DEPENDS tests/e2e/*.cpp)
 if(E2E_SOURCES AND TARGET cafeteria_server)
   add_executable(e2e_section12 ${E2E_SOURCES})
