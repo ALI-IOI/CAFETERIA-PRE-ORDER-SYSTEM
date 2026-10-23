@@ -231,7 +231,9 @@ static void writeFixtures() {
     uni << "id,email,role,name,department\n"
         << "1072520005101030,ayon@uni.example,student,Ayon Das,CSE\n"
         << "1072520005101050,ali@uni.example,student,Mohammad Ali Gazi,CSE\n"
-        << "2000000000000001,teacher1@uni.example,teacher,Sample Teacher,EEE\n";
+        << "2000000000000001,teacher1@uni.example,teacher,Sample Teacher,EEE\n"
+        << "3000000000000002,guard1@uni.example,employee,Sample Guard,Security\n"
+        << "3000000000000001,,employee,Rahim Driver,Transport\n";
     for (int i = 1; i <= 12; i++) uni << uniId(i) << "," << uniEmail(i) << ",student,Student " << i << ",CSE\n";
     std::ofstream smtp(g_config + "/smtp.cfg");
     smtp << "host=[CONFIRM]\nsender=[CONFIRM]\n";
@@ -240,7 +242,11 @@ static void writeFixtures() {
     AuthState a;
     authInit(a, &clock, authDefaults());
     addStaff(a, "cafe.staff", "Cafeteria Staff", "staffpass123");
+    // University staff without a university email: what the admin tool's add-person does.
     std::string err;
+    uni.close();
+    uniLoadCsv(a.uni, g_config + "/university_list.csv", err);
+    addPerson(a, "3000000000000001", "rahim@example.com", PW);
     saveUsers(a.users, g_data, err);
     authFree(a);
 }
@@ -688,6 +694,30 @@ static int realMain(int argc, char** argv) {
               body(r) + " / " + body(r2));
         r = staff.post("/api/account/password", {{"current", "staffpass123"}, {"password", "x-new-pass-1"}});
         check(status(r) == 403, "account: staff use the admin tool, not this page", body(r));
+    }
+
+    // ---- university staff (employees) ----------------------------------------------------
+    // Runs last: reservation codes earlier in the suite are fixed (R-0001...). Each
+    // reservation here is cancelled at once so portion counts stay unchanged.
+    {
+        Browser guard, rahim;
+        bool reg = registerUser(guard, "guard1@uni.example", "3000000000000002");
+        std::string gm = body(guard.get("/api/me"));
+        std::string gr = reserveRes(guard, KHICHURI, "1");
+        check(reg && jsonStr(gm, "role") == "employee" && has(gr, "\"ok\":true"),
+              "employee: registers with a university email and reserves", gm + " / " + gr);
+        guard.post("/api/reservations/cancel", {{"id", std::to_string(jsonInt(gr, "id"))}});
+
+        r = anon.post("/api/register", {{"email", "rahim@uni.example"}, {"id", "3000000000000001"}, {"password", PW}});
+        check(status(r) == 400 && has(body(r), "Ask the cafeteria office"),
+              "employee: blank-email row refused with the office message", body(r));
+
+        int before = countMails("confirmation", "rahim@example.com");
+        r = rahim.post("/api/login", {{"email", "rahim@example.com"}, {"password", PW}});
+        std::string rr = reserveRes(rahim, KHICHURI, "1");
+        check(status(r) == 200 && has(rr, "\"ok\":true") && countMails("confirmation", "rahim@example.com") == before + 1,
+              "employee: admin-added account logs in, reserves, gets the confirmation email", rr);
+        rahim.post("/api/reservations/cancel", {{"id", std::to_string(jsonInt(rr, "id"))}});
     }
 
     std::printf("(stopping server)\n");

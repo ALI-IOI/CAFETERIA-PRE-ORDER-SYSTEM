@@ -52,6 +52,8 @@ enum class AuthResult {
     NotVerified,
     InvalidInput,
     CryptoError,
+    NoUniversityEmail,  // university staff row without an email: the admin tool creates the account
+    NotEligible,        // add-person: the ID is not a university staff row without an email
 };
 const char* authMessage(AuthResult r);
 
@@ -90,6 +92,13 @@ AuthResult changePassword(AuthState& a, const std::string& login, const std::str
 Session* sessionGet(AuthState& a, const std::string& token);
 void logout(AuthState& a, const std::string& token);
 void sessionPruneExpired(AuthState& a);
+
+// Administrator only (cafeteria_admin add-person): an account for university
+// staff who have no university email. The ID must be an employee row with a
+// blank email; `email` is any valid address (lower-cased) not used by another
+// account or list row. Role, name and department come from the list. Active at once.
+AuthResult addPerson(AuthState& a, const std::string& universityId, const std::string& email,
+                     const std::string& password);
 
 // Administrator only (cafeteria_admin tool); there is no web route for this.
 AuthResult addStaff(AuthState& a, const std::string& login, const std::string& name,
