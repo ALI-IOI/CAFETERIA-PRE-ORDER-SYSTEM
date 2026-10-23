@@ -100,10 +100,11 @@ Prices are shown only; people pay at the counter. Staff pictures must be JPEG, P
 Demo food pictures are simple drawings in `web/img/demo/`. Headings use the serif Cormorant
 Garamond (SIL Open Font License, self-hosted in `web/fonts/`) over the system sans. One theme for
 everyone, whatever the device's dark-mode setting, modelled on how acclaimed restaurant sites use
-colour: a warm linen page (`#F7F3EC`), white surfaces, basil green (`#1E5B3E`) for the brand,
-buttons and the announcement bar, terracotta (`#A4532F`) for prices, warm charcoal text. All
-colours are hex, defined once as tokens at the top of `web/css/app.css`; `build/contrast_check`
-and `build/check_hex_colors` keep them accessible and hex-only.
+colour: a warm linen page (`#F7F3EC`), white surfaces, warm charcoal text, and basil green
+(`#1E5B3E`) as the single accent, kept for the brand, buttons and the announcement bar. Labels
+are in sentence case. All colours are hex, defined once as tokens at the top of
+`web/css/app.css`; `build/contrast_check` and `build/check_hex_colors` keep them accessible and
+hex-only.
 
 ## Known limits (documented, proposal §10)
 - Sessions are kept in memory; a restart logs everyone out.

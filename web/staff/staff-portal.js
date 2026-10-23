@@ -47,9 +47,9 @@ function freshPanel(item) {
     el("h3", {}, el("span", {}, item.name), el("span", { class: "hint" }, item.remaining + " left")),
     meter,
     el("p", { class: "food__meta" },
-      item.reserved + " of " + item.limit + " reserved · " + item.waitingPortions +
-      " portion(s) waiting to cook · queue " + item.queueEntries + "/" + item.queueCapacity +
-      (item.waitlist > 0 ? " · " + item.waitlist + " on the waitlist (raising the limit serves them first)" : "")),
+      item.reserved + " of " + item.limit + " reserved, " + item.waitingPortions +
+      " portion(s) waiting to cook, queue " + item.queueEntries + "/" + item.queueCapacity + "." +
+      (item.waitlist > 0 ? " " + item.waitlist + " on the waitlist (raising the limit serves them first)." : "")),
     readyForm,
     limitForm);
 }
@@ -92,7 +92,7 @@ function itemRow(item) {
 
   return el("tr", {},
     el("td", {}, el("img", { class: "thumb", src: item.image, alt: "" })),
-    el("th", { scope: "row" }, item.name, el("br"), el("span", { class: "hint" }, item.category + " · " + item.kind)),
+    el("th", { scope: "row" }, item.name, el("br"), el("span", { class: "hint" }, item.category + " (" + item.kind + ")")),
     el("td", {}, priceForm),
     el("td", {}, el("label", { for: availId, class: "visually-hidden" }, item.name + " available today"), avail),
     el("td", {}, uploadForm));
@@ -155,8 +155,8 @@ async function refresh() {
   overview = o;
   document.getElementById("who").textContent = "Signed in: " + o.staffName;
   document.getElementById("clock").textContent =
-    "Server time " + o.now + " · reservations close at " + o.settings.cutoff +
-    " · " + o.reminderQueue + " ready order(s) waiting for collection";
+    "Server time " + o.now + ". Reservations close at " + o.settings.cutoff + ". " +
+    o.reminderQueue + " ready order(s) waiting for collection.";
   const fresh = o.items.filter((i) => i.kind === "fresh");
   document.getElementById("fresh").replaceChildren(...fresh.map(freshPanel));
   document.getElementById("item-rows").replaceChildren(...o.items.map(itemRow));
@@ -170,7 +170,7 @@ async function refresh() {
     "Undo history: " + o.historySize + " of " + o.historyCapacity + " actions (newest first).";
   document.getElementById("undo").disabled = o.historySize === 0;
   document.getElementById("history").replaceChildren(...o.history.map((a) =>
-    el("li", {}, a.description, el("br"), el("span", { class: "when" }, a.at + " · " + a.staff))));
+    el("li", {}, a.description, el("br"), el("span", { class: "when" }, a.at + " by " + a.staff))));
   document.getElementById("email-mode").textContent = (o.emailMode === "outbox"
     ? "SMTP is not configured yet: emails are saved in data/outbox on the server."
     : "Emails are sent through the cafeteria's SMTP account.") +

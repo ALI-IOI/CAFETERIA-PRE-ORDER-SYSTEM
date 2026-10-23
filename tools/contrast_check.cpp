@@ -30,8 +30,6 @@ static const Pair PAIRS[] = {
     {"green text on white", "#1E5B3E", "#FFFFFF", TEXT},
     {"green text on pale basil", "#1E5B3E", "#E3EDE6", TEXT},
     {"green text on well (button hover)", "#1E5B3E", "#EFE9DE", TEXT},
-    {"terracotta price on white", "#A4532F", "#FFFFFF", TEXT},
-    {"terracotta price on linen", "#A4532F", "#F7F3EC", TEXT},
     {"danger text on linen", "#A3241C", "#F7F3EC", TEXT},
     {"danger text on white", "#A3241C", "#FFFFFF", TEXT},
     {"danger text on danger tint", "#A3241C", "#F6DED8", TEXT},

@@ -1,6 +1,6 @@
 /* BAUSTK Cafeteria — "linen and basil": one light theme for everyone (no dark mode).
    A warm linen page, white surfaces, a deep basil green for the brand, buttons
-   and the announcement bar, terracotta for prices, warm charcoal text. Serif
+   and the announcement bar (its only accent), warm charcoal text. Serif
    headings (Cormorant Garamond, self-hosted) over the system sans, square
    corners, a line grid of dish tiles with a spotlight behind each picture.
    Colours are hex only. Contrast is checked by tools/contrast_check.
@@ -29,7 +29,6 @@
   --accent-hover: #143F2B; /* deep basil */
   --accent-text: #1E5B3E;  /* green text and links (7.2:1 on linen) */
   --tint: #E3EDE6;         /* pale basil: selection, light green fills */
-  --price: #A4532F;        /* terracotta: prices */
   --danger: #A3241C;
   --danger-tint: #F6DED8;
   --focus: #1E5B3E;
@@ -69,22 +68,22 @@ p { margin: 0 0 0.75rem; }
 .rule { display: block; width: 64px; height: 2px; background: var(--accent); margin: 0.75rem 0 1rem; border: 0; }
 
 /* ---- announcement bar ------------------------------------------------------ */
-.announce { margin: 0; background: var(--accent); color: var(--accent-ink); text-align: center; padding: 0.45rem var(--space); font: 600 0.75rem/1.3 var(--font-body); text-transform: uppercase; letter-spacing: 0.14em; }
+.announce { margin: 0; background: var(--accent); color: var(--accent-ink); text-align: center; padding: 0.5rem var(--space); font: 500 0.9rem/1.35 var(--font-body); }
 .announce:empty { display: none; }
 
 /* ---- top bar ------------------------------------------------------------ */
 .topbar { background: var(--bar); color: var(--ink); border-bottom: 3px solid var(--accent); }
 .topbar__inner { max-width: 1180px; margin: 0 auto; padding: 0.75rem var(--space); display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.5rem; }
 .brand { color: inherit; text-decoration: none; font-size: 1.6rem; margin-right: auto; min-height: 44px; display: flex; flex-direction: column; justify-content: center; }
-.brand small { display: block; font: 500 0.75rem/1.2 var(--font-body); letter-spacing: 0.12em; color: var(--ink-soft); }
+.brand small { display: block; font: 500 0.8rem/1.2 var(--font-body); color: var(--ink-soft); }
 .topbar nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1.1rem; align-items: center; }
 .topbar nav a, .topbar .linkbtn {
-  color: inherit; font: 600 0.8rem/1.2 var(--font-body); text-transform: uppercase; letter-spacing: 0.14em;
+  color: inherit; font: 600 0.95rem/1.2 var(--font-body);
   min-height: 44px; display: inline-flex; align-items: center;
 }
 .topbar nav a[aria-current="page"] { text-decoration-thickness: 2px; text-decoration-color: var(--accent); }
 .tray-link { gap: 0.4rem; }
-.tray-count { background: var(--accent); color: var(--accent-ink); padding: 0 0.45rem; font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.tray-count { background: var(--accent); color: var(--accent-ink); padding: 0 0.45rem; font-variant-numeric: tabular-nums; }
 
 /* ---- layout ------------------------------------------------------------- */
 main { max-width: 1180px; margin: 0 auto; padding: var(--space); }
@@ -110,7 +109,6 @@ section.card + form.card { margin-top: var(--space); }  /* My account: details, 
 }
 .hero__inner { max-width: 1180px; margin: 0 auto; padding: clamp(3rem, 8vw, 7rem) var(--space) clamp(6rem, 12vw, 8rem); }
 .hero__panel { max-width: 640px; background: #FFFFFFEB;  /* white at 92% over the campus photo */ padding: clamp(1rem, 3vw, 2rem); border-left: 6px solid var(--accent); }
-.hero__eyebrow { color: var(--accent-text); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 0.5rem; }
 .hero p { color: var(--ink-soft); }
 .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; }
 
@@ -121,7 +119,7 @@ section.card + form.card { margin-top: var(--space); }  /* My account: details, 
 .info-strip { display: flex; flex-wrap: wrap; gap: 0; background: var(--bar); color: var(--ink); border: 1px solid var(--line); border-top: 3px solid var(--accent); margin-top: 2rem; }
 .info-strip div { flex: 1 1 180px; padding: 1rem 1.25rem; border-right: 1px solid var(--line); }
 .info-strip div:last-child { border-right: 0; }
-.info-strip dt { font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); }
+.info-strip dt { font-size: 0.9rem; color: var(--ink-soft); }
 .info-strip dd { margin: 0.2rem 0 0; font: 600 1.9rem/1.1 var(--font-head); font-variant-numeric: tabular-nums; }
 
 /* ---- forms and buttons --------------------------------------------------- */
@@ -138,7 +136,7 @@ input:focus-visible, select:focus-visible { border-color: var(--focus); }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; min-height: 44px;
-  padding: 0.55rem 1.1rem; font: 600 0.95rem var(--font-body); letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 0.55rem 1.1rem; font: 600 0.95rem var(--font-body);
   border-radius: var(--radius); border: 1px solid var(--accent); background: var(--bar); color: var(--accent-text);
   cursor: pointer; text-decoration: none; transition: background-color 150ms ease, transform 100ms ease;
 }
@@ -168,7 +166,7 @@ input:focus-visible, select:focus-visible { border-color: var(--focus); }
 .tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
 .tab {
   min-height: 44px; padding: 0.45rem 0.95rem; border: 1px solid var(--accent); border-radius: var(--radius);
-  background: var(--bar); color: var(--accent-text); font: 600 0.75rem var(--font-body); letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;
+  background: var(--bar); color: var(--accent-text); font: 600 0.9rem var(--font-body); cursor: pointer;
 }
 .tab[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
@@ -182,8 +180,8 @@ input:focus-visible, select:focus-visible { border-color: var(--focus); }
 .dish__body { padding: 0.9rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
 .dish__top { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
 .dish__name { font-size: 1.6rem; margin: 0; }
-.price { color: var(--price); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.dish__meta { color: var(--ink-soft); font: 600 0.75rem/1.3 var(--font-body); text-transform: uppercase; letter-spacing: 0.14em; margin: 0; }
+.price { color: var(--ink); font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dish__meta { color: var(--ink-soft); font: 400 0.9rem/1.4 var(--font-body); margin: 0; }
 .dish__left { color: var(--accent-text); font-weight: 600; }
 .dish--soldout .dish__left { color: var(--ink-soft); }
 .dish--soldout .dish__img { filter: grayscale(1); opacity: 0.6; }
@@ -205,7 +203,7 @@ input:focus-visible, select:focus-visible { border-color: var(--focus); }
 @media (min-width: 1000px) { .menu-layout { grid-template-columns: 1fr 320px; } }
 
 /* ---- status chips (text + colour) ---------------------------------------- */
-.chip { display: inline-block; padding: 0.1rem 0.55rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; border: 1px solid var(--ink); color: var(--ink); }
+.chip { display: inline-block; padding: 0.1rem 0.55rem; font-size: 0.85rem; font-weight: 600; border: 1px solid var(--ink); color: var(--ink); }
 .chip--Reserved { color: var(--ink); border-color: var(--ink); background: var(--well); }
 .chip--Ready { color: var(--accent-text); border-color: var(--accent-text); background: var(--tint); }
 .chip--Collected { color: var(--ink-soft); border-color: var(--ink-soft); }
@@ -217,14 +215,14 @@ input:focus-visible, select:focus-visible { border-color: var(--focus); }
 table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
 caption { text-align: left; font-weight: 700; padding-bottom: 0.5rem; }
 th, td { text-align: left; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
-thead th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-soft); }
+thead th { font-size: 0.88rem; font-weight: 600; color: var(--ink-soft); }
 tbody th { font-weight: 700; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .thumb { width: 64px; height: 44px; object-fit: contain; background: var(--spotlight); }
 
 /* ---- profile ------------------------------------------------------------- */
 .profile { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; align-items: baseline; margin-bottom: 1rem; }
-.role-badge { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; padding: 0.15rem 0.55rem; background: var(--accent); color: var(--accent-ink); }
+.role-badge { font-size: 0.85rem; font-weight: 600; padding: 0.15rem 0.55rem; background: var(--accent); color: var(--accent-ink); }
 
 /* ---- staff portal (control panel) ----------------------------------------- */
 .kpis { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
@@ -248,7 +246,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   display: flex; justify-content: space-between; align-items: center; gap: 1rem;
   min-height: 56px; padding: 0.6rem var(--space) calc(0.6rem + env(safe-area-inset-bottom, 0px));
   background: var(--accent); color: var(--accent-ink); text-decoration: none;
-  font: 600 0.85rem/1.3 var(--font-body); text-transform: uppercase; letter-spacing: 0.08em;
+  font: 600 0.95rem/1.3 var(--font-body);
 }
 .tray-bar:focus-visible { outline: 3px solid var(--ink); outline-offset: -5px; }
 body:has(.tray-bar:not([hidden])) .footer { padding-bottom: calc(2rem + 64px); }
@@ -258,7 +256,7 @@ body:has(.tray-bar:not([hidden])) .footer { padding-bottom: calc(2rem + 64px); }
 @media (max-width: 1000px) {
   .topbar__inner { padding: 0.4rem var(--space); gap: 0 1rem; }
   .topbar nav { gap: 0 0.9rem; }
-  .topbar nav a, .topbar .linkbtn { letter-spacing: 0.06em; }
+  .topbar nav a, .topbar .linkbtn { font-size: 0.9rem; }
 }
 @media (max-width: 760px) { .brand { font-size: 1.4rem; } }
 
@@ -274,7 +272,7 @@ body:has(.tray-bar:not([hidden])) .footer { padding-bottom: calc(2rem + 64px); }
   .table-wrap [data-label] { padding-left: calc(35% + 0.75rem); }
   .table-wrap [data-label]::before {
     content: attr(data-label); position: absolute; left: 0; top: 0.5rem; width: 35%;
-    color: var(--ink-soft); font: 600 0.75rem/1.3 var(--font-body); text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--ink-soft); font: 600 0.85rem/1.3 var(--font-body);
     overflow-wrap: anywhere;
   }
   .table-wrap td .btn { width: 100%; }

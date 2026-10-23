@@ -83,7 +83,7 @@ function renderTray(menu, onChange) {
   const bar = document.getElementById("tray-bar");
   bar.hidden = count === 0;
   document.getElementById("tray-bar-text").textContent =
-    count + (count === 1 ? " dish" : " dishes") + " \u00b7 \u09f3 " + total + " \u00b7 ";
+    count + (count === 1 ? " dish" : " dishes") + ", \u09f3 " + total;
   bar.setAttribute("aria-label", "Review tray: " + count + (count === 1 ? " dish" : " dishes") + ", " + total + " taka");
 }
 
