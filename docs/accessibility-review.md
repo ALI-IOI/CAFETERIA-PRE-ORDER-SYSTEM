@@ -60,3 +60,21 @@ No issues: every input/select/button has a label or `aria-label` (script found 0
 ### Priority fixes remaining
 1. **Screen-reader pass** with NVDA on the staff portal before the demo.
 2. Mark invalid inputs with `aria-invalid` alongside the message (minor).
+
+---
+
+## Re-check after the industrial redesign (2026-10-24)
+
+Pages: landing `/`, `/login.html`, `/register.html`, `/menu.html`, `/reservations.html`, staff portal.
+
+| Check | Result |
+|---|---|
+| Contrast, light and dark themes | `tools/contrast_check.py`: 24/24 pairs pass (body text 15.7:1; white on machine green 6.5:1; deep green on stainless 5.0:1; focus rings 5.8:1 / 9.7:1) |
+| Labels | In-browser script: 0 unlabeled inputs, selects or buttons on the staff portal (including the new Menu items table: every price, availability and picture control has a visually hidden label naming the item) |
+| Touch targets | 0 controls under 40 px except the brand link (38 px, a text link) |
+| Reflow at 375 px | Landing, menu and staff portal: page width 375 px, no horizontal scroll |
+| Tabs | Category tabs are buttons with `aria-pressed`; the tray is a labelled landmark (`aside` + heading) |
+| Status | Tray and menu messages use the existing `role="status"` region; meters have `role="img"` with a text label |
+| Pictures | Dish pictures have alt text ("Picture of Tehari"); the decorative thumbnail in the staff table has empty alt because the item name is in the same row |
+
+Still open from the first audit: `aria-invalid` on invalid fields (minor) and a real screen-reader (NVDA) pass before the demo.

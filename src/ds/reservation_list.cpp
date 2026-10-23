@@ -112,3 +112,51 @@ std::string resCode(int id) {
     std::snprintf(buf, sizeof buf, "R-%04d", id);
     return buf;
 }
+
+// ---- merge sort (order history) ---------------------------------------------
+
+// True if a comes before b: newer day, then later time, then higher ID.
+static bool newerFirst(const Reservation* a, const Reservation* b) {
+    if (a->day != b->day) return a->day > b->day;
+    if (a->reservedAt != b->reservedAt) return a->reservedAt > b->reservedAt;
+    return a->id > b->id;
+}
+
+// Merges two sorted chains into one, re-linking the existing nodes.
+static Reservation* mergeChains(Reservation* a, Reservation* b) {
+    Reservation dummy;
+    dummy.next = nullptr;
+    Reservation* tail = &dummy;
+    while (a != nullptr && b != nullptr) {
+        if (newerFirst(b, a)) {  // take a on ties: keeps equal keys in order
+            tail->next = b;
+            b = b->next;
+        } else {
+            tail->next = a;
+            a = a->next;
+        }
+        tail = tail->next;
+    }
+    tail->next = (a != nullptr) ? a : b;
+    return dummy.next;
+}
+
+// Splits the chain in the middle (slow/fast pointers), sorts both halves, merges.
+static Reservation* mergeSortChain(Reservation* head) {
+    if (head == nullptr || head->next == nullptr) return head;
+    Reservation* slow = head;
+    Reservation* fast = head->next;
+    while (fast != nullptr && fast->next != nullptr) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+    Reservation* second = slow->next;
+    slow->next = nullptr;
+    return mergeChains(mergeSortChain(head), mergeSortChain(second));
+}
+
+void rlSortNewestFirst(ReservationList& list) {
+    list.head = mergeSortChain(list.head);
+    list.tail = list.head;
+    while (list.tail != nullptr && list.tail->next != nullptr) list.tail = list.tail->next;
+}
