@@ -1,5 +1,6 @@
-# Online demo: builds the pages from web/ with pages-demo/build.py (an in-browser
-# stand-in for the C++ server, fake data only) and publishes them on GitHub Pages.
+# Online demo: builds the pages from web/ with pages-demo/build_demo.cpp, adding
+# pages-demo/demo-api.js (an in-browser stand-in for the C++ server, fake data
+# only), and publishes them on GitHub Pages.
 name: Online demo (GitHub Pages)
 
 on:
@@ -21,11 +22,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Build the demo site
-        run: python pages-demo/build.py _site "/${{ github.event.repository.name }}/"
+      - name: Build the demo site (C++17)
+        run: |
+          g++ -std=c++17 -O2 -o build_demo pages-demo/build_demo.cpp
+          ./build_demo _site "/${{ github.event.repository.name }}/"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

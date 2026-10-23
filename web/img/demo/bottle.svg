@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" role="img" aria-label="Demo picture: a bottle of water">
   
-  <rect x="110" y="20" width="20" height="14" rx="2" fill="#16191C"/>
-  <path d="M110 34h20v10c12 8 16 16 16 28v52c0 6-4 10-10 10h-32c-6 0-10-4-10-10V72c0-12 4-20 16-28z" fill="#C8CDD2" stroke="#16191C" stroke-width="2"/>
-  <rect x="94" y="78" width="52" height="30" fill="#1F6B45"/>
-  <path d="M104 93h32" stroke="#F1F2F3" stroke-width="4" stroke-linecap="round"/>
+  <rect x="110" y="20" width="20" height="14" rx="2" fill="#1F1D1A"/>
+  <path d="M110 34h20v10c12 8 16 16 16 28v52c0 6-4 10-10 10h-32c-6 0-10-4-10-10V72c0-12 4-20 16-28z" fill="#E9E0D1" stroke="#1F1D1A" stroke-width="2"/>
+  <rect x="94" y="78" width="52" height="30" fill="#1E5B3E"/>
+  <path d="M104 93h32" stroke="#F7F3EC" stroke-width="4" stroke-linecap="round"/>
 </svg>

@@ -45,6 +45,13 @@ ctest --test-dir build --output-on-failure
 | `build/cafeteria_server` | The web server (default http://127.0.0.1:8080) |
 | `build/cafeteria_admin` | Creates cafeteria staff accounts (`add-staff`) and accounts for university staff with no university email (`add-person`); stop the server first |
 | `build/e2e_section12` | End-to-end test of the proposal's section 12 plan (run by `ctest`) |
+| `build/contrast_check` | WCAG contrast of every colour pair the pages use (run by `ctest`) |
+| `build/check_hex_colors` | Fails if any colour in `web/` or `pages-demo/` is not written in hex (run by `ctest`) |
+| `build/build_demo` | Builds the GitHub Pages demo from `web/` (run by `ctest` and by the Pages workflow) |
+
+Everything is C/C++ (plus CMake for the build and its test scripts); the only other languages are
+the web pages themselves (HTML, CSS, JavaScript), which the browser needs. To repeat a test until it
+fails, use CTest itself: `ctest --test-dir build -R e2e --repeat until-fail:20`.
 
 ## Try it locally
 
@@ -78,7 +85,7 @@ them apart: restrict `/staff/` and `/api/staff/` to the counter PCs at the proxy
 - **Order history and My account** — every finished day is kept in `data/history.txt`; a person's own orders are read into a linked list and merge-sorted newest first. My account shows their details and lets them change their password.
 - **Email retry** — an email that fails to send is retried after 1, 5 and 15 minutes, then logged in `data/email_failed.log`. Waiting emails are kept in `data/pending_emails.txt` across restarts. The staff portal shows how many are waiting.
 
-## Pages (eggshell theme)
+## Pages ("linen and basil" theme)
 
 | Page | Who | What |
 |---|---|---|
@@ -90,10 +97,13 @@ them apart: restrict `/staff/` and `/api/staff/` to the counter PCs at the proxy
 | `/staff/portal.html` | cafeteria staff (not linked from any public page; only from the listed counter computers) | Kitchen (mark ready), menu items (add, price, picture, available today), reservations, packaged stock, settings, undo |
 
 Prices are shown only; people pay at the counter. Staff pictures must be JPEG, PNG or WebP up to 2 MB.
-Demo food pictures are simple drawings in `web/img/demo/`. Headings use Oswald (SIL Open Font
-License, `web/fonts/`). One theme for everyone, whatever the device's dark-mode setting: an
-eggshell page, cream panels, a white top bar, light stainless lines and deep green, with a green
-announcement bar showing whether orders are open. `python tools/contrast_check.py` checks every colour pair.
+Demo food pictures are simple drawings in `web/img/demo/`. Headings use the serif Cormorant
+Garamond (SIL Open Font License, self-hosted in `web/fonts/`) over the system sans. One theme for
+everyone, whatever the device's dark-mode setting, modelled on how acclaimed restaurant sites use
+colour: a warm linen page (`#F7F3EC`), white surfaces, basil green (`#1E5B3E`) for the brand,
+buttons and the announcement bar, terracotta (`#A4532F`) for prices, warm charcoal text. All
+colours are hex, defined once as tokens at the top of `web/css/app.css`; `build/contrast_check`
+and `build/check_hex_colors` keep them accessible and hex-only.
 
 ## Known limits (documented, proposal §10)
 - Sessions are kept in memory; a restart logs everyone out.
@@ -103,6 +113,7 @@ announcement bar showing whether orders are open. `python tools/contrast_check.p
 ## Publishing to GitHub
 
 The public repository (https://github.com/ALI-IOI/cafeteria-pre-order-system) has its own short
-history. Commit on `main` as usual, then run `sh tools/publish.sh "What changed"`: it turns the
-files of `main` (without `docs/proposal/`) into one new commit on the `public`
-branch and pushes that. `DRY_RUN=1 sh tools/publish.sh` shows what would change first.
+history. Commit on `main` as usual, then run `cmake -D MESSAGE="What changed" -P tools/publish.cmake`:
+it turns the files of `main` (without `docs/proposal/`) into one new commit on the
+`public` branch and pushes that. `cmake -D DRY_RUN=1 -P tools/publish.cmake` shows what would
+change first.

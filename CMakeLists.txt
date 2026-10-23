@@ -75,6 +75,20 @@ endif()
 add_test(NAME thread_exit_stress COMMAND thread_exit_stress)
 set_tests_properties(thread_exit_stress PROPERTIES TIMEOUT 120)
 
+# WCAG contrast of every colour pair the pages use (tools/contrast_check.cpp).
+add_executable(contrast_check tools/contrast_check.cpp)
+add_test(NAME contrast_check COMMAND contrast_check)
+
+# Colours are hex only in the pages, scripts and drawings (tools/check_hex_colors.cpp).
+add_executable(check_hex_colors tools/check_hex_colors.cpp)
+add_test(NAME hex_colors_only COMMAND check_hex_colors ${CMAKE_SOURCE_DIR}/web ${CMAKE_SOURCE_DIR}/pages-demo)
+
+# The GitHub Pages demo builder (pages-demo/build_demo.cpp): a real build into the
+# build folder, which fails if any page does not load the in-browser demo backend.
+add_executable(build_demo pages-demo/build_demo.cpp)
+add_test(NAME pages_demo_build COMMAND build_demo ${CMAKE_BINARY_DIR}/pages_demo_site
+         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 file(GLOB E2E_SOURCES CONFIGURE_DEPENDS tests/e2e/*.cpp)
 if(E2E_SOURCES AND TARGET cafeteria_server)
   add_executable(e2e_section12 ${E2E_SOURCES})

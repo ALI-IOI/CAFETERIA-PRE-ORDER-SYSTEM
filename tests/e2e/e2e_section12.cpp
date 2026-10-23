@@ -805,7 +805,7 @@ static int realMain(int argc, char** argv) {
         check(now >= 0 && now < cutoff && openBefore && has(after, "\"open\":false"),
               "theme: public info says whether orders are open", info + " / " + after);
         std::string css = body(guest.get("/css/app.css"));
-        check(!has(css, "prefers-color-scheme") && has(css, "color-scheme: light") && has(css, "--page: #EFE9D9") &&
+        check(!has(css, "prefers-color-scheme") && has(css, "color-scheme: light") && has(css, "--page: #F7F3EC") &&
                   has(css, "--bar: #FFFFFF"),
               "theme: no dark-mode stylesheet", css.substr(0, 80));
     }
