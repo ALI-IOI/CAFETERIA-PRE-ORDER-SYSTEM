@@ -1,7 +1,7 @@
 # Fails if any STL container is used in the directories that must use the
 # hand-built array / linked list / queue / stack (proposal section 7).
 # Usage: cmake -DROOT=<project root> -P tools/check_no_stl.cmake
-set(DIRS src/ds src/core src/auth src/storage src/console)
+set(DIRS src/ds src/core src/auth src/storage src/console src/email)
 set(PATTERN "#include[ \t]*<(vector|list|forward_list|queue|stack|deque|map|set|unordered_map|unordered_set|array)>|std::(vector|list|forward_list|queue|priority_queue|stack|deque|map|multimap|set|multiset|unordered_map|unordered_set|array)[ \t]*<")
 
 set(found "")
