@@ -42,6 +42,6 @@ Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit
 ## Gaps (not covered automatically)
 
 - **Real SMTP delivery** — no account yet (`[CONFIRM]`). Only message building and the curl command line are unit-tested. Test once an account is set: send one confirmation to a team member.
-- **Wall-clock timer thread** — tests drive time through the fake clock; the 60-second background thread is exercised only by a manual run.
+- **Wall-clock timer thread** — tests drive time through the fake clock. Manual check (2026-10-23): server on the real clock with `--tick-seconds 2` re-saved its data files on each tick (12:55:50 → 12:55:56) while answering requests. A real one-hour reminder was not waited for.
 - **HTTPS** — not run locally (proposal §14 allows simplifying it); see README for deploying behind a reverse proxy.
 - **Screen-reader pass** — see `docs/accessibility-review.md`.
