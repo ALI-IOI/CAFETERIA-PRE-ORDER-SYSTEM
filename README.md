@@ -99,3 +99,10 @@ announcement bar showing whether orders are open. `python tools/contrast_check.p
 - Sessions are kept in memory; a restart logs everyone out.
 - One coarse mutex serialises requests — plenty for one cafeteria.
 - Real SMTP delivery is untested until an account is provided.
+
+## Publishing to GitHub
+
+The public repository (https://github.com/ALI-IOI/cafeteria-pre-order-system) has its own short
+history. Commit on `main` as usual, then run `sh tools/publish.sh "What changed"`: it turns the
+files of `main` (without `docs/proposal/`) into one new commit on the `public`
+branch and pushes that. `DRY_RUN=1 sh tools/publish.sh` shows what would change first.
