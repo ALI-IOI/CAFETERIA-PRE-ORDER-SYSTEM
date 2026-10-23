@@ -63,6 +63,20 @@ Caddy or nginx) and start it with `--behind-https` so cookies are marked `Secure
 - **Waitlist** — when a fresh item is sold out, students and teachers can join its waitlist. A cancellation, or staff raising the daily limit, gives the freed portions to the people waiting, first come first served, with a confirmation email. At the cutoff, anyone still waiting gets one "no portion became free" email.
 - **Email retry** — an email that fails to send is retried after 1, 5 and 15 minutes, then logged in `data/email_failed.log`. Waiting emails are kept in `data/pending_emails.txt` across restarts. The staff portal shows how many are waiting.
 
+## Pages (industrial "green and stainless" redesign)
+
+| Page | Who | What |
+|---|---|---|
+| `/` | everyone | Landing page: BAUST Khulna photo (save the real one as `web/img/campus-hero.jpg`; a placeholder shows until then), how it works, today's times |
+| `/login.html`, `/register.html` | students and teachers | Log in; register with university email + ID and an emailed code |
+| `/menu.html` | students and teachers | Menu with category tabs, search and sort; dish cards with picture and price; a tray that reserves several dishes at once (all or nothing); waitlist for sold-out dishes |
+| `/reservations.html` | students and teachers | Your reservations; cancel before the deadline |
+| `/staff/portal.html` | staff | Kitchen (mark ready), menu items (add, price, picture, available today), reservations, packaged stock, settings, undo |
+
+Prices are shown only; people pay at the counter. Staff pictures must be JPEG, PNG or WebP up to 2 MB.
+Demo food pictures are simple drawings in `web/img/demo/`. Headings use Oswald (SIL Open Font
+License, `web/fonts/`). `python tools/contrast_check.py` checks every colour pair.
+
 ## Known limits (documented, proposal §10)
 - Sessions are kept in memory; a restart logs everyone out.
 - One coarse mutex serialises requests — plenty for one cafeteria.

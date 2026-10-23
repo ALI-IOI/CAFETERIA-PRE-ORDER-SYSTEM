@@ -5875,7 +5875,7 @@ inline std::string encode_path(const std::string &s) {
 
 inline std::string file_extension(const std::string &path) {
   std::smatch m;
-  thread_local auto re = std::regex("\\.([a-zA-Z0-9]+)$");
+  static const auto re = std::regex("\\.([a-zA-Z0-9]+)$");  // PATCHED: was thread_local
   if (std::regex_search(path, m, re)) { return m[1].str(); }
   return std::string();
 }
@@ -5947,7 +5947,7 @@ inline bool parse_trailers(stream_line_reader &line_reader, Headers &dest,
   // chunked transfer coding data without the final CRLF.
 
   // RFC 7230 Section 4.1.2 - Headers prohibited in trailers
-  thread_local case_ignore::unordered_set<std::string> prohibited_trailers = {
+  static const case_ignore::unordered_set<std::string> prohibited_trailers = {  // PATCHED: was thread_local
       "transfer-encoding",
       "content-length",
       "host",
@@ -8252,9 +8252,11 @@ inline bool read_headers(Stream &strm, Headers &headers) {
 inline bool parse_status_line(const char *line, std::string &version,
                               int &status, std::string &reason) {
 #ifdef CPPHTTPLIB_ALLOW_LF_AS_LINE_TERMINATOR
-  thread_local const std::regex re("(HTTP/1\\.[01]) (\\d{3})(?: (.*?))?\r?\n");
+  static const std::regex re(  // PATCHED: was thread_local
+      "(HTTP/1\\.[01]) (\\d{3})(?: (.*?))?\r?\n");
 #else
-  thread_local const std::regex re("(HTTP/1\\.[01]) (\\d{3})(?: (.*?))?\r\n");
+  static const std::regex re(  // PATCHED: was thread_local
+      "(HTTP/1\\.[01]) (\\d{3})(?: (.*?))?\r\n");
 #endif
 
   std::cmatch m;
@@ -11566,7 +11568,8 @@ inline std::string sanitize_filename(const std::string &filename) {
 inline std::string append_query_params(const std::string &path,
                                        const Params &params) {
   std::string path_with_query = path;
-  thread_local const std::regex re("[^?]+\\?.*");
+  static const std::regex re(  // PATCHED: was thread_local
+      "[^?]+\\?.*");
   auto delm = std::regex_match(path, re) ? '&' : '?';
   path_with_query += delm + detail::params_to_query_str(params);
   return path_with_query;
@@ -13054,7 +13057,7 @@ inline Server &Server::Options(const std::string &pattern, Handler handler) {
 }
 
 inline const std::set<std::string> &Server::builtin_methods() {
-  thread_local const std::set<std::string> methods{
+  static const std::set<std::string> methods{  // PATCHED: was thread_local
       "GET",     "HEAD",    "POST",  "PUT",   "DELETE",
       "CONNECT", "OPTIONS", "TRACE", "PATCH", "PRI"};
   return methods;
