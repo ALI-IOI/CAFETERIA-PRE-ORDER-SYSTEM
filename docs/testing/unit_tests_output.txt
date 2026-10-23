@@ -71,6 +71,7 @@ PASS staff_computer_empty_list_allows_all
 PASS staff_computer_exact_match
 PASS staff_computer_ipv4_mapped_matches
 PASS is_staff_path_cases
+PASS is_staff_path_windows_spellings
 PASS reserve_before_cutoff_ok
 PASS reserve_at_cutoff_refused
 PASS packaged_item_not_reservable
@@ -104,9 +105,9 @@ PASS queue_fifo_order
 PASS queue_enqueue_full_returns_false_and_keeps_contents
 PASS queue_wraparound_after_dequeues
 PASS queue_init_rejects_nonpositive_capacity
-PASS queue_at_reads_front_to_rear_for_display
-PASEMAIL GIVEN UP after 4 attempts: ready to a@uni.example
-S ready_emails_in_fifo_order
+PASS queue_aEMAIL GIVEN UP after 4 attempts: ready to a@uni.example
+t_reads_front_to_rear_for_display
+PASS ready_emails_in_fifo_order
 PASS ready_skips_cancelled
 PASS ready_batch_stops_at_portion_count
 PASS ready_on_empty_queue_returns_0
@@ -168,6 +169,7 @@ PASS uni_duplicate_email_refused
 PASS users_file_with_employee_round_trips
 PASS employee_self_signup_with_university_email
 PASS blank_email_row_cannot_self_register
+PASS blank_email_row_personal_email_gets_office_message
 PASS add_person_creates_active_account
 PASS add_person_refusals
 PASS add_person_email_lowercased
@@ -219,4 +221,4 @@ PASS stack_lifo_order
 PASS stack_push_full_returns_false_top_unchanged
 PASS stack_from_top_index_for_history_display
 
-219 tests, 219 passed, 0 failed
+221 tests, 221 passed, 0 failed

@@ -90,3 +90,15 @@ TEST(is_staff_path_cases) {
     CHECK(!isStaffPath("/menu.html"));
     CHECK(!isStaffPath("/api/staffroom"));
 }
+
+// Review finding 1: Windows ignores trailing dots and spaces in a folder name and
+// reads "name::$INDEX_ALLOCATION" as the folder itself.
+TEST(is_staff_path_windows_spellings) {
+    CHECK(isStaffPath("/staff./login.html"));
+    CHECK(isStaffPath("/staff../portal.html"));
+    CHECK(isStaffPath("/staff /login.html"));
+    CHECK(isStaffPath("/staff. ./login.html"));
+    CHECK(isStaffPath("/staff::$INDEX_ALLOCATION/login.html"));
+    CHECK(isStaffPath("/STAFF:x/login.html"));
+    CHECK(!isStaffPath("/staffs/login.html"));
+}

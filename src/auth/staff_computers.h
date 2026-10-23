@@ -22,8 +22,9 @@ bool staffComputersLoad(StaffComputers& sc, const std::string& path, std::string
 // seen through an IPv6 socket) also matches "a.b.c.d".
 bool staffComputerAllowed(const StaffComputers& sc, const std::string& remoteAddr);
 
-// True when any segment of the path is "staff", ignoring case ('/' and '\' both
-// separate segments): "/staff/login.html", "/STAFF/portal.html", "/api/staff",
-// "/x/../staff/login.html". Windows serves files case-insensitively, so case
-// must not matter.
+// True when any segment of the path is "staff" as Windows reads it: case is
+// ignored, '/' and '\' both separate segments, trailing dots and spaces are
+// dropped and a ':' starts a stream name ("/staff/login.html", "/STAFF/portal.html",
+// "/api/staff", "/x/../staff/login.html", "/staff./login.html",
+// "/staff::$INDEX_ALLOCATION/login.html").
 bool isStaffPath(const std::string& path);

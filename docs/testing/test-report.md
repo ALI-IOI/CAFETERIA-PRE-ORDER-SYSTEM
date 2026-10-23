@@ -5,12 +5,12 @@
 
 | Suite | What it is | Result |
 |---|---|---|
-| `unit_tests` | 219 unit tests: data structures (incl. linked-list merge sort), rules, storage, auth, email, lock file, waitlist, email retry, menu items, tray, pictures, order history, password change, university staff, staff computer list (fake clock) | **219 / 219 pass** |
+| `unit_tests` | 221 unit tests: data structures (incl. linked-list merge sort), rules, storage, auth, email, lock file, waitlist, email retry, menu items, tray, pictures, order history, password change, university staff, staff computer list (fake clock) | **221 / 221 pass** |
 | `no_stl_guard` | Fails the build if `vector/list/queue/stack/deque/map/set/array` appear in `src/ds`, `src/core`, `src/auth`, `src/storage`, `src/console`, `src/email` | **pass** (proven to fail on an injected `#include <vector>`) |
 | `console_demo` | Scripted run of the stage-2 console program, checks the transcript | **pass** |
 | `admin_tool` | `add-staff` and `add-person`: hashed, duplicate/short/mismatched password refused, a student ID refused for `add-person`, refused while a live server holds the lock, allowed with a stale lock | **pass** |
 | `thread_exit_stress` | 640 short-lived client threads against an in-process HTTP server (guards the MinGW thread-exit crash fix below) | **pass** |
-| `e2e_section12` | Starts the real server (fake clock, temp data, email outbox), drives it over HTTP, crashes and restarts it | **111 / 111 checks pass** |
+| `e2e_section12` | Starts the real server (fake clock, temp data, email outbox), drives it over HTTP, crashes and restarts it | **113 / 113 checks pass** |
 
 Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit_tests_output.txt),
 [e2e_section12_output.txt](e2e_section12_output.txt).
@@ -110,3 +110,12 @@ Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit
 - **Wall-clock timer thread** — tests drive time through the fake clock. Manual check (2026-10-23): server on the real clock with `--tick-seconds 2` re-saved its data files on each tick (12:55:50 → 12:55:56) while answering requests. A real one-hour reminder was not waited for.
 - **HTTPS** — not run locally (proposal §14 allows simplifying it); see README for deploying behind a reverse proxy.
 - **Screen-reader pass** — see `docs/accessibility-review.md`.
+
+## Fixes from the final review of university staff and the hidden terminal (each test seen failing first)
+
+| Finding | Test | Before → after |
+|---|---|---|
+| Windows also opens the staff folder as `staff.`, `staff%2e` and `staff::$INDEX_ALLOCATION`, so those spellings served the staff pages from any computer | unit `is_staff_path_windows_spellings`; E2E `staff_hidden_case_and_path_tricks` (spellings added) | 200 → same as a missing page |
+| The staff pages' scripts were public at `/js/staff-*.js` and named every staff API | E2E `staff hidden: staff scripts are served from /staff/` and the tricks list | 200 → hidden (moved to `web/staff/`) |
+| Staff without a university email who typed a personal one got "use your university email" instead of the office message | unit `blank_email_row_personal_email_gets_office_message`, `register_after_add_person_refused` | NotUniversityEmail → NoUniversityEmail |
+| Page copy left out university staff ("Student or teacher ID", "University email", "Student & teacher login") | E2E `pages: no copy that leaves out university staff` | FAIL → PASS |

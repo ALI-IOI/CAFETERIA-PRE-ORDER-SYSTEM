@@ -1,7 +1,7 @@
-1/6 Test #1: unit_tests .......................   Passed    7.98 sec
+1/6 Test #1: unit_tests .......................   Passed    8.65 sec
 2/6 Test #2: no_stl_guard .....................   Passed    0.04 sec
-3/6 Test #3: console_demo .....................   Passed    0.04 sec
-4/6 Test #4: admin_tool .......................   Passed    0.42 sec
-5/6 Test #5: thread_exit_stress ...............   Passed    0.47 sec
-6/6 Test #6: e2e_section12 ....................   Passed   13.66 sec
+3/6 Test #3: console_demo .....................   Passed    0.13 sec
+4/6 Test #4: admin_tool .......................   Passed    0.51 sec
+5/6 Test #5: thread_exit_stress ...............   Passed    0.42 sec
+6/6 Test #6: e2e_section12 ....................   Passed   15.48 sec
 100% tests passed, 0 tests failed out of 6

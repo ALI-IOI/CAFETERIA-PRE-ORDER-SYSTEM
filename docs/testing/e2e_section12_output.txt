@@ -101,7 +101,9 @@ PASS employee: registers with a university email and reserves
 PASS employee: blank-email row refused with the office message
 PASS employee: admin-added account logs in, reserves, gets the confirmation email
 PASS pages: copy names university staff
+PASS pages: no copy that leaves out university staff
 PASS staff hidden: no public page links to /staff/
+PASS staff hidden: staff scripts are served from /staff/
 PASS setup: restart with a counter PC that is not this computer
 PASS staff hidden: pages and APIs answer like a missing page
 PASS staff_hidden_case_and_path_tricks
@@ -112,4 +114,4 @@ PASS theme: no dark-mode stylesheet
 (stopping server)
 (server stopped)
 
-111 checks, 111 passed, 0 failed
+113 checks, 113 passed, 0 failed

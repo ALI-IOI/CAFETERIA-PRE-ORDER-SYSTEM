@@ -134,6 +134,16 @@ TEST(blank_email_row_cannot_self_register) {
              std::string("You have no university email. Ask the cafeteria office to create your account."));
 }
 
+// Review finding 3: someone without a university email will type a personal one.
+TEST(blank_email_row_personal_email_gets_office_message) {
+    EmployeeFixture f;
+    CHECK_EQ(registerStart(f.auth, "rahim@gmail.com", "3000000000000001", "driverpass1", f.out),
+             AuthResult::NoUniversityEmail);
+    CHECK_EQ(f.out.count, 0);
+    CHECK_EQ(registerStart(f.auth, "ayon@gmail.com", "1072520005101030", "studentpass1", f.out),
+             AuthResult::NotUniversityEmail);  // listed rows with an email still need the university domain
+}
+
 TEST(add_person_creates_active_account) {
     EmployeeFixture f;
     CHECK_EQ(addPerson(f.auth, "3000000000000001", "rahim@example.com", "driverpass1"), AuthResult::Ok);
@@ -177,7 +187,7 @@ TEST(register_after_add_person_refused) {
     CHECK_EQ(registerStart(f.auth, "rahim@uni.example", "3000000000000001", "otherpass1", f.out),
              AuthResult::NoUniversityEmail);
     CHECK_EQ(registerStart(f.auth, "rahim@example.com", "3000000000000001", "otherpass1", f.out),
-             AuthResult::NotUniversityEmail);
+             AuthResult::NoUniversityEmail);
     CHECK_EQ(f.out.count, 0);
     CHECK(ulFind(f.auth.users, "rahim@example.com")->passwordHash == hash);
 }
