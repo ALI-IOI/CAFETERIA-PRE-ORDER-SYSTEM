@@ -7,7 +7,7 @@ four hand-built data structures** — no STL containers for them (checked by a b
 | Structure | Where | Used for |
 |---|---|---|
 | Array | `src/ds/menu_array.*` | Menu, packaged stock, fresh portions (O(1) by index) |
-| Linked list | `src/ds/reservation_list.*`, `src/auth/users.*` | Reservations (tail insert O(1), search/cancel O(n)); user accounts; university list; sessions |
+| Linked list | `src/ds/reservation_list.*`, `src/auth/users.*` | Reservations (tail insert O(1), search/cancel O(n)); user accounts; university list; sessions; order history (merge sort, newest first, O(n log n)) |
 | Circular queue | `src/ds/res_queue.*` | One cooking queue per fresh item (FIFO "ready" emails, cancelled entries skipped); the reminder queue (front = next reminder due) |
 | Array stack | `src/ds/action_stack.*` | Staff action history; "undo the latest action" (LIFO) |
 | Circular queue (addition) | `src/ds/wait_queue.*` | Waitlist per sold-out fresh item: a freed portion goes to the first person waiting |
@@ -61,6 +61,7 @@ Caddy or nginx) and start it with `--behind-https` so cookies are marked `Secure
 
 ## Additions beyond the proposal
 - **Waitlist** — when a fresh item is sold out, students and teachers can join its waitlist. A cancellation, or staff raising the daily limit, gives the freed portions to the people waiting, first come first served, with a confirmation email. At the cutoff, anyone still waiting gets one "no portion became free" email.
+- **Order history and My account** — every finished day is kept in `data/history.txt`; a person's own orders are read into a linked list and merge-sorted newest first. My account shows their details and lets them change their password.
 - **Email retry** — an email that fails to send is retried after 1, 5 and 15 minutes, then logged in `data/email_failed.log`. Waiting emails are kept in `data/pending_emails.txt` across restarts. The staff portal shows how many are waiting.
 
 ## Pages (industrial "green and stainless" redesign)
@@ -70,7 +71,8 @@ Caddy or nginx) and start it with `--behind-https` so cookies are marked `Secure
 | `/` | everyone | Landing page: BAUST Khulna photo (save the real one as `web/img/campus-hero.jpg`; a placeholder shows until then), how it works, today's times |
 | `/login.html`, `/register.html` | students and teachers | Log in; register with university email + ID and an emailed code |
 | `/menu.html` | students and teachers | Menu with category tabs, search and sort; dish cards with picture and price; a tray that reserves several dishes at once (all or nothing); waitlist for sold-out dishes |
-| `/reservations.html` | students and teachers | Your reservations; cancel before the deadline |
+| `/reservations.html` | students and teachers | Today's reservations (cancel before the deadline) and your order history from earlier days, newest first |
+| `/account.html` | students and teachers | Your university details; change your password (signs you out on other devices) |
 | `/staff/portal.html` | staff | Kitchen (mark ready), menu items (add, price, picture, available today), reservations, packaged stock, settings, undo |
 
 Prices are shown only; people pay at the counter. Staff pictures must be JPEG, PNG or WebP up to 2 MB.

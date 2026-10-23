@@ -76,7 +76,27 @@ PASS reservation allowed again after cutoff moved
 PASS setup: restart with the email outbox blocked
 PASS email retry: a failed confirmation waits in the retry queue
 PASS email retry: sent one minute later once the outbox works again
+PASS redesign: public_info_without_login
+PASS redesign: staff adds an item
+PASS redesign: staff_adds_item_student_sees_it (with price)
+PASS redesign: upload_picture_then_served
+PASS redesign: non_image_upload_refused
+PASS redesign: student_cannot_upload
+PASS redesign: other_routes_keep_4kb_limit
+PASS redesign: item_name_shown_as_text
+PASS redesign: unavailable_item_hidden_and_refused
+PASS redesign: tray with one bad line reserves nothing and names the dish
+PASS redesign: tray reserves every dish with one confirmation email
+PASS setup: clock moved past midnight (day rollover)
+PASS history: yesterday's orders listed after midnight
+PASS history: newest first (merge sort)
+PASS history: only your own orders
+PASS history: needs a login
+PASS account: wrong current password refused
+PASS account: password changed, this session stays signed in
+PASS account: old password no longer works, new one does
+PASS account: staff use the admin tool, not this page
 (stopping server)
 (server stopped)
 
-78 checks, 78 passed, 0 failed
+98 checks, 98 passed, 0 failed

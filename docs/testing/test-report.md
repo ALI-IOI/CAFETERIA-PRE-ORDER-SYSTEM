@@ -1,15 +1,16 @@
 # Test report — proposal section 12
 
-**Date:** 2026-10-23 · **Build:** MinGW-w64 g++ 13.1, `-Wall -Wextra`, 0 warnings
+**Date:** 2026-10-24 (re-run after the redesign and order history) · **Build:** MinGW-w64 g++ 13.1, `-Wall -Wextra`, 0 warnings
 **Run:** `ctest --test-dir build --output-on-failure`
 
 | Suite | What it is | Result |
 |---|---|---|
-| `unit_tests` | 156 unit tests: data structures, rules, storage, auth, email, lock file, waitlist, email retry (fake clock) | **156 / 156 pass** |
-| `no_stl_guard` | Fails the build if `vector/list/queue/stack/deque/map/set/array` appear in `src/ds`, `src/core`, `src/auth`, `src/storage`, `src/console` | **pass** (proven to fail on an injected `#include <vector>`) |
+| `unit_tests` | 197 unit tests: data structures (incl. linked-list merge sort), rules, storage, auth, email, lock file, waitlist, email retry, menu items, tray, pictures, order history, password change (fake clock) | **197 / 197 pass** |
+| `no_stl_guard` | Fails the build if `vector/list/queue/stack/deque/map/set/array` appear in `src/ds`, `src/core`, `src/auth`, `src/storage`, `src/console`, `src/email` | **pass** (proven to fail on an injected `#include <vector>`) |
 | `console_demo` | Scripted run of the stage-2 console program, checks the transcript | **pass** |
 | `admin_tool` | Staff account creation: hashed, duplicate/short/mismatched password refused, refused while a live server holds the lock, allowed with a stale lock | **pass** |
-| `e2e_section12` | Starts the real server (fake clock, temp data, email outbox), drives it over HTTP, crashes and restarts it | **78 / 78 checks pass** |
+| `thread_exit_stress` | 640 short-lived client threads against an in-process HTTP server (guards the MinGW thread-exit crash fix below) | **pass** |
+| `e2e_section12` | Starts the real server (fake clock, temp data, email outbox), drives it over HTTP, crashes and restarts it | **98 / 98 checks pass** |
 
 Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit_tests_output.txt),
 [e2e_section12_output.txt](e2e_section12_output.txt).
@@ -59,7 +60,27 @@ Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit
 | End to end | E2E: join at position 1, join twice refused, cannot join while portions remain, place in line shown, cancellation promotes with email, portion used once, list closes at cutoff with email; outbox blocked → confirmation waits → delivered 1 minute after recovery | Pass |
 | Console demo | scripted waitlist scenario (strict FIFO, cutoff email) | Pass |
 
-**Intermittent E2E failures seen once during development:** 4 of about 25 runs in one batch failed (one request with no response, a missed retry check, an abnormal exit after the last check), and one CTest run hung. The cause was **not confirmed**. After hardening the test harness (client timeouts, a 180 s CTest limit, stopping a stray server left by an interrupted run), 35 consecutive runs passed. `tools/e2e_loop.ps1 -Runs 20` re-runs the check.
+**Intermittent E2E failures seen during development (now explained and fixed):** a few runs failed (a request with no response, an abnormal exit after the last check) or hung. Cause, confirmed with a gdb backtrace: heap corruption (`0xC0000374`) when a server worker thread exits. MinGW-w64 runs the destructors of `thread_local` objects after the thread's memory is already freed; cpp-httplib keeps several read-only regexes and sets as `thread_local`. Fix: those five objects are `static const` instead (`third_party/httplib/PATCHES.md`). Evidence: the new `thread_exit_stress` test crashed 5 of 5 times before the patch and passed 10 of 10 after; `tools/e2e_gdb_hunt.sh` ran the E2E suite 25 times under gdb with no crash.
+
+## Redesign (menu items, tray, pictures, landing page)
+
+| Area | Tests | Result |
+|---|---|---|
+| Staff menu items | unit `test_menu_items.cpp` (10): add at next index, refused when the 32-item array is full, duplicate and bad names refused, price change + undo, "not available today" refuses reserve and waitlist, existing reservations kept, waitlist paused while unavailable, undo of availability, picture change not undoable | Pass |
+| Tray (several dishes at once) | unit `test_batch.cpp` (9): all or nothing, one confirmation email with every code and the total | Pass |
+| Pictures | unit `test_image_store.cpp` (7): JPEG/PNG/WebP recognised by their first bytes, anything else refused, 2 MB limit, server-chosen file names only | Pass |
+| End to end | E2E `redesign:` checks (12): public info without login, staff add item, student sees it with price, upload then served, non-image refused, students cannot upload, other routes keep the 4 KB limit, names shown as text, unavailable item hidden and refused, tray with one bad line reserves nothing, tray reserves all with one email | Pass |
+| Look and feel | `python tools/contrast_check.py`: 24 colour pairs, light and dark, 0 failed. Pages checked in a browser at desktop and 375 px phone width (no sideways scrolling) | Pass |
+
+## Order history and My account
+
+| Area | Tests | Result |
+|---|---|---|
+| Merge sort on the linked list | unit `test_reservation_sort.cpp` (5): empty and single, newest day then later time first, ties broken by higher id, already sorted and reversed input, 1,000-node list keeps every node and the tail | Pass |
+| History file | unit `test_history.cpp` (4): only that person's orders, newest first; missing file is empty; damaged line reported; after midnight it holds yesterday's orders | Pass |
+| Password change | unit `change_password_*` (3): other sessions signed out, wrong current password counts toward lockout, weak or unchanged new password refused | Pass |
+| End to end | E2E `history:` / `account:` checks (8): yesterday's orders listed after midnight, newest first, only your own, needs a login; wrong current password refused; changed password keeps this session; old password stops working; staff refused (they use the admin tool) | Pass |
+| Pages | Browser check: "Order history" table under My reservations; My account shows the university details and changes the password (mismatch, wrong current, success messages); logged-out visitors are redirected | Pass |
 
 ## Gaps (not covered automatically)
 
