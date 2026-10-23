@@ -29,7 +29,7 @@ static std::string imageUrl(const MenuItem& m) {
 using httplib::Request;
 using httplib::Response;
 
-enum class Access { Public, User, Staff };  // User = student or teacher
+enum class Access { Public, User, Staff };  // User = student, teacher or university staff
 
 struct Ctx {
     AppState& app;

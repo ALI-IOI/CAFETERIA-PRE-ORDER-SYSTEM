@@ -727,6 +727,11 @@ static int realMain(int argc, char** argv) {
                   has(body(page.get("/register.html")), "university staff") &&
                   has(body(page.get("/js/api.js")), "University staff"),
               "pages: copy names university staff", copy.substr(0, 120));
+        check(!has(body(page.get("/register.html")), "Student or teacher") &&
+                  !has(body(page.get("/login.html")), "University email") &&
+                  !has(body(page.get("/staff/login.html")), "Student &amp; teacher") &&
+                  !has(body(page.get("/staff/login.html")), "Student & teacher"),
+              "pages: no copy that leaves out university staff");
     }
 
     // ---- hidden staff terminal ------------------------------------------------------------
@@ -742,6 +747,12 @@ static int realMain(int argc, char** argv) {
             if (status(pr) != 200 || has(body(pr), "/staff/")) noLinks = false, where += page;
         }
         check(noLinks, "staff hidden: no public page links to /staff/", where);
+        // The staff pages' own scripts live under /staff/ too, so they are hidden with them.
+        std::string portalHtml = body(staff.get("/staff/portal.html"));
+        check(has(portalHtml, "/staff/staff-portal.js") && status(guest.get("/staff/staff-portal.js")) == 200 &&
+                  has(body(guest.get("/staff/login.html")), "/staff/staff-login.js") &&
+                  status(guest.get("/staff/staff-login.js")) == 200,
+              "staff hidden: staff scripts are served from /staff/", portalHtml.substr(0, 80));
 
         killServer(server);
         std::ofstream(g_config + "/staff_computers.txt") << "# only the counter PC\n10.20.30.40\n";
@@ -760,7 +771,10 @@ static int realMain(int argc, char** argv) {
               seen + " " + std::to_string(status(missingGet)));
         bool tricks = true;
         seen.clear();
-        for (const char* path : {"/STAFF/login.html", "/Staff/portal.html", "/staff", "/api/staff", "/x/../staff/login.html"}) {
+        for (const char* path : {"/STAFF/login.html", "/Staff/portal.html", "/staff", "/api/staff", "/x/../staff/login.html",
+                                 "/staff./login.html", "/staff%2e/login.html", "/staff./portal.html",
+                                 "/staff::$INDEX_ALLOCATION/login.html", "/js/staff-portal.js", "/js/staff-login.js",
+                                 "/staff/staff-portal.js"}) {
             auto r2 = guest.get(path);
             if (status(r2) != status(missingGet) || body(r2) != body(missingGet))
                 tricks = false, seen += std::string(path) + "=" + std::to_string(status(r2)) + " ";

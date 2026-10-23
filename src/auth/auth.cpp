@@ -67,12 +67,13 @@ void authFree(AuthState& a) {
 AuthResult registerStart(AuthState& a, const std::string& emailIn, const std::string& universityId,
                          const std::string& password, NotificationList& out) {
     std::string email = toLower(emailIn);
+    UniEntry* entry = validUniversityId(universityId) ? uniFindById(a.uni, universityId) : nullptr;
+    // Staff without a university email will type a personal one: tell them where to go
+    // before the domain check, whatever they typed.
+    if (entry != nullptr && entry->email.empty()) return AuthResult::NoUniversityEmail;
     if (a.cfg.emailDomain.empty() || !validEmail(email) || emailDomain(email) != toLower(a.cfg.emailDomain))
         return AuthResult::NotUniversityEmail;
-    if (!validUniversityId(universityId)) return AuthResult::IdNotListed;
-    UniEntry* entry = uniFindById(a.uni, universityId);
     if (entry == nullptr) return AuthResult::IdNotListed;
-    if (entry->email.empty()) return AuthResult::NoUniversityEmail;
     if (entry->email != email) return AuthResult::EmailIdMismatch;
     if (!validPassword(password)) return AuthResult::WeakPassword;
 

@@ -86,12 +86,21 @@ bool staffComputerAllowed(const StaffComputers& sc, const std::string& remoteAdd
     return false;
 }
 
+// One path segment as Windows reads a file or folder name: everything from the
+// first ':' on is a stream name ("staff::$INDEX_ALLOCATION" is the folder), and
+// trailing dots and spaces are ignored ("staff." and "staff " are "staff").
+static std::string windowsName(const std::string& segment) {
+    std::string s = segment.substr(0, segment.find(':'));
+    while (!s.empty() && (s.back() == '.' || s.back() == ' ')) s.pop_back();
+    return s;
+}
+
 bool isStaffPath(const std::string& path) {
     std::string p = toLower(path);
     size_t start = 0;
     for (size_t i = 0; i <= p.size(); i++) {
         if (i == p.size() || p[i] == '/' || p[i] == '\\') {
-            if (p.compare(start, i - start, "staff") == 0 && i - start == 5) return true;
+            if (windowsName(p.substr(start, i - start)) == "staff") return true;
             start = i + 1;
         }
     }
