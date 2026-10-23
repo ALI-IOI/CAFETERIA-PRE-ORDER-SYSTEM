@@ -77,26 +77,101 @@ Result reserve(Cafeteria& caf, const std::string& user, int itemIndex, int quant
     return reserveWithNote(caf, user, itemIndex, quantity, out, created, "");
 }
 
-Result reserveWithNote(Cafeteria& caf, const std::string& user, int itemIndex, int quantity,
-                       NotificationList& out, Reservation** created, const std::string& note) {
-    cafEnsureToday(caf);
-    if (created) *created = nullptr;
+// The single-dish checks in order, with `heldExtra` / `takenExtra` /
+// `entriesExtra` portions and queue entries already claimed by earlier lines
+// of the same tray (all 0 for a single reservation).
+static Result checkReserve(Cafeteria& caf, const std::string& user, int itemIndex, int quantity, int heldExtra,
+                           int takenExtra, int entriesExtra) {
     MenuItem* item = menuAt(caf.menu, itemIndex);
     if (item == nullptr) return Result::BadItem;
     if (item->kind != ItemKind::Fresh) return Result::NotFresh;
     if (!item->available) return Result::NotAvailable;
     if (quantity < 1 || quantity > caf.settings.perUserLimit) return Result::BadQuantity;
     if (!beforeMinuteOfDay(caf, caf.settings.cutoffMinute)) return Result::CutoffPassed;
-    if (quantity > menuRemaining(*item)) return Result::SoldOut;
-    if (userPortionsToday(caf, user, itemIndex) + quantity > caf.settings.perUserLimit)
+    if (quantity + takenExtra > menuRemaining(*item)) return Result::SoldOut;
+    if (userPortionsToday(caf, user, itemIndex) + heldExtra + quantity > caf.settings.perUserLimit)
         return Result::UserLimit;
-    if (qIsFull(caf.cooking[itemIndex])) return Result::QueueFull;
+    if (caf.cooking[itemIndex].count + entriesExtra + 1 > caf.cooking[itemIndex].capacity) return Result::QueueFull;
+    return Result::Ok;
+}
 
+// Checks, then books: node at the list tail, portions from the array, entry in
+// the item's cooking queue, and the person leaves that item's waitlist. No email.
+static Result reserveCore(Cafeteria& caf, const std::string& user, int itemIndex, int quantity,
+                          Reservation** created) {
+    if (created) *created = nullptr;
+    Result chk = checkReserve(caf, user, itemIndex, quantity, 0, 0, 0);
+    if (chk != Result::Ok) return chk;
+    MenuItem* item = menuAt(caf.menu, itemIndex);
     time_t now = caf.clock->now();
     Reservation* r = rlAppend(caf.reservations, user, itemIndex, quantity, now, dayKeyOf(now));
     item->reservedToday += quantity;
     qEnqueue(caf.cooking[itemIndex], r);
+    // Reserving it yourself means you are no longer waiting for it (promotion
+    // has already taken the entry off the front, so this only matters for a
+    // direct reservation).
+    leaveWaitlist(caf, user, itemIndex);
+    if (created) *created = r;
+    return Result::Ok;
+}
 
+static std::string taka(int amount) {
+    return "\xE0\xA7\xB3 " + std::to_string(amount);  // "৳ 120"
+}
+
+Result reserveBatch(Cafeteria& caf, const std::string& user, const TrayLine* lines, int n, NotificationList& out,
+                    int& failedLine, int* createdIds) {
+    cafEnsureToday(caf);
+    failedLine = -1;
+    if (lines == nullptr || n < 1 || n > MAX_MENU_ITEMS) return Result::BadQuantity;
+
+    // 1. Check every line, counting what earlier lines of this tray already claim.
+    int portions[MAX_MENU_ITEMS] = {0};  // per item: portions claimed by earlier lines
+    int entries[MAX_MENU_ITEMS] = {0};   // per item: cooking-queue entries claimed
+    for (int i = 0; i < n; i++) {
+        int item = lines[i].itemIndex;
+        bool inRange = item >= 0 && item < MAX_MENU_ITEMS;
+        Result r = checkReserve(caf, user, item, lines[i].quantity, inRange ? portions[item] : 0,
+                                inRange ? portions[item] : 0, inRange ? entries[item] : 0);
+        if (r != Result::Ok) {
+            failedLine = i;
+            return r;  // nothing has been changed
+        }
+        portions[item] += lines[i].quantity;
+        entries[item]++;
+    }
+
+    // 2. Book them all (every check above already passed under the same lock).
+    std::string codes, body = "Your reservations are confirmed:\n";
+    int total = 0;
+    for (int i = 0; i < n; i++) {
+        Reservation* r = nullptr;
+        reserveCore(caf, user, lines[i].itemIndex, lines[i].quantity, &r);
+        const MenuItem& m = caf.menu.items[lines[i].itemIndex];
+        int lineTotal = m.priceTaka * lines[i].quantity;
+        total += lineTotal;
+        if (createdIds) createdIds[i] = r->id;
+        codes += (i ? ", " : "") + resCode(r->id);
+        body += resCode(r->id) + "  " + m.name + " x " + std::to_string(lines[i].quantity) + "  " + taka(lineTotal) +
+                "\n";
+    }
+    body += "Total to pay at the counter: " + taka(total) + "\n" +
+            "We will email you when each dish is ready for collection.\n" + "You can cancel until " +
+            formatMinuteOfDay(caf.settings.cancelDeadlineMinute) + " today.";
+    nlAppend(out, NotifType::Confirmation, user, "Reservations confirmed: " + codes, body,
+             createdIds ? createdIds[0] : 0);
+    return Result::Ok;
+}
+
+Result reserveWithNote(Cafeteria& caf, const std::string& user, int itemIndex, int quantity,
+                       NotificationList& out, Reservation** created, const std::string& note) {
+    cafEnsureToday(caf);
+    Reservation* booked = nullptr;
+    Result res = reserveCore(caf, user, itemIndex, quantity, &booked);
+    if (created) *created = booked;
+    if (res != Result::Ok) return res;
+    MenuItem* item = menuAt(caf.menu, itemIndex);
+    Reservation* r = booked;
     std::string code = resCode(r->id);
     nlAppend(out, NotifType::Confirmation, user, "Reservation " + code + " confirmed",
              note + "Reservation " + code + " confirmed: " + item->name + " x " +
@@ -105,11 +180,6 @@ Result reserveWithNote(Cafeteria& caf, const std::string& user, int itemIndex, i
                  "You can cancel until " + formatMinuteOfDay(caf.settings.cancelDeadlineMinute) +
                  " today.",
              r->id);
-    // Reserving it yourself means you are no longer waiting for it (promotion
-    // has already taken the entry off the front, so this only matters for a
-    // direct reservation).
-    leaveWaitlist(caf, user, itemIndex);
-    if (created) *created = r;
     return Result::Ok;
 }
 

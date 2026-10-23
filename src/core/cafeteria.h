@@ -180,3 +180,18 @@ Result setAvailable(Cafeteria& caf, const std::string& staff, int itemIndex, boo
 
 // Records the picture file name chosen by the image store. Not undoable.
 Result setItemImage(Cafeteria& caf, const std::string& staff, int itemIndex, const std::string& fileName);
+
+// ---- tray: several dishes reserved all or nothing (redesign) ------------------
+struct TrayLine {
+    int itemIndex;
+    int quantity;
+};
+
+// Checks every line in order with the single-dish rules, counting portions
+// and queue entries claimed by earlier lines of the same tray. On the first
+// failing line returns its Result, sets failedLine and changes nothing.
+// Otherwise books every line (createdIds[i] = reservation ID, may be null)
+// and queues ONE confirmation email listing each dish, its price and the
+// total to pay at the counter. n must be 1..MAX_MENU_ITEMS.
+Result reserveBatch(Cafeteria& caf, const std::string& user, const TrayLine* lines, int n, NotificationList& out,
+                    int& failedLine, int* createdIds);
