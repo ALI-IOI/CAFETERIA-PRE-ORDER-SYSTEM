@@ -1,0 +1,22 @@
+# Starting menu, copied into data/ on first start. Staff change stock and
+# limits in the portal afterwards. Format: category|name|kind|stock|dailyLimit
+# Line order = item index. At most 32 items.
+#
+# [CONFIRM] Daily limits 12 / 8 / 10 are the proposal's "indicative only" sample (section 9).
+Fresh food|Khichuri|fresh|0|12
+Fresh food|Fried Rice|fresh|0|8
+Fresh food|Tehari|fresh|0|10
+#
+# [CONFIRM] Packaged stock counts are not given in the proposal: all start at 0.
+# [CONFIRM] Proposal section 7 says 17 packaged items but names only these 9 + water.
+# [CONFIRM] Add biscuit names (and water brands) here before the first start.
+Chips|Alloz|packaged|0|0
+Chips|Mr. Twist|packaged|0|0
+Chips|Lays|packaged|0|0
+Chips|Sun|packaged|0|0
+Soft drinks|Dew|packaged|0|0
+Soft drinks|Pepsi|packaged|0|0
+Soft drinks|Mirinda|packaged|0|0
+Soft drinks|7UP|packaged|0|0
+Soft drinks|Coca-Cola|packaged|0|0
+Water|Drinking water|packaged|0|0
