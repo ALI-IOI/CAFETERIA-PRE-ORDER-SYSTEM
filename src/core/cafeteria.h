@@ -90,6 +90,11 @@ Result markCollected(Cafeteria& caf, const std::string& staff, int reservationId
 // from the front of the reminder queue.
 void timerTick(Cafeteria& caf, NotificationList& out);
 
+// Runs the day rollover (D9) if the date changed since the counters were last
+// reset. reserve/cancel/markReady/setDailyLimit call it first, so nothing made
+// after midnight is counted against yesterday or wiped by a later tick.
+void cafEnsureToday(Cafeteria& caf);
+
 // "7 hours", "1 hour 30 minutes", "45 minutes".
 std::string durationText(int minutes);
 
