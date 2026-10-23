@@ -21,7 +21,9 @@ const char* authMessage(AuthResult r) {
         case AuthResult::EmailIdMismatch: return "That email does not match the university record for this ID.";
         case AuthResult::AlreadyRegistered: return "An account already exists for this email.";
         case AuthResult::WeakPassword: return "Password must be 8 to 128 characters.";
-        case AuthResult::BadCode: return "That verification code is not correct.";
+        case AuthResult::BadCode:
+            return "That code is not correct, or the password differs from the one you chose. "
+                   "If someone else registered your email, simply register again.";
         case AuthResult::CodeExpired: return "The verification code has expired. Please register again to get a new code.";
         case AuthResult::BadCredentials: return "Wrong login or password.";
         case AuthResult::Locked: return "Too many failed attempts. The account is locked for a short time.";
@@ -97,13 +99,15 @@ AuthResult registerStart(AuthState& a, const std::string& emailIn, const std::st
     return AuthResult::Ok;
 }
 
-AuthResult registerVerify(AuthState& a, const std::string& emailIn, const std::string& code) {
+AuthResult registerVerify(AuthState& a, const std::string& emailIn, const std::string& code,
+                          const std::string& password) {
     User* u = ulFind(a.users, toLower(emailIn));
     if (u == nullptr) return AuthResult::BadCode;
     if (u->verified) return AuthResult::AlreadyRegistered;
     if (u->codeHash.empty() || a.clock->now() >= u->codeExpires || u->codeAttempts >= a.cfg.codeMaxAttempts)
         return AuthResult::CodeExpired;
-    if (code.size() != 6 || !verifyPassword(u->codeHash, code)) {
+    if (code.size() != 6 || password.size() > (size_t)MAX_PASSWORD_LEN || !verifyPassword(u->codeHash, code) ||
+        !verifyPassword(u->passwordHash, password)) {
         u->codeAttempts++;
         return AuthResult::BadCode;
     }
