@@ -8,6 +8,7 @@ const char* roleName(Role r) {
         case Role::Student: return "student";
         case Role::Teacher: return "teacher";
         case Role::Staff: return "staff";
+        case Role::Employee: return "employee";
     }
     return "unknown";
 }
@@ -16,6 +17,7 @@ bool roleFromName(const std::string& name, Role& out) {
     if (name == "student") out = Role::Student;
     else if (name == "teacher") out = Role::Teacher;
     else if (name == "staff") out = Role::Staff;
+    else if (name == "employee") out = Role::Employee;
     else return false;
     return true;
 }
@@ -82,6 +84,12 @@ UniEntry* uniFindById(const UniList& list, const std::string& id) {
     return nullptr;
 }
 
+UniEntry* uniFindByEmail(const UniList& list, const std::string& email) {
+    for (UniEntry* e = list.head; e != nullptr; e = e->next)
+        if (!e->email.empty() && e->email == email) return e;
+    return nullptr;
+}
+
 bool uniLoadCsv(UniList& list, const std::string& path, std::string& err) {
     std::ifstream in(path);
     if (!in) {
@@ -94,16 +102,24 @@ bool uniLoadCsv(UniList& list, const std::string& path, std::string& err) {
         lineNo++;
         if (!line.empty() && line.back() == '\r') line.pop_back();
         if (line.empty() || line[0] == '#' || line.rfind("id,", 0) == 0) continue;
-        Role role;
-        if (splitFields(line, ',', f, 5) != 5 || !validUniversityId(f[0]) || !validEmail(f[1]) ||
-            !roleFromName(f[2], role) || role == Role::Staff || !validName(f[3]) ||
+        Role role = Role::Student;
+        int n = splitFields(line, ',', f, 5);
+        bool roleOk = n == 5 && roleFromName(f[2], role) && role != Role::Staff;
+        // Only university staff may have no university email (the admin tool
+        // then creates their account with a personal one).
+        bool emailOk = roleOk && (f[1].empty() ? role == Role::Employee : validEmail(f[1]));
+        if (!roleOk || !emailOk || !validUniversityId(f[0]) || !validName(f[3]) ||
             (!f[4].empty() && !validName(f[4]))) {
             err = path + " line " + std::to_string(lineNo) +
-                  ": expected id,email,student|teacher,name,department";
+                  ": expected id,email,student|teacher|employee,name,department";
             return false;
         }
         if (uniFindById(list, f[0]) != nullptr) {
             err = path + " line " + std::to_string(lineNo) + ": duplicate id";
+            return false;
+        }
+        if (!f[1].empty() && uniFindByEmail(list, toLower(f[1])) != nullptr) {
+            err = path + " line " + std::to_string(lineNo) + ": duplicate email";
             return false;
         }
         UniEntry* e = new UniEntry;
