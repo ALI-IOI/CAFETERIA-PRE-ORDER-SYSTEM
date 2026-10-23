@@ -21,7 +21,7 @@ structures underneath. References chosen by the team:
 - **D-R3** Staff add and edit menu items (name, category, fresh/packaged, price, picture, available today). Items are **hidden, never deleted**: reservations refer to items by their array index.
 - **D-R4** The tray reserves **all or nothing**: if any dish breaks a rule, nothing is reserved and the message names the dish.
 - **D-R5** Landing page = hero + "How it works" (3 steps) + "Today's info" strip. No featured-dish grid.
-- **D-R6** The BAUST Khulna photo is a **placeholder** (`web/img/campus-hero.jpg`, a labelled steel-grey image) that the team replaces later. No university logo is used.
+- **D-R6** The BAUST Khulna photo is a **placeholder**: `web/img/campus-hero.svg`, a labelled stainless panel shown behind an optional `web/img/campus-hero.jpg`. The team replaces it by saving the real photo as `campus-hero.jpg`. No university logo is used.
 - **D-R7** Demo food pictures are simple **SVG illustrations drawn for this project** (bowl, chips packet, can, bottle), used until staff upload real photos. No stock or generated photos.
 - **D-R8** Oswald (SIL Open Font License) is downloaded once and self-hosted in `web/fonts/` with its licence file; the server's CSP stays `default-src 'self'`.
 - **D-R9** Placeholders to confirm: menu array capacity `[CONFIRM: 32 items]`, picture upload limit `[CONFIRM: 2 MB]`.
@@ -34,7 +34,7 @@ structures underneath. References chosen by the team:
 - Staff portal "Menu items" panel: add item; edit price, availability, picture. Name and kind are fixed after creation (they label existing reservations).
 - An unavailable item disappears from the student menu; `reserve` and `joinWaitlist` refuse it with a new `Result::NotAvailable`. Existing reservations, cooking queues and reminders for it carry on unchanged. Its waitlist **pauses**: nobody is promoted while it is unavailable, people keep their place, and the normal cutoff email still closes the list.
 - Adding an item when the array is full is refused with a clear message (array capacity is the hand-built limit).
-- Every menu change is a staff action on the undo stack where it can be undone (price, availability); adding an item and changing a picture are logged but not undoable (like "mark ready").
+- Every menu change is a staff action on the undo stack where it can be undone (price, availability); adding an item and changing a picture are not on the undo stack (like "mark ready").
 
 ### 1.2 Picture upload (staff only)
 - `POST /api/staff/items/image` (multipart, one file). Accepted: JPEG, PNG, WebP, recognised by the file's first bytes, not its name or claimed type. Max `[CONFIRM: 2 MB]`.
