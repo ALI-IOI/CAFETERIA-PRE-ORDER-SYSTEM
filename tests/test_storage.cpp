@@ -352,3 +352,53 @@ TEST(corrupt_waitlist_line_refuses_start) {
     CHECK(!r.ok);
     CHECK(r.err.find("waitlist.txt line 1") != std::string::npos);
 }
+
+TEST(menu_round_trip_new_fields) {
+    std::string dir = tempDir("menu_fields");
+    CafeFixture f;
+    bool rec;
+    setPrice(f.caf, STAFF, TEHARI, 120, rec);
+    setAvailable(f.caf, STAFF, LAYS, false, f.out, rec);
+    setItemImage(f.caf, STAFF, TEHARI, "item-2-0123456789abcdef.jpg");
+    int idx;
+    addMenuItem(f.caf, STAFF, "Fresh food", "Biryani", ItemKind::Fresh, 150, 20, idx);
+    std::string err;
+    CHECK(saveCafeteria(f.caf, dir, err));
+    Restarted r(dir, f.clock.now());
+    CHECK(r.ok);
+    CHECK_EQ(r.caf.menu.count, 5);
+    CHECK_EQ(r.caf.menu.items[TEHARI].priceTaka, 120);
+    CHECK_EQ(r.caf.menu.items[TEHARI].imageFile, std::string("item-2-0123456789abcdef.jpg"));
+    CHECK(!r.caf.menu.items[LAYS].available);
+    CHECK(r.caf.menu.items[KHICHURI].available);
+    CHECK_EQ(r.caf.menu.items[4].name, std::string("Biryani"));
+}
+
+TEST(old_five_field_menu_loads) {
+    std::string seed = tempDir("old_menu_seed");
+    std::string dir = tempDir("old_menu_data");
+    {
+        std::ofstream o(seed + "/menu.txt");
+        o << "Fresh food|Khichuri|fresh|0|12\n";
+    }
+    FakeClock c;
+    c.set(2026, 10, 23, 9, 0, 0);
+    Restarted r(dir, c.now(), seed);
+    CHECK(r.ok);
+    CHECK_EQ(r.caf.menu.items[0].priceTaka, 0);
+    CHECK_EQ(r.caf.menu.items[0].imageFile, std::string(""));
+    CHECK(r.caf.menu.items[0].available);
+}
+
+TEST(menu_image_path_traversal_refused) {
+    std::string dir = tempDir("menu_traversal");
+    CafeFixture f;
+    std::string err;
+    saveCafeteria(f.caf, dir, err);
+    {
+        std::ofstream o(dir + "/menu.txt");
+        o << "Fresh food|Khichuri|fresh|0|12|50|../../secret.txt|1\n";
+    }
+    Restarted r(dir, f.clock.now());
+    CHECK(!r.ok);
+}

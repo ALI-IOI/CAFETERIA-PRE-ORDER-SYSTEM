@@ -32,6 +32,7 @@ Result joinWaitlist(Cafeteria& caf, const std::string& user, int itemIndex, int 
     MenuItem* item = menuAt(caf.menu, itemIndex);
     if (item == nullptr) return Result::BadItem;
     if (item->kind != ItemKind::Fresh) return Result::NotFresh;
+    if (!item->available) return Result::NotAvailable;
     if (quantity < 1 || quantity > caf.settings.perUserLimit) return Result::BadQuantity;
     if (!beforeMinuteOfDay(caf, caf.settings.cutoffMinute)) return Result::CutoffPassed;
     if (quantity <= menuRemaining(*item)) return Result::NotSoldOut;
@@ -76,6 +77,7 @@ Result leaveWaitlist(Cafeteria& caf, const std::string& user, int itemIndex) {
 int promoteWaitlist(Cafeteria& caf, int itemIndex, NotificationList& out) {
     MenuItem* item = menuAt(caf.menu, itemIndex);
     if (item == nullptr || item->kind != ItemKind::Fresh) return 0;
+    if (!item->available) return 0;  // paused: people keep their place until it is back
     if (!beforeMinuteOfDay(caf, caf.settings.cutoffMinute)) return 0;
 
     WaitQueue& q = caf.waitlists[itemIndex];
