@@ -55,3 +55,4 @@ async function loadHistory() {
 wireLogout("logout", "/");
 load();
 loadHistory();
+fillAnnouncement();

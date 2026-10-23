@@ -1,4 +1,4 @@
-# WCAG contrast check for the green-and-stainless palette (light and dark).
+# WCAG contrast check for the eggshell palette (one theme, no dark mode).
 # Usage: python tools/contrast_check.py   -> exit code 1 if any pair fails.
 import sys
 
@@ -14,32 +14,27 @@ def ratio(a, b):
 
 TEXT, UI = 4.5, 3.0
 PAIRS = [
-    # light theme
-    ("light: text on concrete", "#16191C", "#F1F2F3", TEXT),
-    ("light: text on card", "#16191C", "#FFFFFF", TEXT),
-    ("light: text on stainless", "#16191C", "#C8CDD2", TEXT),
-    ("light: secondary text on concrete", "#3A4046", "#F1F2F3", TEXT),
-    ("light: secondary text on stainless", "#3A4046", "#C8CDD2", TEXT),
-    ("light: white on machine green button", "#FFFFFF", "#1F6B45", TEXT),
-    ("light: white on graphite button", "#FFFFFF", "#16191C", TEXT),
-    ("light: machine green text on concrete", "#1F6B45", "#F1F2F3", TEXT),
-    ("light: machine green text on card", "#1F6B45", "#FFFFFF", TEXT),
-    ("light: deep green text on stainless", "#0F5C3A", "#C8CDD2", TEXT),
-    ("light: topbar text on graphite", "#F1F2F3", "#16191C", TEXT),
-    ("light: danger text on card", "#A3241C", "#FFFFFF", TEXT),
-    ("light: green accent rule on stainless (UI)", "#1F6B45", "#C8CDD2", UI),
-    ("light: steel border on concrete (UI)", "#6B737B", "#F1F2F3", UI),
-    ("light: focus ring on concrete (UI)", "#1F6B45", "#F1F2F3", UI),
-    ("light: focus ring on graphite bar (UI)", "#7FD1A4", "#16191C", UI),
-    # dark theme
-    ("dark: text on page", "#ECEEF0", "#121416", TEXT),
-    ("dark: text on panel", "#ECEEF0", "#1D2125", TEXT),
-    ("dark: secondary text on panel", "#B6BCC2", "#1D2125", TEXT),
-    ("dark: green text on panel", "#7FD1A4", "#1D2125", TEXT),
-    ("dark: dark text on green button", "#0B1F15", "#7FD1A4", TEXT),
-    ("dark: text on hero steel", "#ECEEF0", "#2A3036", TEXT),
-    ("dark: danger text on panel", "#FF9B92", "#1D2125", TEXT),
-    ("dark: border on panel (UI)", "#69727B", "#1D2125", UI),
+    # eggshell theme (one theme for everyone; spec 2026-10-24 Part 3)
+    ("text on eggshell", "#16191C", "#EFE9D9", TEXT),
+    ("text on cream", "#16191C", "#FAF7EF", TEXT),
+    ("text on white top bar", "#16191C", "#FFFFFF", TEXT),
+    ("text on well", "#16191C", "#E6DFCC", TEXT),
+    ("secondary text on eggshell", "#4A463D", "#EFE9D9", TEXT),
+    ("secondary text on cream", "#4A463D", "#FAF7EF", TEXT),
+    ("secondary text on white", "#4A463D", "#FFFFFF", TEXT),
+    ("white on deep green (bar, buttons)", "#FFFFFF", "#127A4B", TEXT),
+    ("green text on eggshell", "#0F5C3A", "#EFE9D9", TEXT),
+    ("green text on cream", "#0F5C3A", "#FAF7EF", TEXT),
+    ("green text on white", "#0F5C3A", "#FFFFFF", TEXT),
+    ("danger text on eggshell", "#A3241C", "#EFE9D9", TEXT),
+    ("danger text on cream", "#A3241C", "#FAF7EF", TEXT),
+    ("danger text on white", "#A3241C", "#FFFFFF", TEXT),
+    ("danger text on danger tint", "#A3241C", "#F6DED8", TEXT),
+    ("green edge on eggshell (UI)", "#127A4B", "#EFE9D9", UI),
+    ("green edge on cream (UI)", "#127A4B", "#FAF7EF", UI),
+    ("green edge on white (UI)", "#127A4B", "#FFFFFF", UI),
+    ("focus ring on eggshell (UI)", "#127A4B", "#EFE9D9", UI),
+    # Light stainless #C8CDD2 lines are decoration only (about 1.5:1), never a control's edge.
 ]
 
 failed = 0

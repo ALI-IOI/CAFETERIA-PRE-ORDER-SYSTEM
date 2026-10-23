@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" role="img" aria-label="Demo picture: a bowl of rice">
-  <rect width="240" height="160" fill="#E2E5E8"/>
+  
   <ellipse cx="120" cy="78" rx="66" ry="22" fill="#F1F2F3" stroke="#6B737B" stroke-width="2"/>
   <path d="M60 74c8-20 30-30 60-30s52 10 60 30" fill="#C8CDD2" stroke="#6B737B" stroke-width="2"/>
   <circle cx="92" cy="60" r="4" fill="#1F6B45"/><circle cx="128" cy="54" r="4" fill="#1F6B45"/><circle cx="150" cy="64" r="4" fill="#1F6B45"/>

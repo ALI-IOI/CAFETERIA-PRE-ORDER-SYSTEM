@@ -13,3 +13,4 @@
   document.getElementById("info-fresh").textContent = info.freshness;
   document.getElementById("info-now").textContent = info.now;
 })();
+fillAnnouncement();

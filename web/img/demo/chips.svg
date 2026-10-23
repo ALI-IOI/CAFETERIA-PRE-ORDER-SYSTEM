@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" role="img" aria-label="Demo picture: a packet of chips">
-  <rect width="240" height="160" fill="#E2E5E8"/>
+  
   <path d="M84 24h72l-6 10 6 10v76l-6 10 6 10H84l6-10-6-10V44l6-10z" fill="#C8CDD2" stroke="#16191C" stroke-width="2"/>
   <rect x="92" y="58" width="56" height="44" rx="2" fill="#1F6B45"/>
   <path d="M104 82c6-10 26-10 32 0" fill="none" stroke="#F1F2F3" stroke-width="4" stroke-linecap="round"/>
