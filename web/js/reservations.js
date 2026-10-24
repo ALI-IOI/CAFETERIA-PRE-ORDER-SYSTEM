@@ -35,25 +35,9 @@ async function load() {
           class: "btn btn--danger",
           type: "button",
           "aria-label": "Cancel " + res.code + " (" + res.item + ")",
-          // Cancelling gives the portion away, so the first press only asks
-          // for a second one; after 5 seconds the button goes back.
           onclick: async (e) => {
             const button = e.currentTarget;
-            // a double-click is one press: the confirming press must come later
-            if (button.dataset.confirm === "yes" && Date.now() - Number(button.dataset.armedAt) < 400) return;
-            if (button.dataset.confirm !== "yes") {
-              button.dataset.confirm = "yes";
-              button.dataset.armedAt = String(Date.now());
-              button.textContent = "Press again to cancel";
-              button.setAttribute("aria-label", "Press again to cancel " + res.code + " (" + res.item + ")");
-              setTimeout(() => {
-                if (!button.isConnected || button.getAttribute("aria-busy") === "true") return;
-                button.dataset.confirm = "";
-                button.textContent = "Cancel";
-                button.setAttribute("aria-label", "Cancel " + res.code + " (" + res.item + ")");
-              }, 5000);
-              return;
-            }
+            if (button.getAttribute("aria-busy") === "true") return;  // a second press waits for the first
             const done = busy(button, "Cancelling…");
             const c = await api.post("/api/reservations/cancel", { id: res.id });
             done();
