@@ -89,7 +89,7 @@ function dishCard(item) {
     el("div", { class: "dish__top" },
       el("h3", { class: "dish__name" }, item.name),
       el("span", { class: "leader", "aria-hidden": "true" }),
-      el("span", { class: "price" }, taka(item.price))));
+      el("span", { class: item.price > 0 ? "price" : "price price--ask" }, taka(item.price))));
   if (fresh) {
     const pct = item.limit > 0 ? Math.round(((item.limit - left) / item.limit) * 100) : 100;
     const meter = el("div", { class: "meter", role: "img", "aria-label": left + " of " + item.limit + " portions left" }, el("span"));
