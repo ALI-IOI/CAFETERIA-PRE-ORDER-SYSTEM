@@ -83,6 +83,10 @@ add_test(NAME contrast_check COMMAND contrast_check)
 add_executable(check_hex_colors tools/check_hex_colors.cpp)
 add_test(NAME hex_colors_only COMMAND check_hex_colors ${CMAKE_SOURCE_DIR}/web)
 
+# Static rules for every page and the stylesheet (tools/check_pages.cpp).
+add_executable(check_pages tools/check_pages.cpp)
+add_test(NAME page_rules COMMAND check_pages ${CMAKE_SOURCE_DIR}/web)
+
 file(GLOB E2E_SOURCES CONFIGURE_DEPENDS tests/e2e/*.cpp)
 if(E2E_SOURCES AND TARGET cafeteria_server)
   add_executable(e2e_section12 ${E2E_SOURCES})
