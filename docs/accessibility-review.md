@@ -121,9 +121,9 @@ visible piece of text against the background actually behind it.
 | Check | Result |
 |---|---|
 | Contrast, measured on the rendered pages | 0 failing text elements on any page at either width; lowest ratio 5.44:1 (terracotta prices on white), body text 15.2:1 on linen and 16.8:1 on white |
-| Contrast, colour pairs | `build/contrast_check` (ctest `contrast_check`): 24/24 pairs pass |
+| Contrast, colour pairs | `build/contrast_check` (ctest `contrast_check`): 21/21 pairs pass |
 | Controls | Fields and selects have a 3.5:1 edge (`#8A8174`); buttons and tabs a 7.2:1 green edge; focus ring 7.2:1 on linen |
-| Colour notation | `build/check_hex_colors` (ctest `hex_colors_only`): 25 files in `web/` and `pages-demo/`, 0 non-hex colours |
+| Colour notation | `build/check_hex_colors` (ctest `hex_colors_only`): 24 files in `web/`, 0 non-hex colours |
 | Reflow | No horizontal scroll on any page at 375 px |
 | Browser surfaces | Text selection uses pale basil (`#E3EDE6`, text 14.0:1 on it); the caret is basil green |
 
