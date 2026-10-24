@@ -79,6 +79,41 @@ function listState(container, kind, text, onRetry) {
   container.replaceChildren(box);
 }
 
+// Shows (or clears, with "") the error under one field: red edge, the message
+// in a .field__error linked to the input by aria-describedby.
+function fieldError(input, text) {
+  const field = input.closest(".field");
+  const id = input.id + "-error";
+  let note = document.getElementById(id);
+  if (!note) {
+    note = el("span", { class: "field__error", id });
+    input.after(note);
+  }
+  note.textContent = text || "";
+  if (field) field.classList.toggle("field--invalid", Boolean(text));
+  if (text) input.setAttribute("aria-invalid", "true");
+  else input.removeAttribute("aria-invalid");
+  const ids = (input.getAttribute("aria-describedby") || "").split(" ").filter((x) => x && x !== id);
+  if (text) ids.push(id);
+  if (ids.length) input.setAttribute("aria-describedby", ids.join(" "));
+  else input.removeAttribute("aria-describedby");
+}
+
+// Checks a form's required, length and pattern rules in the browser before it is
+// sent. Each field's message is its data-error attribute. Returns true when all
+// are valid; otherwise shows every error and moves focus to the first.
+function checkFields(form) {
+  let first = null;
+  for (const input of form.querySelectorAll("input[data-error], select[data-error]")) {
+    const value = input.value.trim();
+    const bad = !input.disabled && (!input.checkValidity() || (input.required && value === ""));
+    fieldError(input, bad ? input.dataset.error : "");
+    if (bad && !first) first = input;
+  }
+  if (first) first.focus();
+  return first === null;
+}
+
 // Locks a button while the server answers: busy(button, "Reserving…") returns a
 // function that puts it back. A second call while it is busy changes nothing.
 function busy(button, label) {

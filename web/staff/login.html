@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Staff login · BAUSTK Cafeteria</title>
+  <title>Staff login – BAUSTK Cafeteria</title>
   <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
@@ -17,14 +17,16 @@
   <main id="main" class="narrow">
     <h1>Staff login</h1>
     <p class="lead">Staff accounts are created by the administrator. There is no public sign-up.</p>
-    <form id="login-form" class="card" novalidate>
+    <form id="login-form" class="card panel--lead" novalidate>
       <div class="field">
         <label for="login">Staff login</label>
-        <input id="login" name="login" autocomplete="username" required maxlength="32" autocapitalize="none">
+        <input id="login" name="login" autocomplete="username" required maxlength="32" autocapitalize="none"
+               data-error="Enter your staff login.">
       </div>
       <div class="field">
         <label for="password">Password</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="128">
+        <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="128"
+               data-error="Enter your password.">
       </div>
       <button class="btn btn--primary btn--block" type="submit">Log in to the staff portal</button>
       <p id="msg" class="msg" role="status" aria-live="polite"></p>

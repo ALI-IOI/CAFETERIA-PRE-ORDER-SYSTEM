@@ -103,6 +103,7 @@ input, select, textarea { caret-color: var(--accent); accent-color: var(--accent
 
 h1, h2, h3, .brand, .dish__name, .step__num, .figure {
   font-family: var(--font-head); font-weight: 600; letter-spacing: -0.01em; line-height: 1.08; text-wrap: balance;
+  font-variant-numeric: lining-nums;
 }
 h1 { font-size: var(--step-4); margin: 0 0 var(--space-3); }
 h2 { font-size: var(--step-3); margin: var(--space-7) 0 var(--space-3); }
@@ -110,7 +111,7 @@ h3 { font-size: var(--step-2); margin: 0 0 var(--space-2); }
 p { margin: 0 0 var(--space-3); text-wrap: pretty; }
 .lead { color: var(--ink-soft); font-size: var(--step-1); line-height: 1.45; max-width: 60ch; }
 .hint { display: block; color: var(--ink-soft); font: 400 var(--step--1)/1.45 var(--font-body); margin-top: var(--space-1); }
-.num, .price, .figure, time, table { font-variant-numeric: tabular-nums; }
+.num, .price, .figure, time, table { font-variant-numeric: lining-nums tabular-nums; }
 
 /* ==== layout ================================================================== */
 .announce {
@@ -229,6 +230,7 @@ input[disabled], select[disabled] { background: var(--well); color: var(--ink-so
 .card, .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--space-5); }
 .panel--lead, .tray, .kpi { border-top: var(--rule); }
 .card + .card, section.card + form.card { margin-top: var(--space-4); }
+.card > h2:first-child, .card > h3:first-child, .panel > h2:first-child { margin-top: 0; font-size: var(--step-2); }
 
 /* messages and banners */
 .msg { margin: var(--space-3) 0; font-weight: 600; min-height: 1.5rem; }
@@ -309,7 +311,7 @@ tr.is-ready > * { background: var(--tint); }
 .info-strip div:nth-child(odd) { border-right: 1px solid var(--line); }
 .info-strip div:nth-last-child(-n + 2) { border-bottom: 0; }
 .info-strip dt { font-size: var(--step--1); color: var(--ink-soft); }
-.info-strip dd { margin: var(--space-1) 0 0; font: 600 var(--step-3)/1.1 var(--font-head); font-variant-numeric: tabular-nums; }
+.info-strip dd { margin: var(--space-1) 0 0; font: 600 var(--step-3)/1.1 var(--font-head); font-variant-numeric: lining-nums tabular-nums; }
 
 /* menu */
 .menu-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2) var(--space-5); }
