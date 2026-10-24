@@ -434,6 +434,7 @@ static void routeStaff(httplib::Server& svr, AppState& app) {
             j.key("items").beginArray();
             for (int i = 0; i < caf.menu.count; i++) {
                 const MenuItem& m = caf.menu.items[i];
+                if (m.removed) continue;  // retired: not in the kitchen, item or stock lists
                 j.beginObject().key("index").value(i).key("name").value(m.name).key("category").value(m.category);
                 j.key("kind").value(m.kind == ItemKind::Fresh ? "fresh" : "packaged");
                 j.key("stock").value(m.stock);
@@ -780,6 +781,26 @@ static void routeRedesign(httplib::Server& svr, AppState& app) {
                 return;
             }
             Result r = setAvailable(c.app.caf, c.session->login, item, a == "1", c.out, rec);
+            if (r != Result::Ok) {
+                fail(c, httpStatus(r), resultMessage(r));
+                return;
+            }
+            c.changed = true;
+            okMessage(c, lastDescription(c.app.caf), rec);
+        });
+    });
+
+    // Retires an item: gone from the menu and the staff lists, kept for the
+    // reservations and history that refer to it. Undoable.
+    svr.Post("/api/staff/items/remove", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::Staff, [](Ctx& c) {
+            int item;
+            bool rec = false;
+            if (!parseIntStrict(param(c.req, "item"), item)) {
+                fail(c, 400, "Choose an item to remove.");
+                return;
+            }
+            Result r = removeMenuItem(c.app.caf, c.session->login, item, rec);
             if (r != Result::Ok) {
                 fail(c, httpStatus(r), resultMessage(r));
                 return;

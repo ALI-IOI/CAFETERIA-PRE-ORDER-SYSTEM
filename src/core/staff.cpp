@@ -26,7 +26,7 @@ Result setStock(Cafeteria& caf, const std::string& staff, int itemIndex, int val
                 bool& undoRecorded) {
     undoRecorded = false;
     MenuItem* item = menuAt(caf.menu, itemIndex);
-    if (item == nullptr) return Result::BadItem;
+    if (item == nullptr || item->removed) return Result::BadItem;  // a removed item takes no more changes
     if (item->kind != ItemKind::Packaged) return Result::WrongKind;
     if (value < 0 || value > MAX_STOCK) return Result::InvalidValue;
 
@@ -46,7 +46,7 @@ Result setDailyLimit(Cafeteria& caf, const std::string& staff, int itemIndex, in
     undoRecorded = false;
     cafEnsureToday(caf);  // the limit is checked against today's reserved count
     MenuItem* item = menuAt(caf.menu, itemIndex);
-    if (item == nullptr) return Result::BadItem;
+    if (item == nullptr || item->removed) return Result::BadItem;
     if (item->kind != ItemKind::Fresh) return Result::WrongKind;
     if (value < item->reservedToday || value > caf.cookingCapacity) return Result::InvalidValue;
 
@@ -86,9 +86,24 @@ static bool inQueue(const ResQueue& q, const Reservation* r) {
     return false;
 }
 
+// True if an item other than `except` that is not removed has this name
+// (a removed item's name may be used again). Linear scan of the array.
+static bool nameInUse(const MenuArray& menu, const std::string& name, int except) {
+    for (int i = 0; i < menu.count; i++)
+        if (i != except && !menu.items[i].removed && menu.items[i].name == name) return true;
+    return false;
+}
+
 // Restores one action. Returns false when it can no longer be undone.
 static bool restore(Cafeteria& caf, const StaffAction& a) {
     switch (a.type) {
+        case ActionType::RemoveItem: {
+            MenuItem* item = menuAt(caf.menu, a.itemIndex);
+            if (item == nullptr || !item->removed || nameInUse(caf.menu, item->name, a.itemIndex)) return false;
+            item->removed = false;
+            item->available = a.oldValue != 0;
+            return true;
+        }
         case ActionType::SetStock: {
             MenuItem* item = menuAt(caf.menu, a.itemIndex);
             if (item == nullptr) return false;
@@ -177,7 +192,7 @@ Result addMenuItem(Cafeteria& caf, const std::string& staff, const std::string& 
     (void)staff;
     newIndex = -1;
     // The category starts the menu.txt line, where a leading '#' marks a comment.
-    if (!validName(category) || category[0] == '#' || !validName(name) || menuFindByName(caf.menu, name) != -1)
+    if (!validName(category) || category[0] == '#' || !validName(name) || nameInUse(caf.menu, name, -1))
         return Result::InvalidValue;
     if (priceTaka < 0 || priceTaka > MAX_PRICE_TAKA) return Result::InvalidValue;
     int maxAmount = kind == ItemKind::Fresh ? caf.cookingCapacity : MAX_STOCK;
@@ -201,7 +216,7 @@ Result addMenuItem(Cafeteria& caf, const std::string& staff, const std::string& 
 Result setPrice(Cafeteria& caf, const std::string& staff, int itemIndex, int priceTaka, bool& undoRecorded) {
     undoRecorded = false;
     MenuItem* item = menuAt(caf.menu, itemIndex);
-    if (item == nullptr) return Result::BadItem;
+    if (item == nullptr || item->removed) return Result::BadItem;
     if (priceTaka < 0 || priceTaka > MAX_PRICE_TAKA) return Result::InvalidValue;
     StaffAction a = newAction(caf, ActionType::SetPrice, staff);
     a.itemIndex = itemIndex;
@@ -217,7 +232,7 @@ Result setAvailable(Cafeteria& caf, const std::string& staff, int itemIndex, boo
                     NotificationList& out, bool& undoRecorded) {
     undoRecorded = false;
     MenuItem* item = menuAt(caf.menu, itemIndex);
-    if (item == nullptr) return Result::BadItem;
+    if (item == nullptr || item->removed) return Result::BadItem;
     StaffAction a = newAction(caf, ActionType::SetAvailable, staff);
     a.itemIndex = itemIndex;
     a.oldValue = item->available ? 1 : 0;
@@ -229,10 +244,31 @@ Result setAvailable(Cafeteria& caf, const std::string& staff, int itemIndex, boo
     return Result::Ok;
 }
 
+Result removeMenuItem(Cafeteria& caf, const std::string& staff, int itemIndex, bool& undoRecorded) {
+    undoRecorded = false;
+    MenuItem* item = menuAt(caf.menu, itemIndex);
+    if (item == nullptr || item->removed) return Result::BadItem;
+    // walk the reservation list: anything still to cook or to collect holds the item
+    for (const Reservation* r = caf.reservations.head; r != nullptr; r = r->next) {
+        if (r->itemIndex == itemIndex && (r->status == ResStatus::Reserved || r->status == ResStatus::Ready))
+            return Result::ItemInUse;
+    }
+    if (item->kind == ItemKind::Fresh && waitlistActiveCount(caf, itemIndex) > 0) return Result::ItemInUse;
+    StaffAction a = newAction(caf, ActionType::RemoveItem, staff);
+    a.itemIndex = itemIndex;
+    a.oldValue = item->available ? 1 : 0;
+    a.newValue = 0;
+    a.description = "Removed " + item->name;
+    item->removed = true;
+    item->available = false;
+    undoRecorded = stPush(caf.history, a);
+    return Result::Ok;
+}
+
 Result setItemImage(Cafeteria& caf, const std::string& staff, int itemIndex, const std::string& fileName) {
     (void)staff;
     MenuItem* item = menuAt(caf.menu, itemIndex);
-    if (item == nullptr) return Result::BadItem;
+    if (item == nullptr || item->removed) return Result::BadItem;
     item->imageFile = fileName;
     return Result::Ok;
 }

@@ -14,7 +14,8 @@ struct MenuItem {
     int reservedToday;  // fresh items: portions already reserved today
     int priceTaka = 0;      // shown only; paid in cash at the counter (no online payment)
     std::string imageFile;  // server-chosen picture file in data/images, or "" for the demo picture
-    bool available = true;  // false: hidden from the menu, cannot be reserved (never deleted)
+    bool available = true;  // false: hidden from the menu, cannot be reserved
+    bool removed = false;   // retired by staff: hidden everywhere, but keeps its index (reservations refer to it)
 };
 
 const int MAX_MENU_ITEMS = 32;

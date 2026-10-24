@@ -48,6 +48,7 @@ enum class Result {
     NotWaiting,
     NotAvailable,
     MenuFull,
+    ItemInUse,
 };
 
 const char* resultMessage(Result r);
@@ -160,7 +161,9 @@ Result reserveWithNote(Cafeteria& caf, const std::string& user, int itemIndex, i
                        NotificationList& out, Reservation** created, const std::string& note);
 
 // ---- menu items managed by staff (staff.cpp, redesign) ------------------------
-// Items are never deleted: reservations refer to them by array index.
+// Items are never erased: reservations refer to them by array index. Removing
+// one retires it (MenuItem::removed): it disappears from the menu and the staff
+// lists but keeps its place.
 
 const int MAX_PRICE_TAKA = 9999;
 
@@ -177,6 +180,12 @@ Result setPrice(Cafeteria& caf, const std::string& staff, int itemIndex, int pri
 // Undoable. Turning an item back on lets its waitlist move again.
 Result setAvailable(Cafeteria& caf, const std::string& staff, int itemIndex, bool available,
                     NotificationList& out, bool& undoRecorded);
+
+// Retires an item. BadItem for an unknown or already removed item; ItemInUse
+// while any reservation of it is Reserved or Ready, or anyone is on its
+// waitlist. Also switches it off. Undoable: undo brings it back as it was
+// (UndoBlocked once a new item has taken its name).
+Result removeMenuItem(Cafeteria& caf, const std::string& staff, int itemIndex, bool& undoRecorded);
 
 // Records the picture file name chosen by the image store. Not undoable.
 Result setItemImage(Cafeteria& caf, const std::string& staff, int itemIndex, const std::string& fileName);

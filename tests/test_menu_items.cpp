@@ -126,3 +126,91 @@ TEST(set_item_image_not_undoable) {
     CHECK(stIsEmpty(f.caf.history));
     CHECK_EQ(setItemImage(f.caf, STAFF, 99, "x.png"), Result::BadItem);
 }
+
+// ---- removing items: retired, not erased (reservations refer to the index) ----
+
+TEST(remove_item_hides_it_and_refuses_reserve) {
+    CafeFixture f;
+    bool rec = false;
+    CHECK_EQ(removeMenuItem(f.caf, STAFF, KHICHURI, rec), Result::Ok);
+    CHECK(rec);
+    CHECK(f.caf.menu.items[KHICHURI].removed);
+    CHECK(!f.caf.menu.items[KHICHURI].available);
+    CHECK_EQ(f.caf.menu.count, 4);  // keeps its place: later indices do not move
+    CHECK_EQ(stPeek(f.caf.history)->description, std::string("Removed Khichuri"));
+    Reservation* r = nullptr;
+    CHECK_EQ(reserve(f.caf, ALICE, KHICHURI, 1, f.out, &r), Result::NotAvailable);
+}
+
+TEST(remove_item_refused_while_reserved_or_ready) {
+    CafeFixture f;
+    Reservation* a = f.reserveOk(ALICE, TEHARI, 1);
+    bool rec = false;
+    CHECK_EQ(removeMenuItem(f.caf, STAFF, TEHARI, rec), Result::ItemInUse);
+    CHECK(!rec);
+    ReadyReport rep;
+    markReady(f.caf, STAFF, TEHARI, 0, f.out, rep);
+    CHECK_EQ(removeMenuItem(f.caf, STAFF, TEHARI, rec), Result::ItemInUse);  // ready, not collected yet
+    CHECK_EQ(markCollected(f.caf, STAFF, a->id, rec), Result::Ok);
+    CHECK_EQ(removeMenuItem(f.caf, STAFF, TEHARI, rec), Result::Ok);
+    CHECK(f.caf.menu.items[TEHARI].removed);
+}
+
+TEST(remove_item_allowed_after_cancel_refused_with_waitlist) {
+    CafeFixture f;
+    Reservation* a = f.reserveOk(ALICE, KHICHURI, 1);
+    cancelReservation(f.caf, ALICE, a->id, f.out);
+    bool rec;
+    CHECK_EQ(removeMenuItem(f.caf, STAFF, KHICHURI, rec), Result::Ok);  // a cancellation does not hold it
+    f.caf.menu.items[FRIED_RICE].dailyLimit = 0;  // sold out
+    int pos;
+    CHECK_EQ(joinWaitlist(f.caf, BOB, FRIED_RICE, 1, pos), Result::Ok);
+    CHECK_EQ(removeMenuItem(f.caf, STAFF, FRIED_RICE, rec), Result::ItemInUse);
+}
+
+TEST(remove_item_bad_or_already_removed) {
+    CafeFixture f;
+    bool rec;
+    CHECK_EQ(removeMenuItem(f.caf, STAFF, 99, rec), Result::BadItem);
+    CHECK_EQ(removeMenuItem(f.caf, STAFF, LAYS, rec), Result::Ok);
+    CHECK_EQ(removeMenuItem(f.caf, STAFF, LAYS, rec), Result::BadItem);
+}
+
+TEST(undo_remove_item_restores_it) {
+    CafeFixture f;
+    bool rec;
+    removeMenuItem(f.caf, STAFF, KHICHURI, rec);
+    StaffAction u;
+    CHECK_EQ(undoLast(f.caf, STAFF, f.out, u), Result::Ok);
+    CHECK(!f.caf.menu.items[KHICHURI].removed);
+    CHECK(f.caf.menu.items[KHICHURI].available);
+    CHECK(f.reserveOk(ALICE, KHICHURI, 1) != nullptr);
+    // an item that was switched off before it was removed comes back switched off
+    setAvailable(f.caf, STAFF, TEHARI, false, f.out, rec);
+    removeMenuItem(f.caf, STAFF, TEHARI, rec);
+    CHECK_EQ(undoLast(f.caf, STAFF, f.out, u), Result::Ok);
+    CHECK(!f.caf.menu.items[TEHARI].removed);
+    CHECK(!f.caf.menu.items[TEHARI].available);
+}
+
+TEST(removed_item_name_can_be_reused) {
+    CafeFixture f;
+    bool rec;
+    removeMenuItem(f.caf, STAFF, KHICHURI, rec);
+    int idx = -1;
+    CHECK_EQ(addMenuItem(f.caf, STAFF, "Fresh food", "Khichuri", ItemKind::Fresh, 90, 10, idx), Result::Ok);
+    CHECK_EQ(idx, 4);
+    // undoing the old removal now would give two items the same name
+    StaffAction u;
+    CHECK_EQ(undoLast(f.caf, STAFF, f.out, u), Result::UndoBlocked);
+    CHECK(f.caf.menu.items[KHICHURI].removed);
+}
+
+TEST(removed_item_cannot_be_switched_on_or_repriced) {
+    CafeFixture f;
+    bool rec;
+    removeMenuItem(f.caf, STAFF, TEHARI, rec);
+    CHECK_EQ(setAvailable(f.caf, STAFF, TEHARI, true, f.out, rec), Result::BadItem);
+    CHECK_EQ(setPrice(f.caf, STAFF, TEHARI, 50, rec), Result::BadItem);
+    CHECK(!f.caf.menu.items[TEHARI].available);
+}

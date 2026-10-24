@@ -21,19 +21,29 @@ static bool loadMenu(Cafeteria& caf, const std::string& path, std::string& err) 
         err = "cannot open " + path;
         return false;
     }
-    std::string line, f[8];
+    std::string line, f[9];
     int lineNo = 0;
     while (std::getline(in, line)) {
         lineNo++;
         line = stripCR(line);
         if (isSkippable(line)) continue;
         MenuItem m;
-        int n = splitFields(line, '|', f, 8);
-        if ((n != 5 && n != 8) || f[1].empty()) {  // 5 = format before price/picture/availability
-            err = lineError("menu.txt", lineNo, "expected category|name|kind|stock|dailyLimit|price|image|available");
+        // 5 = format before price/picture/availability, 8 = before removed items
+        int n = splitFields(line, '|', f, 9);
+        if ((n != 5 && n != 8 && n != 9) || f[1].empty()) {
+            err = lineError("menu.txt", lineNo,
+                            "expected category|name|kind|stock|dailyLimit|price|image|available|removed");
             return false;
         }
-        if (n == 8) {
+        if (n == 9) {
+            int removed;
+            if (!parseIntStrict(f[8], removed) || (removed != 0 && removed != 1)) {
+                err = lineError("menu.txt", lineNo, "removed must be 0 or 1");
+                return false;
+            }
+            m.removed = removed == 1;
+        }
+        if (n >= 8) {
             int avail;
             bool badImage = !f[6].empty() && !validImageFileName(f[6]);  // only server-chosen names
             if (!parseIntStrict(f[5], m.priceTaka) || m.priceTaka < 0 || m.priceTaka > MAX_PRICE_TAKA ||
@@ -244,12 +254,13 @@ static std::string reservationLine(const Reservation* r) {
 bool saveCafeteria(Cafeteria& caf, const std::string& dataDir, std::string& err) {
     if (!ensureDir(dataDir, err)) return false;
 
-    std::string menu = "# category|name|kind|stock|dailyLimit|priceTaka|imageFile|available  (line order = item index)\n";
+    std::string menu =
+        "# category|name|kind|stock|dailyLimit|priceTaka|imageFile|available|removed  (line order = item index)\n";
     for (int i = 0; i < caf.menu.count; i++) {
         const MenuItem& m = caf.menu.items[i];
         menu += m.category + "|" + m.name + "|" + (m.kind == ItemKind::Fresh ? "fresh" : "packaged") + "|" +
                 std::to_string(m.stock) + "|" + std::to_string(m.dailyLimit) + "|" + std::to_string(m.priceTaka) +
-                "|" + m.imageFile + "|" + (m.available ? "1" : "0") + "\n";
+                "|" + m.imageFile + "|" + (m.available ? "1" : "0") + "|" + (m.removed ? "1" : "0") + "\n";
     }
 
     std::string settings;

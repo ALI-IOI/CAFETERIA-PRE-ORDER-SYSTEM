@@ -4,7 +4,7 @@
 #include <ctime>
 #include <string>
 
-enum class ActionType { SetStock, SetDailyLimit, SetSetting, MarkCollected, SetPrice, SetAvailable };
+enum class ActionType { SetStock, SetDailyLimit, SetSetting, MarkCollected, SetPrice, SetAvailable, RemoveItem };
 
 struct StaffAction {
     ActionType type;

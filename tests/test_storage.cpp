@@ -402,3 +402,18 @@ TEST(menu_image_path_traversal_refused) {
     Restarted r(dir, f.clock.now());
     CHECK(!r.ok);
 }
+
+TEST(removed_item_survives_restart) {
+    std::string dir = tempDir("removed_item");
+    CafeFixture f;
+    bool rec;
+    CHECK_EQ(removeMenuItem(f.caf, STAFF, LAYS, rec), Result::Ok);
+    std::string err;
+    CHECK(saveCafeteria(f.caf, dir, err));
+    Restarted r(dir, f.clock.now());
+    CHECK(r.ok);
+    CHECK_EQ(r.caf.menu.count, 4);
+    CHECK(r.caf.menu.items[LAYS].removed);
+    CHECK(!r.caf.menu.items[LAYS].available);
+    CHECK(!r.caf.menu.items[TEHARI].removed);
+}
