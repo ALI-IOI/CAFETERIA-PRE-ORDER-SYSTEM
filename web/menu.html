@@ -3,7 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Today's menu – BAUSTK Cafeteria</title>
+  <meta name="theme-color" content="#F7F3EC">
+  <link rel="preload" href="/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <title>Today’s menu – BAUSTK Cafeteria</title>
   <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
@@ -27,7 +29,7 @@
       <div class="profile" id="profile"></div>
       <p class="menu-status" id="menu-status"></p>
     </div>
-    <h1>Today's menu</h1>
+    <h1>Today’s menu</h1>
     <div id="banner" class="banner" role="note"></div>
     <p id="msg" class="msg" role="status" aria-live="polite"></p>
 
@@ -39,7 +41,7 @@
       <div class="toolbar__fields">
         <div class="field">
           <label for="search">Search</label>
-          <input id="search" type="search" placeholder="Tehari" autocomplete="off" maxlength="60">
+          <input id="search" name="q" type="search" spellcheck="false" placeholder="Khichuri, Tehari…" autocomplete="off" maxlength="60">
         </div>
         <div class="field">
           <label for="sort">Sort by</label>

@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#F7F3EC">
+  <link rel="preload" href="/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
   <title>My account – BAUSTK Cafeteria</title>
   <link rel="stylesheet" href="/css/app.css">
 </head>
@@ -27,7 +29,7 @@
 
     <section class="card" aria-labelledby="details-h">
       <h2 id="details-h">Your details</h2>
-      <p class="hint">These come from the university's records. Ask the university office to correct them.</p>
+      <p class="hint">These come from the university’s records. Ask the university office to correct them.</p>
       <dl class="details" id="details"></dl>
     </section>
 
@@ -35,18 +37,18 @@
       <h2 id="pw-h">Change password</h2>
       <div class="field">
         <label for="current">Current password</label>
-        <input id="current" type="password" autocomplete="current-password" required maxlength="128"
+        <input id="current" name="current-password" type="password" autocomplete="current-password" required maxlength="128"
                data-error="Enter your current password.">
       </div>
       <div class="field">
         <label for="new1">New password</label>
         <span class="hint" id="new1-hint">At least 8 characters.</span>
-        <input id="new1" type="password" autocomplete="new-password" required minlength="8" maxlength="128"
+        <input id="new1" name="new-password" type="password" autocomplete="new-password" required minlength="8" maxlength="128"
                aria-describedby="new1-hint" data-error="Choose a new password of at least 8 characters.">
       </div>
       <div class="field">
         <label for="new2">Repeat new password</label>
-        <input id="new2" type="password" autocomplete="new-password" required minlength="8" maxlength="128"
+        <input id="new2" name="new-password-repeat" type="password" autocomplete="new-password" required minlength="8" maxlength="128"
                data-error="Repeat the new password.">
       </div>
       <button class="btn btn--primary btn--block" type="submit">Change password</button>

@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#F7F3EC">
+  <link rel="preload" href="/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
   <title>Staff portal – BAUSTK Cafeteria</title>
   <link rel="stylesheet" href="/css/app.css">
 </head>
@@ -67,25 +69,25 @@
           <form id="add-item" class="card grid" novalidate aria-labelledby="add-h">
             <h3 class="visually-hidden" id="add-h">Add an item</h3>
             <div class="field"><label for="ni-name">New item name</label>
-              <input id="ni-name" required maxlength="60" data-error="Enter the item's name."></div>
+              <input id="ni-name" name="name" autocomplete="off" required maxlength="60" data-error="Enter the item’s name."></div>
             <div class="field"><label for="ni-cat">Category</label><span class="hint" id="ni-cat-hint">For example Fresh food, Chips, Soft drinks</span>
-              <input id="ni-cat" required maxlength="60" list="ni-cats" aria-describedby="ni-cat-hint" data-error="Enter a category."><datalist id="ni-cats"></datalist></div>
+              <input id="ni-cat" name="category" autocomplete="off" required maxlength="60" list="ni-cats" aria-describedby="ni-cat-hint" data-error="Enter a category."><datalist id="ni-cats"></datalist></div>
             <div class="field"><label for="ni-kind">Kind</label>
               <select id="ni-kind"><option value="fresh">Fresh (reservable)</option><option value="packaged">Packaged (view only)</option></select></div>
             <div class="field"><label for="ni-price">Price (taka)</label>
-              <input id="ni-price" type="number" min="0" max="9999" value="0" required data-error="Enter a price from 0 to 9999."></div>
+              <input id="ni-price" name="price" autocomplete="off" type="number" min="0" max="9999" value="0" required data-error="Enter a price from 0 to 9999."></div>
             <div class="field"><label for="ni-amount">Daily portions or stock</label>
-              <input id="ni-amount" type="number" min="0" max="9999" value="10" required data-error="Enter a number from 0 to 9999."></div>
+              <input id="ni-amount" name="amount" autocomplete="off" type="number" min="0" max="9999" value="10" required data-error="Enter a number from 0 to 9999."></div>
             <div class="field"><button class="btn btn--primary btn--block" type="submit">Add item</button></div>
           </form>
         </section>
 
         <section id="reservations" aria-labelledby="res-h">
-          <h2 id="res-h">Today's reservations</h2>
+          <h2 id="res-h">Today’s reservations</h2>
           <form id="search" class="row" role="search">
             <div class="field">
               <label for="q">Find by reservation ID</label>
-              <input id="q" name="q" placeholder="R-0042" maxlength="12" autocomplete="off">
+              <input id="q" name="q" spellcheck="false" placeholder="R-0042…" maxlength="12" autocomplete="off">
             </div>
             <button class="btn" type="submit">Search</button>
             <button class="btn" type="button" id="clear">Show all</button>

@@ -133,7 +133,7 @@ function busy(button, label) {
 
 // "৳ 120", or a note when staff have not set a price yet.
 function taka(amount) {
-  return amount > 0 ? "৳ " + amount : "Price at counter";
+  return amount > 0 ? "৳ " + amount : "Price at counter";  // no line break between sign and number
 }
 
 // sessionStorage can be unavailable (private mode, blocked storage).

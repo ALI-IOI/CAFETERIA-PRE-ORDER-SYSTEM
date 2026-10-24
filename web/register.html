@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#F7F3EC">
+  <link rel="preload" href="/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
   <title>Create your account – BAUSTK Cafeteria</title>
   <link rel="stylesheet" href="/css/app.css">
 </head>
@@ -21,19 +23,19 @@
       <li>Check your email</li>
     </ol>
     <h1>Create your account</h1>
-    <p class="lead">For BAUSTK students, teachers and university staff. Your role comes from the university's records.</p>
+    <p class="lead">For BAUSTK students, teachers and university staff. Your role comes from the university’s records.</p>
 
     <form id="step1" class="card" novalidate>
       <h2>Your details</h2>
       <div class="field">
         <label for="email">University email</label>
-        <input id="email" name="email" type="email" autocomplete="email" required maxlength="100"
+        <input id="email" name="email" spellcheck="false" type="email" autocomplete="email" required maxlength="100"
                data-error="Enter your university email address.">
       </div>
       <div class="field">
         <label for="uid">University ID</label>
         <span class="hint" id="uid-hint">Digits only, as on your university ID card.</span>
-        <input id="uid" name="id" inputmode="numeric" pattern="[0-9]*" required maxlength="20" autocomplete="off"
+        <input id="uid" name="id" spellcheck="false" inputmode="numeric" pattern="[0-9]*" required maxlength="20" autocomplete="off"
                aria-describedby="uid-hint" data-error="Enter your university ID, digits only.">
       </div>
       <div class="field">
@@ -51,7 +53,7 @@
       <p>We sent a 6-digit code to <strong id="sent-to"></strong>. It expires in 15 minutes.</p>
       <div class="field">
         <label for="code">Verification code</label>
-        <input id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code"
+        <input id="code" name="code" spellcheck="false" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code"
                data-error="Enter the 6-digit code from the email.">
       </div>
       <button class="btn btn--primary btn--block" type="submit">Verify email</button>

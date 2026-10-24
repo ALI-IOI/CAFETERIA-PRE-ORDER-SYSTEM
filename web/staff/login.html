@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#F7F3EC">
+  <link rel="preload" href="/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
   <title>Staff login – BAUSTK Cafeteria</title>
   <link rel="stylesheet" href="/css/app.css">
 </head>
@@ -20,7 +22,7 @@
     <form id="login-form" class="card panel--lead" novalidate>
       <div class="field">
         <label for="login">Staff login</label>
-        <input id="login" name="login" autocomplete="username" required maxlength="32" autocapitalize="none"
+        <input id="login" name="login" spellcheck="false" autocomplete="username" required maxlength="32" autocapitalize="none"
                data-error="Enter your staff login.">
       </div>
       <div class="field">
