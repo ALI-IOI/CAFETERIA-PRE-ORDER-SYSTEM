@@ -150,7 +150,11 @@ main { max-width: var(--content); margin: 0 auto; padding: var(--space-5) var(--
   color: var(--ink-soft); font-size: var(--step--1); border-top: 1px solid var(--line);
 }
 .split { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1fr); }
-.grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); }
+/* form grids: every cell sits on the row's bottom line, so the boxes and the
+   button in a row line up whether or not a field has a hint above its box */
+.grid { display: grid; gap: var(--space-5) var(--space-4); align-items: end;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); }
+.grid > .field { margin-bottom: 0; }
 .row { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: end; }
 .row > .field { margin-bottom: 0; flex: 1 1 8rem; }
 .actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-5); }
