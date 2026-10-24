@@ -167,6 +167,15 @@ static int countMails(const char* type, const std::string& to, int fromIndex = 0
     return n;
 }
 
+// Emails about one reservation (a person can hold several, each with its own confirmation).
+static int countMailsFor(const char* type, long reservationId) {
+    readOutbox();
+    int n = 0;
+    for (int i = 0; i < g_mailCount; i++)
+        if (g_mails[i].type == type && g_mails[i].resId == std::to_string(reservationId)) n++;
+    return n;
+}
+
 static std::string latestCode(const std::string& to) {
     readOutbox();
     for (int i = g_mailCount - 1; i >= 0; i--) {
@@ -589,8 +598,11 @@ static int realMain(int argc, char** argv) {
     { std::ofstream blocker(g_data + "/outbox"); blocker << "blocked"; }
     check(startServer(server, "2026-10-23T17:10"), "setup: restart with the email outbox blocked");
     staff.post("/api/staff/login", {{"login", "cafe.staff"}, {"password", "staffpass123"}});
-    s[8].post("/api/login", {{"email", uniEmail(8)}, {"password", PW}});
-    res = reserveRes(s[8], TEHARI, "1");
+    // s5 already has a confirmation from today (and may have won the Khichuri race), so
+    // count the emails for this reservation, not every confirmation s5 ever got.
+    s[5].post("/api/login", {{"email", uniEmail(5)}, {"password", PW}});
+    res = reserveRes(s[5], TEHARI, "1");
+    long retryId = jsonInt(res, "id");
     std::string ov2 = body(staff.get("/api/staff/overview"));
     check(has(res, "\"ok\":true") && jsonInt(ov2, "emailsWaiting") == 1,
           "email retry: a failed confirmation waits in the retry queue", res + " " + ov2.substr(0, 200));
@@ -598,10 +610,11 @@ static int realMain(int argc, char** argv) {
     fs::rename(g_data + "/outbox_saved", g_data + "/outbox");
     staff.post("/api/dev/advance", {{"minutes", "1"}});
     ov2 = body(staff.get("/api/staff/overview"));
-    check(jsonInt(ov2, "emailsWaiting") == 0 && countMails("confirmation", "s8@uni.example") == 1,
+    check(jsonInt(ov2, "emailsWaiting") == 0 && countMailsFor("confirmation", retryId) == 1,
           "email retry: sent one minute later once the outbox works again",
           ov2.substr(0, 120) + " ... emailsWaiting=" + std::to_string(jsonInt(ov2, "emailsWaiting")) +
-              " s8-confirmations=" + std::to_string(countMails("confirmation", "s8@uni.example")) +
+              " confirmations-for-" + std::to_string(retryId) + "=" +
+              std::to_string(countMailsFor("confirmation", retryId)) +
               " outbox-is-dir=" + std::to_string(fs::is_directory(g_data + "/outbox")));
 
     // ---- redesign: public info, staff-managed items, pictures, tray -----------------------
