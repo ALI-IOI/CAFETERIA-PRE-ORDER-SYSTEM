@@ -38,7 +38,7 @@ async function loadHistory() {
   const h = await api.get("/api/reservations/history");
   if (!requireLogin(h, "/login.html")) return;
   if (!h.ok) {
-    say("msg", h.error);
+    say("msg", h.error, false);
     return;
   }
   const rows = h.orders.map((o) => el("tr", {},

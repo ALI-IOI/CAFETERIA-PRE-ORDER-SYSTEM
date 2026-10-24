@@ -54,11 +54,46 @@ function el(tag, attrs, ...children) {
   return node;
 }
 
-// Shows a message in a role="status" element.
+// Shows a message in a role="status" element: ok true = success, false = error,
+// left out = information. It fades in each time (CSS .is-new).
 function say(target, text, ok) {
   const node = typeof target === "string" ? document.getElementById(target) : target;
   node.textContent = text || "";
-  node.className = "msg " + (ok ? "msg--ok" : "msg--error");
+  node.className = "msg " + (ok === true ? "msg--ok" : ok === false ? "msg--error" : "msg--info");
+  void node.offsetWidth;  // restart the fade when the same message comes again
+  if (text) node.classList.add("is-new");
+}
+
+// Loading, empty and error states for a list: replaces the container's content
+// with one .state paragraph (an error adds "Try again"); kind null removes it.
+function listState(container, kind, text, onRetry) {
+  if (kind === null) {
+    for (const s of container.querySelectorAll(":scope > .state")) s.remove();
+    return;
+  }
+  const box = el("div", { class: "state state--" + kind + " is-new", role: kind === "error" ? "alert" : "status" },
+    el("p", {}, text || (kind === "loading" ? "Loading…" : "")));
+  if (kind === "error" && onRetry) {
+    box.append(el("button", { class: "btn", type: "button", onclick: onRetry }, "Try again"));
+  }
+  container.replaceChildren(box);
+}
+
+// Locks a button while the server answers: busy(button, "Reserving…") returns a
+// function that puts it back. A second call while it is busy changes nothing.
+function busy(button, label) {
+  if (button.getAttribute("aria-busy") === "true") return () => {};
+  const before = { text: button.textContent, disabled: button.disabled };
+  button.disabled = true;
+  button.setAttribute("aria-busy", "true");
+  button.classList.add("is-busy");
+  button.textContent = label;
+  return () => {
+    button.textContent = before.text;
+    button.disabled = before.disabled;
+    button.removeAttribute("aria-busy");
+    button.classList.remove("is-busy");
+  };
 }
 
 // "৳ 120", or a note when staff have not set a price yet.

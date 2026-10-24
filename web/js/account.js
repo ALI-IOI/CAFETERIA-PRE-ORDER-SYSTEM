@@ -19,7 +19,7 @@ document.getElementById("password-form").addEventListener("submit", async (e) =>
   const current = document.getElementById("current").value;
   const next = document.getElementById("new1").value;
   if (next !== document.getElementById("new2").value) {
-    say("msg", "The two new passwords are different.");
+    say("msg", "The two new passwords are different.", false);
     document.getElementById("new2").focus();
     return;
   }
