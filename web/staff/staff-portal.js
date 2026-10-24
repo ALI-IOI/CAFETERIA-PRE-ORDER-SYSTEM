@@ -131,7 +131,11 @@ function itemRow(item) {
     el("th", { scope: "row" }, item.name, el("span", { class: "hint" }, item.category + " (" + item.kind + ")")),
     el("td", {}, priceForm),
     el("td", {}, el("label", { for: availId, class: "check" }, el("span", { class: "visually-hidden" }, item.name + " available today"), avail)),
-    el("td", {}, uploadForm));
+    el("td", {}, uploadForm),
+    el("td", {}, el("button", {
+      class: "btn btn--danger", type: "button", "aria-label": "Remove " + item.name + " from the menu",
+      onclick: (e) => action("/api/staff/items/remove", { item: item.index }, e.currentTarget, "Removing…"),
+    }, "Remove")));
 }
 
 function stockRow(item) {

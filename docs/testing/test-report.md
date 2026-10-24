@@ -163,3 +163,15 @@ retry code, which this change did not touch, and is listed as a follow-up.
 Fixes after the final review (each test seen failing first): desktop tray stays in view while scrolling (top 16 px after a 1000 px scroll; was -601 px); a request that never reaches the server returns an error answer, so buttons come back (log in, save settings); reduced motion makes every change instant (`page_rules`); the undo history is named as a stack and each kitchen panel shows its cooking-queue capacity; today's reservation times carry their date; a fast double-click no longer passes the Cancel confirmation; the tray bar's focus ring is white on basil (`contrast_check`, 25/25).
 
 The two-step Cancel added during the rebuild was removed at the user's request (2026-10-25): one press cancels again, and the busy lock still makes a double-click cancel once.
+
+## Removing menu items (2026-10-25)
+
+Staff can remove an item from the portal's Menu items table. The menu is a fixed array whose index is
+the item's identity for reservations, cooking queues, waitlists and history, so removing retires the
+item (`MenuItem::removed`, saved as a 9th `menu.txt` field) instead of erasing it.
+
+| Area | Tests | Result |
+|---|---|---|
+| Unit (seen failing first) | `remove_item_hides_it_and_refuses_reserve`, `remove_item_refused_while_reserved_or_ready`, `remove_item_allowed_after_cancel_refused_with_waitlist`, `remove_item_bad_or_already_removed`, `undo_remove_item_restores_it`, `removed_item_name_can_be_reused`, `removed_item_cannot_be_switched_on_or_repriced`, `removed_item_survives_restart` | 229/229 Pass |
+| E2E | `remove: student_cannot_remove_items`, `remove: item gone from the menu and the staff lists`, `remove: undo brings it back`, `remove: refused while reserved` | 117/117 Pass |
+| Browser | Remove on Mr. Twist: row gone, "Removed Mr. Twist" on top of the undo stack, hidden from the student menu; Remove on Khichuri with a reservation: refused with the reason; Undo brings it back | Pass |

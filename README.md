@@ -79,6 +79,7 @@ them apart: restrict `/staff/` and `/api/staff/` to the counter PCs at the proxy
 - **University staff** — every employee on the university list can order. Those with a university email sign up like students; the admin tool creates accounts for those without one.
 - **Hidden staff terminal** — no public page links to it, and with `config/staff_computers.txt` filled in it answers "not found" to every computer except the cafeteria's own.
 - **Waitlist** — when a fresh item is sold out, anyone ordering can join its waitlist. A cancellation, or staff raising the daily limit, gives the freed portions to the people waiting, first come first served, with a confirmation email. At the cutoff, anyone still waiting gets one "no portion became free" email.
+- **Removing menu items** — cafeteria staff can add items and remove ones they no longer sell. A removed item leaves the menu and the staff lists but keeps its place in the menu array, so reservations and history still name it; it cannot be removed while it has reservations or a waitlist today, and Undo brings it back.
 - **Order history and My account** — every finished day is kept in `data/history.txt`; a person's own orders are read into a linked list and merge-sorted newest first. My account shows their details and lets them change their password.
 - **Email retry** — an email that fails to send is retried after 1, 5 and 15 minutes, then logged in `data/email_failed.log`. Waiting emails are kept in `data/pending_emails.txt` across restarts. The staff portal shows how many are waiting.
 
@@ -91,7 +92,7 @@ them apart: restrict `/staff/` and `/api/staff/` to the counter PCs at the proxy
 | `/menu.html` | students, teachers, university staff | Menu with category tabs, search and sort; dish cards with picture and price; a tray that reserves several dishes at once (all or nothing); waitlist for sold-out dishes |
 | `/reservations.html` | students, teachers, university staff | Today's reservations (cancel before the deadline) and your order history from earlier days, newest first |
 | `/account.html` | students, teachers, university staff | Your university details; change your password (signs you out on other devices) |
-| `/staff/portal.html` | cafeteria staff (not linked from any public page; only from the listed counter computers) | Kitchen (mark ready), menu items (add, price, picture, available today), reservations, packaged stock, settings, undo |
+| `/staff/portal.html` | cafeteria staff (not linked from any public page; only from the listed counter computers) | Kitchen (mark ready), menu items (add, remove, price, picture, available today), reservations, packaged stock, settings, undo |
 
 Prices are shown only; people pay at the counter. Staff pictures must be JPEG, PNG or WebP up to 2 MB.
 Demo food pictures are simple drawings in `web/img/demo/`. Headings use the serif Cormorant

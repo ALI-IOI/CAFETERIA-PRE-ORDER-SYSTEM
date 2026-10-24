@@ -668,6 +668,25 @@ static int realMain(int argc, char** argv) {
               "redesign: unavailable_item_hidden_and_refused", body(rr));
         staff.post("/api/staff/items/available", {{"item", IDX}, {"available", "1"}});
 
+        // removing an item: retired, not erased (Halwa was added right after Biryani)
+        const std::string HALWA = std::to_string(std::stoi(IDX) + 1);
+        r = s[9].post("/api/staff/items/remove", {{"item", HALWA}});
+        check(status(r) == 403, "remove: student_cannot_remove_items", body(r));
+        r = staff.post("/api/staff/items/remove", {{"item", HALWA}});
+        std::string m4 = body(s[9].get("/api/menu")), ov4 = body(staff.get("/api/staff/overview"));
+        // the undo history still names it ("Removed ..."), so look at the item records only
+        check(status(r) == 200 && !has(m4, "Halwa") && !has(ov4, "\"name\":\"\\u003cb\\u003eHalwa"),
+              "remove: item gone from the menu and the staff lists", body(r));
+        r = staff.post("/api/staff/undo", {});
+        check(status(r) == 200 && has(body(s[9].get("/api/menu")), "Halwa"), "remove: undo brings it back", body(r));
+        // s8 holds a Biryani (past the cancel deadline, so it stays; later checks use s9 and the teacher)
+        s[8].post("/api/login", {{"email", uniEmail(8)}, {"password", PW}});
+        auto held = s[8].post("/api/reservations", {{"item", IDX}, {"quantity", "1"}});
+        r = staff.post("/api/staff/items/remove", {{"item", IDX}});
+        check(has(body(held), "\"ok\":true") && status(r) == 409 && has(body(r), "still has reservations"),
+              "remove: refused while reserved", body(held) + " / " + body(r));
+        if (status(r) == 200) staff.post("/api/staff/undo", {});  // keep Biryani for the checks below
+
         r = s[9].post("/api/reservations/batch",
                       {{"items", IDX + ":1," + std::to_string(TEHARI) + ":5"}});
         std::string mine9 = body(s[9].get("/api/reservations/mine"));

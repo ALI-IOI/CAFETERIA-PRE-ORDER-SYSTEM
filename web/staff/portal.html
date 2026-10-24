@@ -58,12 +58,12 @@
 
         <section id="items" aria-labelledby="items-h">
           <h2 id="items-h">Menu items</h2>
-          <p class="hint">Items are never deleted, because reservations refer to them. Switch one off to hide it from the menu. Prices are shown only; people pay at the counter.</p>
+          <p class="hint">Switch an item off to hide it for now. Remove takes it off the menu for good (Undo brings it back); an item with reservations or a waitlist today cannot be removed. Prices are shown only; people pay at the counter.</p>
           <div id="items-state"></div>
           <div class="card table-wrap">
             <table>
               <caption class="visually-hidden">Menu items with price, availability and picture</caption>
-              <thead><tr><th scope="col">Picture</th><th scope="col">Item</th><th scope="col">Price (taka)</th><th scope="col">Available</th><th scope="col">New picture</th></tr></thead>
+              <thead><tr><th scope="col">Picture</th><th scope="col">Item</th><th scope="col">Price (taka)</th><th scope="col">Available</th><th scope="col">New picture</th><th scope="col"><span class="visually-hidden">Remove</span></th></tr></thead>
               <tbody id="item-rows"></tbody>
             </table>
           </div>

@@ -24,7 +24,10 @@ const char* resultMessage(Result r) {
         case Result::WaitlistFull: return "The waitlist for this item is full.";
         case Result::NotWaiting: return "You are not on the waitlist for this item.";
         case Result::NotAvailable: return "That item is not available today.";
-        case Result::MenuFull: return "The menu is full. Hide an item you no longer sell instead of adding more.";
+        case Result::MenuFull: return "The menu is full: all 32 places are used, removed items included.";
+        case Result::ItemInUse:
+            return "This item still has reservations or a waitlist. Switch it off now, and remove it once they are "
+                   "collected.";
     }
     return "Unknown error.";
 }
