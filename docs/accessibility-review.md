@@ -151,4 +151,4 @@ and checked against the Web Interface Guidelines and a motion audit.
 | Forms | Errors appear under the field (`aria-describedby`, `aria-invalid`), focus moves to the first; emails, codes and logins have spellcheck off |
 | Status messages | `role="status"` for results, `role="alert"` for load errors |
 | Destructive action | Cancelling a reservation needs a second press within 5 seconds |
-| Motion | Feedback only, under 300 ms, nothing on load or looping; reduced motion keeps short fades and drops all movement |
+| Motion | Feedback only, under 300 ms, nothing on load or looping; with reduced motion every change is instant (`build/check_pages` checks it) |

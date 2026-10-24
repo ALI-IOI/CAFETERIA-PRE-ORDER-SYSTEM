@@ -41,6 +41,7 @@ static const Pair PAIRS[] = {
     {"green button edge on linen (UI)", "#1E5B3E", "#F7F3EC", UI},
     {"focus ring on linen (UI)", "#1E5B3E", "#F7F3EC", UI},
     {"focus ring on white (UI)", "#1E5B3E", "#FFFFFF", UI},
+    {"tray bar focus ring on basil (UI)", "#FFFFFF", "#1E5B3E", UI},
 };
 
 // "#RRGGBB" -> relative luminance (WCAG 2.2).
