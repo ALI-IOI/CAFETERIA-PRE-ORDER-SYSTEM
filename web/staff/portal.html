@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Staff portal · BAUSTK Cafeteria</title>
+  <title>Staff portal – BAUSTK Cafeteria</title>
   <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
@@ -11,13 +11,8 @@
   <header class="topbar">
     <div class="topbar__inner">
       <a class="brand" href="/staff/portal.html">BAUSTK Cafeteria <small>Staff portal</small></a>
-      <nav aria-label="Portal sections">
-        <a href="#kitchen">Kitchen</a>
-        <a href="#items">Menu items</a>
-        <a href="#reservations">Reservations</a>
-        <a href="#stock">Packaged stock</a>
-        <a href="#settings">Settings</a>
-        <span id="who"></span>
+      <nav aria-label="Account">
+        <span class="who" id="who"></span>
         <button class="linkbtn" type="button" id="logout">Log out</button>
       </nav>
     </div>
@@ -28,17 +23,40 @@
     <p class="lead" id="clock"></p>
     <p id="msg" class="msg" role="status" aria-live="polite"></p>
 
-    <div class="split">
-      <div>
-        <section id="kitchen" aria-labelledby="kitchen-h">
-          <h2 id="kitchen-h">Fresh food</h2>
-          <p class="hint">"Mark ready" emails people in the order they reserved (first come, first served), skipping cancellations. Leave portions empty to serve everyone waiting.</p>
-          <div class="kpis" id="fresh"></div>
-        </section>
+    <div class="portal">
+      <nav class="portal__nav" aria-label="Portal sections">
+        <a href="#kitchen">Kitchen</a>
+        <a href="#undo-h">Undo history</a>
+        <a href="#items">Menu items</a>
+        <a href="#reservations">Reservations</a>
+        <a href="#stock">Packaged stock</a>
+        <a href="#settings">Settings</a>
+      </nav>
+
+      <div class="portal__main">
+        <div class="split">
+          <section id="kitchen" aria-labelledby="kitchen-h">
+            <h2 id="kitchen-h">Fresh food</h2>
+            <p class="hint">Each dish has a cooking queue, first in, first out. Mark ready emails people in the order they reserved, skipping cancellations. Leave portions empty to serve everyone waiting.</p>
+            <div class="kpis" id="fresh"></div>
+          </section>
+
+          <aside aria-labelledby="undo-h">
+            <h2 id="undo-h">Undo history</h2>
+            <div class="card panel--lead">
+              <p class="hint" id="stack-size"></p>
+              <button class="btn btn--block" type="button" id="undo">Undo latest action</button>
+              <ol class="stack-list" id="history" aria-label="Staff actions, newest first"></ol>
+              <p class="hint">Marking food ready cannot be undone: the emails have already gone.</p>
+            </div>
+            <h2 id="email-h">Email</h2>
+            <p class="card hint" id="email-mode" aria-labelledby="email-h"></p>
+          </aside>
+        </div>
 
         <section id="items" aria-labelledby="items-h">
           <h2 id="items-h">Menu items</h2>
-          <p class="hint">Items are never deleted (reservations refer to them). Switch one off to hide it from students. Prices are shown only; people pay at the counter.</p>
+          <p class="hint">Items are never deleted, because reservations refer to them. Switch one off to hide it from the menu. Prices are shown only; people pay at the counter.</p>
           <div class="card table-wrap">
             <table>
               <caption class="visually-hidden">Menu items with price, availability and picture</caption>
@@ -46,14 +64,18 @@
               <tbody id="item-rows"></tbody>
             </table>
           </div>
-          <form id="add-item" class="card grid" novalidate>
-            <h3 class="visually-hidden">Add an item</h3>
-            <div class="field"><label for="ni-name">New item name</label><input id="ni-name" required maxlength="60"></div>
-            <div class="field"><label for="ni-cat">Category <span class="hint">e.g. Fresh food, Chips, Soft drinks</span></label><input id="ni-cat" required maxlength="60" list="ni-cats"><datalist id="ni-cats"></datalist></div>
+          <form id="add-item" class="card grid" novalidate aria-labelledby="add-h">
+            <h3 class="visually-hidden" id="add-h">Add an item</h3>
+            <div class="field"><label for="ni-name">New item name</label>
+              <input id="ni-name" required maxlength="60" data-error="Enter the item's name."></div>
+            <div class="field"><label for="ni-cat">Category</label><span class="hint" id="ni-cat-hint">For example Fresh food, Chips, Soft drinks</span>
+              <input id="ni-cat" required maxlength="60" list="ni-cats" aria-describedby="ni-cat-hint" data-error="Enter a category."><datalist id="ni-cats"></datalist></div>
             <div class="field"><label for="ni-kind">Kind</label>
               <select id="ni-kind"><option value="fresh">Fresh (reservable)</option><option value="packaged">Packaged (view only)</option></select></div>
-            <div class="field"><label for="ni-price">Price (taka)</label><input id="ni-price" type="number" min="0" max="9999" value="0" required></div>
-            <div class="field"><label for="ni-amount">Daily portions / stock</label><input id="ni-amount" type="number" min="0" max="9999" value="10" required></div>
+            <div class="field"><label for="ni-price">Price (taka)</label>
+              <input id="ni-price" type="number" min="0" max="9999" value="0" required data-error="Enter a price from 0 to 9999."></div>
+            <div class="field"><label for="ni-amount">Daily portions or stock</label>
+              <input id="ni-amount" type="number" min="0" max="9999" value="10" required data-error="Enter a number from 0 to 9999."></div>
             <div class="field"><button class="btn btn--primary btn--block" type="submit">Add item</button></div>
           </form>
         </section>
@@ -66,7 +88,7 @@
               <input id="q" name="q" placeholder="R-0042" maxlength="12" autocomplete="off">
             </div>
             <button class="btn" type="submit">Search</button>
-            <button class="btn btn--ghost" type="button" id="clear">Show all</button>
+            <button class="btn" type="button" id="clear">Show all</button>
           </form>
           <div class="card table-wrap">
             <table>
@@ -78,8 +100,8 @@
               </thead>
               <tbody id="res-rows"></tbody>
             </table>
-            <p id="res-empty" hidden>No reservations found.</p>
           </div>
+          <p id="res-empty" class="state state--empty" hidden>No reservations found.</p>
         </section>
 
         <section id="stock" aria-labelledby="stock-h">
@@ -98,33 +120,20 @@
           <div class="card">
             <form id="settings-form" class="grid" novalidate>
               <div class="field"><label for="s-cutoff">Reservation cutoff</label>
-                <input id="s-cutoff" name="cutoff" type="time" required></div>
+                <input id="s-cutoff" name="cutoff" type="time" required data-error="Enter a time."></div>
               <div class="field"><label for="s-cancel">Cancellation deadline</label>
-                <input id="s-cancel" name="cancel_deadline" type="time" required></div>
-              <div class="field"><label for="s-fresh">Freshness window <span class="hint">minutes after "ready"</span></label>
-                <input id="s-fresh" name="freshness_minutes" type="number" min="30" max="1440" required></div>
-              <div class="field"><label for="s-remind">Reminder interval <span class="hint">minutes</span></label>
-                <input id="s-remind" name="reminder_minutes" type="number" min="5" max="720" required></div>
+                <input id="s-cancel" name="cancel_deadline" type="time" required data-error="Enter a time."></div>
+              <div class="field"><label for="s-fresh">Freshness window</label><span class="hint" id="s-fresh-hint">Minutes after "ready"</span>
+                <input id="s-fresh" name="freshness_minutes" type="number" min="30" max="1440" required aria-describedby="s-fresh-hint" data-error="Enter 30 to 1440 minutes."></div>
+              <div class="field"><label for="s-remind">Reminder interval</label><span class="hint" id="s-remind-hint">Minutes</span>
+                <input id="s-remind" name="reminder_minutes" type="number" min="5" max="720" required aria-describedby="s-remind-hint" data-error="Enter 5 to 720 minutes."></div>
               <div class="field"><label for="s-limit">Portions per person per item</label>
-                <input id="s-limit" name="per_user_limit" type="number" min="1" max="10" required></div>
+                <input id="s-limit" name="per_user_limit" type="number" min="1" max="10" required data-error="Enter 1 to 10."></div>
               <div class="field"><button class="btn btn--block" type="submit">Save changed settings</button></div>
             </form>
           </div>
         </section>
       </div>
-
-      <aside aria-labelledby="undo-h">
-        <h2 id="undo-h">Undo</h2>
-        <div class="card">
-          <p class="hint" id="stack-size"></p>
-          <button class="btn btn--block" type="button" id="undo">Undo latest action</button>
-          <h3 class="visually-hidden">Action history, newest first</h3>
-          <ol class="stack-list" id="history" aria-label="Action history, newest first"></ol>
-          <p class="hint">Marking food ready is not undoable: the emails have already been sent.</p>
-        </div>
-        <h2>Email</h2>
-        <p class="card hint" id="email-mode"></p>
-      </aside>
     </div>
   </main>
   <script src="/js/api.js"></script>
