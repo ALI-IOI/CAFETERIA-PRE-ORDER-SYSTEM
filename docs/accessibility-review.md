@@ -150,5 +150,5 @@ and checked against the Web Interface Guidelines and a motion audit.
 | Page structure | `build/check_pages`: one `h1` per page, skip link to `#main`, every field labelled, no inline styles or scripts |
 | Forms | Errors appear under the field (`aria-describedby`, `aria-invalid`), focus moves to the first; emails, codes and logins have spellcheck off |
 | Status messages | `role="status"` for results, `role="alert"` for load errors |
-| Destructive action | Cancelling a reservation needs a second press within 5 seconds |
+| Cancel | One press cancels; while the request is out the button is locked ("Cancelling…"), so a double-click cancels once |
 | Motion | Feedback only, under 300 ms, nothing on load or looping; with reduced motion every change is instant (`build/check_pages` checks it) |

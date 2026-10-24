@@ -147,7 +147,7 @@ Plan: `docs/superpowers/plans/2026-10-24-rebuild.md`. The C++ server, API and da
 | Area | Tests | Result |
 |---|---|---|
 | Whole suite | `ctest --test-dir build`: 9/9 (new: `page_rules`, `tools/check_pages.cpp`, seen failing on the old stylesheet with 53 problems before the rebuild) | Pass |
-| Busy buttons | Browser check: 3 presses of Reserve all, Cancel (after its confirm) and Undo each sent exactly 1 request | Pass |
+| Busy buttons | Browser check: 3 presses of Reserve all, Cancel and Undo each sent exactly 1 request | Pass |
 | List states | Browser check: with the network failing, the menu, today's reservations, order history and kitchen overview show an error with Try again, and each recovers | Pass |
 | Long names | A 61-character dish name at 375 px wraps, keeps the price inside the tile, no sideways scroll | Pass |
 | Closed for the day | After the fake clock passes the cutoff: closed banner and status, every Add disabled, tray kept, Reserve all disabled | Pass |
@@ -161,3 +161,5 @@ outbox works again" (the person received 2 confirmations instead of 1). It is in
 retry code, which this change did not touch, and is listed as a follow-up.
 
 Fixes after the final review (each test seen failing first): desktop tray stays in view while scrolling (top 16 px after a 1000 px scroll; was -601 px); a request that never reaches the server returns an error answer, so buttons come back (log in, save settings); reduced motion makes every change instant (`page_rules`); the undo history is named as a stack and each kitchen panel shows its cooking-queue capacity; today's reservation times carry their date; a fast double-click no longer passes the Cancel confirmation; the tray bar's focus ring is white on basil (`contrast_check`, 25/25).
+
+The two-step Cancel added during the rebuild was removed at the user's request (2026-10-25): one press cancels again, and the busy lock still makes a double-click cancel once.
