@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My account · BAUSTK Cafeteria</title>
+  <title>My account – BAUSTK Cafeteria</title>
   <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
@@ -23,7 +23,6 @@
 
   <main id="main" class="narrow">
     <h1>My account</h1>
-    <span class="rule" aria-hidden="true"></span>
     <p id="msg" class="msg" role="status" aria-live="polite"></p>
 
     <section class="card" aria-labelledby="details-h">
@@ -36,15 +35,19 @@
       <h2 id="pw-h">Change password</h2>
       <div class="field">
         <label for="current">Current password</label>
-        <input id="current" type="password" autocomplete="current-password" required maxlength="128">
+        <input id="current" type="password" autocomplete="current-password" required maxlength="128"
+               data-error="Enter your current password.">
       </div>
       <div class="field">
-        <label for="new1">New password <span class="hint">At least 8 characters.</span></label>
-        <input id="new1" type="password" autocomplete="new-password" required minlength="8" maxlength="128">
+        <label for="new1">New password</label>
+        <span class="hint" id="new1-hint">At least 8 characters.</span>
+        <input id="new1" type="password" autocomplete="new-password" required minlength="8" maxlength="128"
+               aria-describedby="new1-hint" data-error="Choose a new password of at least 8 characters.">
       </div>
       <div class="field">
         <label for="new2">Repeat new password</label>
-        <input id="new2" type="password" autocomplete="new-password" required minlength="8" maxlength="128">
+        <input id="new2" type="password" autocomplete="new-password" required minlength="8" maxlength="128"
+               data-error="Repeat the new password.">
       </div>
       <button class="btn btn--primary btn--block" type="submit">Change password</button>
       <p class="hint">Changing it signs you out on your other devices.</p>
