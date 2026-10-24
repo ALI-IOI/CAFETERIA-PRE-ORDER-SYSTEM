@@ -159,8 +159,24 @@ static void cssScales(const std::string& f, const std::string& css) {
     }
 }
 
+// With reduced motion, every change is instant: the block must switch off every
+// animation and transition, not only the movement.
 static void cssReducedMotion(const std::string& f, const std::string& css) {
-    if (css.find("prefers-reduced-motion") == std::string::npos) fail(f, "no prefers-reduced-motion rules");
+    size_t at = css.find("@media (prefers-reduced-motion: reduce)");
+    if (at == std::string::npos) {
+        fail(f, "no @media (prefers-reduced-motion: reduce) block");
+        return;
+    }
+    size_t open = css.find('{', at), depth = 0, end = open;
+    for (; end < css.size(); end++) {
+        if (css[end] == '{') depth++;
+        else if (css[end] == '}' && --depth == 0) break;
+    }
+    const std::string block = css.substr(open, end - open);
+    if (block.find("animation: none !important") == std::string::npos)
+        fail(f, "reduced motion does not set animation: none !important");
+    if (block.find("transition: none !important") == std::string::npos)
+        fail(f, "reduced motion does not set transition: none !important");
 }
 
 static void cssDeclarationRules(const std::string& f, const std::vector<Decl>& decls) {

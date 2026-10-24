@@ -73,6 +73,8 @@ function freshPanel(item) {
       (item.waitlist > 0 ? " " + item.waitlist + " on the waitlist; raising the limit serves them first." : "")),
     meter,
     el("p", { class: "dish__flag" }, queueText),
+    el("p", { class: "food__meta" }, "Cooking queue: " + item.queueEntries + " of " + item.queueCapacity +
+      " places used, first in, first out."),
     readyForm,
     limitForm);
 }
@@ -190,7 +192,7 @@ function fillSettings(s) {
 // The undo history is the staff action stack: newest on top, and Undo pops it.
 function renderHistory(o) {
   document.getElementById("stack-size").textContent =
-    o.historySize === 0 ? "Nothing to undo." : o.historySize + " of " + o.historyCapacity + " actions kept, newest on top.";
+    o.historySize === 0 ? "Nothing to undo." : o.historySize + " of " + o.historyCapacity + " places on the stack used, newest on top.";
   const undo = document.getElementById("undo");
   if (undo.getAttribute("aria-busy") !== "true") undo.disabled = o.historySize === 0;
   document.getElementById("history").replaceChildren(...o.history.map((a, i) =>

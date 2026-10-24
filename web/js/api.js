@@ -4,26 +4,34 @@
 
 const api = {
   async get(path) {
-    return api._handle(await fetch(path, { credentials: "same-origin" }));
+    return api._send(path, { credentials: "same-origin" });
   },
   async post(path, fields) {
-    const body = new URLSearchParams(fields || {});
-    const res = await fetch(path, {
+    return api._send(path, {
       method: "POST",
       credentials: "same-origin",
       headers: { "X-Cafe": "1", "Content-Type": "application/x-www-form-urlencoded" },
-      body,
+      body: new URLSearchParams(fields || {}),
     });
-    return api._handle(res);
   },
   // Multipart upload (staff pictures). The browser sets the multipart boundary.
   async upload(path, formData) {
-    const res = await fetch(path, {
+    return api._send(path, {
       method: "POST",
       credentials: "same-origin",
       headers: { "X-Cafe": "1" },
       body: formData,
     });
+  },
+  // A request that never reached the server comes back as an ordinary error
+  // answer, so no caller is left with a locked button or a page stuck loading.
+  async _send(path, options) {
+    let res;
+    try {
+      res = await fetch(path, options);
+    } catch (e) {
+      return { ok: false, status: 0, error: "Could not reach the cafeteria. Check your connection and try again." };
+    }
     return api._handle(res);
   },
   async _handle(res) {

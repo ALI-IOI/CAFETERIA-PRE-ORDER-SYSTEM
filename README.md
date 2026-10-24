@@ -102,7 +102,7 @@ colour: a warm linen page (`#F7F3EC`), white surfaces, warm charcoal text, and b
 are in sentence case. All colours are hex, defined once as tokens at the top of
 `web/css/app.css`, which is one ordered design system: tokens (colours, a 6-step type scale, an
 8-step spacing scale, motion), base, layout, components, states, page rules, motion. Every list
-has its loading, empty and error state, and every button that waits for the server is locked
+shown to students (menu, today, history) and the kitchen overview has its loading, empty and error state, and every button that waits for the server is locked
 until it answers. `build/contrast_check`, `build/check_hex_colors` and `build/check_pages` (one
 title, labelled fields, no inline styles or scripts, sizes only from the scale, no motion over
 300 ms) keep the pages to these rules.

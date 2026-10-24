@@ -159,3 +159,5 @@ Plan: `docs/superpowers/plans/2026-10-24-rebuild.md`. The C++ server, API and da
 Known: `e2e_section12` failed 2 times in about 25 runs on "email retry: sent one minute later once the
 outbox works again" (the person received 2 confirmations instead of 1). It is in the server's email
 retry code, which this change did not touch, and is listed as a follow-up.
+
+Fixes after the final review (each test seen failing first): desktop tray stays in view while scrolling (top 16 px after a 1000 px scroll; was -601 px); a request that never reaches the server returns an error answer, so buttons come back (log in, save settings); reduced motion makes every change instant (`page_rules`); the undo history is named as a stack and each kitchen panel shows its cooking-queue capacity; today's reservation times carry their date; a fast double-click no longer passes the Cancel confirmation; the tray bar's focus ring is white on basil (`contrast_check`, 25/25).

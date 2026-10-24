@@ -38,8 +38,11 @@ async function load() {
           // for a second one; after 5 seconds the button goes back.
           onclick: async (e) => {
             const button = e.currentTarget;
+            // a double-click is one press: the confirming press must come later
+            if (button.dataset.confirm === "yes" && Date.now() - Number(button.dataset.armedAt) < 400) return;
             if (button.dataset.confirm !== "yes") {
               button.dataset.confirm = "yes";
+              button.dataset.armedAt = String(Date.now());
               button.textContent = "Press again to cancel";
               button.setAttribute("aria-label", "Press again to cancel " + res.code + " (" + res.item + ")");
               setTimeout(() => {
@@ -64,7 +67,8 @@ async function load() {
       el("th", { scope: "row" }, res.code),
       el("td", {}, res.item),
       el("td", { class: "num" }, res.quantity),
-      el("td", {}, res.reservedAt),
+      // ready orders from yesterday stay in this list, so every time carries its date
+      el("td", {}, dayText(res.day).slice(0, 5) + " " + res.reservedAt),
       el("td", {}, statusChip(res.status)),
       el("td", {}, res.status === "Ready" ? res.freshUntil : "–"),
       el("td", {}, cancel));
