@@ -7,7 +7,7 @@
 "use strict";
 
 (() => {
-  const BASE = new URL(".", document.currentScript.src).pathname;  // e.g. /cafeteria-pre-order-system/
+  const BASE = new URL(".", document.currentScript.src).pathname;  // e.g. /CAFETERIA-PRE-ORDER-SYSTEM/
   const KEY = "cafe-demo-v1";
   const SESSION = "cafe-demo-session";
   const TODAY = 20261024;
