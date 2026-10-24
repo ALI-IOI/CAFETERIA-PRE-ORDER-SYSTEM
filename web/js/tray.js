@@ -92,7 +92,7 @@ function renderTray(menu, onChange, highlight) {
   badge.textContent = String(count);
   if (trayCountShown !== null && trayCountShown !== count) {
     badge.classList.add("is-pulse");
-    setTimeout(() => badge.classList.remove("is-pulse"), 120);
+    setTimeout(() => badge.classList.remove("is-pulse"), 100);  // 100 ms up, 100 ms back
   }
   trayCountShown = count;
   // Phones and tablets: the tray is below every dish, so a bar at the bottom of

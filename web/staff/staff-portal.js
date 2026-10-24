@@ -68,7 +68,7 @@ function freshPanel(item) {
   });
 
   return el("article", { class: "kpi" + (waiting === 0 ? " kpi--idle" : "") },
-    el("h3", {}, el("span", {}, item.name), el("span", { class: "figure", "aria-label": item.remaining + " left" }, item.remaining)),
+    el("h3", {}, el("span", {}, item.name), el("span", { class: "figure" }, item.remaining, el("span", { class: "visually-hidden" }, " left"))),
     el("p", { class: "food__meta" }, item.remaining + " left of " + item.limit + ", " + item.reserved + " reserved." +
       (item.waitlist > 0 ? " " + item.waitlist + " on the waitlist; raising the limit serves them first." : "")),
     meter,
@@ -167,10 +167,13 @@ async function loadReservations(q) {
     r = { ok: false, error: "Couldn’t load the reservations. Try again." };
   }
   if (!requireLogin(r, "/staff/login.html")) return;
+  const state = document.getElementById("res-state");
   if (!r.ok) {
-    report(r);
+    listState(state, "error", (r.status === 0 ? "Couldn’t load the reservations. " : r.error + " ") + "Try again.",
+      () => loadReservations(q));
     return;
   }
+  listState(state, null);
   document.getElementById("res-caption").textContent =
     q ? "Search result for " + q : "Sorted by item, then reservation time";
   const before = shownStatus;
@@ -200,9 +203,15 @@ function renderHistory(o) {
       a.description, el("span", { class: "when" }, a.at + " by " + a.staff))));
 }
 
+// The boxes above the staff tables carry their loading and error states.
+const LIST_STATES = ["items-state", "stock-state", "res-state"];
+
 async function refresh() {
   const fresh = document.getElementById("fresh");
-  if (!overview) listState(fresh, "loading");
+  if (!overview) {
+    listState(fresh, "loading");
+    for (const id of LIST_STATES) listState(document.getElementById(id), "loading");
+  }
   let o;
   try {
     o = await api.get("/api/staff/overview");
@@ -212,8 +221,14 @@ async function refresh() {
   if (!requireLogin(o, "/staff/login.html")) return;
   if (!o.ok || !Array.isArray(o.items)) {
     listState(fresh, "error", "Couldn’t load the kitchen overview. Check the connection to the server and try again.", refresh);
+    for (const id of LIST_STATES) {
+      listState(document.getElementById(id), "error", "Couldn’t load this list. Try again.", refresh);
+    }
+    document.getElementById("stack-size").textContent = "Couldn’t load the undo history.";
+    document.getElementById("undo").disabled = true;
     return;
   }
+  for (const id of ["items-state", "stock-state"]) listState(document.getElementById(id), null);
   overview = o;
   document.getElementById("who").textContent = "Signed in: " + o.staffName;
   document.getElementById("clock").textContent =
@@ -268,6 +283,10 @@ document.getElementById("settings-form").addEventListener("submit", async (e) =>
   e.preventDefault();
   const form = e.target;
   if (!checkFields(form)) return;
+  if (!overview) {
+    say("msg", "The settings are still loading. Try again in a moment.", false);
+    return;
+  }
   const s = overview.settings;
   const changes = [];
   for (const key of ["cutoff", "cancel_deadline", "freshness_minutes", "reminder_minutes", "per_user_limit"]) {

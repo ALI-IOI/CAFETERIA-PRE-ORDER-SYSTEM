@@ -22,6 +22,7 @@ async function load() {
   if (!r.ok || !Array.isArray(r.reservations)) {
     listState(state, "error", "Couldn’t load your reservations. Check your connection and try again.", load);
     table.hidden = true;
+    document.getElementById("empty").hidden = true;  // the list is unknown, not empty
     return;
   }
   listState(state, null);

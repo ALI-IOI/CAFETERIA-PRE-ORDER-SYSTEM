@@ -32,6 +32,7 @@ function freshControls(item) {
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     Tray.set(item.index, Number(select.value));
+    say("tray-msg", "");  // codes from an earlier reservation no longer apply
     say("msg", item.name + ", " + select.value + (select.value === "1" ? " portion" : " portions") + ", is in your tray.", true);
     render(String(item.index));
   });
@@ -100,7 +101,10 @@ function dishCard(item) {
       meter);
     if (inTray) body.append(el("p", { class: "dish__flag" }, "In tray: " + inTray));
     if (!menu.open) body.append(el("p", { class: "dish__flag" }, "Reservations closed for today."));
-    if (soldOut || item.yourPosition > 0) body.append(waitlistBox(item));
+    if (soldOut || item.yourPosition > 0) {
+      const box = waitlistBox(item);
+      if (box.children.length) body.append(box);  // nothing to offer: no empty box
+    }
     if (!soldOut) body.append(freshControls(item));
   } else {
     body.append(el("p", { class: "dish__meta" },
@@ -136,10 +140,13 @@ function visibleItems() {
 
 // highlight: the item index whose tray line just changed.
 function render(highlight) {
+  if (!menu) return;  // search or sort before the menu has loaded
   renderTabs();
   const items = visibleItems();
   const dishes = document.getElementById("dishes");
-  if (menu.items.length === 0) listState(dishes, "empty", "Nothing is on the menu yet today. Check again later this morning.");
+  if (menu.items.length === 0) listState(dishes, "empty", menu.open
+    ? "Nothing is on the menu yet today. Check again later this morning."
+    : "Nothing was on the menu today. You can order again tomorrow morning.");
   else if (items.length === 0) listState(dishes, "empty", "No dishes match. Clear the search or pick another category.");
   else dishes.replaceChildren(...items.map(dishCard));
   document.getElementById("count").textContent = items.length + (items.length === 1 ? " item" : " items");

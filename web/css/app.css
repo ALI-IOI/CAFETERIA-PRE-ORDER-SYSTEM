@@ -70,6 +70,7 @@
   /* motion: colour changes ease; things that enter ease out, strongly */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --dur-fast: 120ms;  /* hover, press */
+  --dur-pulse: 100ms; /* each half of the tray-count change (200 ms in all) */
   --dur: 150ms;       /* messages */
   --dur-enter: 180ms; /* a new tray line */
   --dur-slow: 300ms;  /* a status tint */
@@ -153,8 +154,6 @@ main { max-width: var(--content); margin: 0 auto; padding: var(--space-5) var(--
 .row { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: end; }
 .row > .field { margin-bottom: 0; flex: 1 1 8rem; }
 .actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-5); }
-.section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2) var(--space-4); }
-.section-head > h2 { margin-bottom: 0; }
 
 /* the staff portal: a sticky section column on desktop, a tab row below that */
 .portal { display: grid; gap: var(--space-5); grid-template-columns: minmax(0, 1fr); }
@@ -183,7 +182,6 @@ main { max-width: var(--content); margin: 0 auto; padding: var(--space-5) var(--
 }
 .btn:active { transform: scale(0.97); }
 .btn--primary { background: var(--accent); color: var(--accent-ink); }
-.btn--ghost { background: var(--bar); }
 .btn--danger { border-color: var(--danger); color: var(--danger); }
 .btn--block { width: 100%; }
 .btn[disabled], .btn[aria-disabled="true"] { cursor: not-allowed; border-color: var(--edge); background: var(--well); color: var(--ink-soft); transform: none; }
@@ -364,7 +362,7 @@ tr.is-ready > * { background: var(--tint); }
 .tray-count {
   display: inline-block; min-width: 1.5em; padding: 0 var(--space-1); text-align: center;
   background: var(--accent); color: var(--accent-ink); font-variant-numeric: tabular-nums;
-  transition: transform var(--dur-fast) var(--ease-out);
+  transition: transform var(--dur-pulse) var(--ease-out);
 }
 .tray-bar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
@@ -389,10 +387,6 @@ body:has(.tray-bar:not([hidden])) .footer { padding-bottom: calc(var(--space-6) 
 .stack-list li:first-child { border-color: var(--accent); background: var(--tint); }
 .stack-list .when { display: block; color: var(--ink-soft); font-size: var(--step--1); }
 .stack-list .top { display: block; color: var(--accent-text); font-weight: 700; }
-.packaged { columns: 2 14rem; column-gap: var(--space-6); }
-.packaged section { break-inside: avoid; margin-bottom: var(--space-4); }
-.packaged ul { list-style: none; padding: 0; margin: 0; }
-.packaged li { display: flex; justify-content: space-between; gap: var(--space-4); padding: var(--space-2) 0; border-bottom: 1px dashed var(--line); }
 
 /* ==== widths: tablet (641px and up) and desktop (1001px and up) =================== */
 @media (min-width: 641px) {
