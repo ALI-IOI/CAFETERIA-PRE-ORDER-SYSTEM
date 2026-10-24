@@ -320,7 +320,7 @@ tr.is-ready > * { background: var(--tint); }
 .menu-status--closed { color: var(--danger); }
 .toolbar { display: grid; gap: var(--space-3); grid-template-columns: minmax(0, 1fr); margin: var(--space-4) 0 var(--space-5); }
 .toolbar .field { margin: 0; }
-.toolbar__fields { display: grid; gap: var(--space-3); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.toolbar__fields { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); }
 .menu-layout { display: grid; gap: var(--space-5); grid-template-columns: minmax(0, 1fr); }
 .menu-layout > * { min-width: 0; }
 

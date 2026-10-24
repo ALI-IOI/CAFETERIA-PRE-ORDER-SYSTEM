@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Today's menu · BAUSTK Cafeteria</title>
+  <title>Today's menu – BAUSTK Cafeteria</title>
   <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
@@ -23,7 +23,10 @@
   </header>
 
   <main id="main">
-    <div class="profile" id="profile"></div>
+    <div class="menu-head">
+      <div class="profile" id="profile"></div>
+      <p class="menu-status" id="menu-status"></p>
+    </div>
     <h1>Today's menu</h1>
     <div id="banner" class="banner" role="note"></div>
     <p id="msg" class="msg" role="status" aria-live="polite"></p>
@@ -33,23 +36,26 @@
         <span class="visually-hidden" id="tabs-label">Category</span>
         <ul class="tabs" id="tabs" aria-labelledby="tabs-label"></ul>
       </div>
-      <div class="field">
-        <label for="search">Search</label>
-        <input id="search" type="search" placeholder="Tehari" autocomplete="off" maxlength="60">
-      </div>
-      <div class="field">
-        <label for="sort">Sort by</label>
-        <select id="sort">
-          <option value="menu">Menu order</option>
-          <option value="name">Name</option>
-          <option value="left">Portions left</option>
-          <option value="price">Price</option>
-        </select>
+      <div class="toolbar__fields">
+        <div class="field">
+          <label for="search">Search</label>
+          <input id="search" type="search" placeholder="Tehari" autocomplete="off" maxlength="60">
+        </div>
+        <div class="field">
+          <label for="sort">Sort by</label>
+          <select id="sort">
+            <option value="menu">Menu order</option>
+            <option value="name">Name</option>
+            <option value="left">Portions left</option>
+            <option value="price">Price</option>
+          </select>
+        </div>
       </div>
     </div>
 
     <div class="menu-layout">
-      <section aria-label="Dishes">
+      <section aria-labelledby="dishes-h">
+        <h2 class="visually-hidden" id="dishes-h">Dishes</h2>
         <p id="count" class="hint" aria-live="polite"></p>
         <div class="dish-grid" id="dishes"></div>
       </section>
@@ -57,8 +63,9 @@
         <h2 id="tray-h">Your tray</h2>
         <p class="hint" id="tray-empty">Add fresh dishes, then reserve them all at once.</p>
         <ul id="tray-lines"></ul>
-        <div class="tray__total" id="tray-total-row" hidden><span>Total to pay at the counter</span><span id="tray-total"></span></div>
+        <div class="tray__total" id="tray-total-row" hidden><span>Total to pay at the counter</span><span id="tray-total" class="num"></span></div>
         <button class="btn btn--primary btn--block" type="button" id="reserve-all" hidden>Reserve all</button>
+        <p id="tray-msg" class="msg" role="status" aria-live="polite"></p>
         <p class="hint">You pay in cash when you collect. No payment online.</p>
       </aside>
     </div>
