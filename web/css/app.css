@@ -159,7 +159,7 @@ main { max-width: var(--content); margin: 0 auto; padding: var(--space-5) var(--
 .portal { display: grid; gap: var(--space-5); grid-template-columns: minmax(0, 1fr); }
 .portal__nav {
   display: flex; gap: var(--space-2); overflow-x: auto; scrollbar-width: thin;
-  margin: 0 calc(var(--gutter) * -1); padding: 0 var(--gutter) var(--space-1);
+  margin: 0; padding: 0 0 var(--space-1);  /* stays inside the page margins */
   border-bottom: 1px solid var(--line);
 }
 .portal__nav a {
@@ -382,6 +382,7 @@ body:has(.tray-bar:not([hidden])) .footer { padding-bottom: calc(var(--space-6) 
 .kpi { background: var(--panel); border: 1px solid var(--line); border-top: var(--rule); padding: var(--space-4) var(--space-5); }
 .kpi h3 { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2); }
 .kpi .figure { font-size: var(--step-3); }
+.kpi form + form { margin-top: var(--space-4); }  /* "Mark ready" and "Daily limit" read as two separate actions */
 .kpi--idle { border-top-color: var(--line); }
 .food__meta { color: var(--ink-soft); font-size: var(--step--1); margin: 0 0 var(--space-2); }
 .stack-list { list-style: none; padding: 0; margin: var(--space-3) 0; }

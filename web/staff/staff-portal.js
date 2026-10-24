@@ -3,8 +3,14 @@
 let overview = null;
 let shownStatus = {};  // reservation code -> status at the last draw, so a change can fade in
 
+// The server writes changes as "8 -> 5"; the page says "8 to 5" (no arrows,
+// and an arrow can break across two lines between "-" and ">").
+function plain(text) {
+  return String(text).replace(/\s*->\s*/g, " to ");
+}
+
 function report(r) {
-  let text = r.ok ? r.message : r.error;
+  let text = plain(r.ok ? r.message : r.error);
   if (r.ok && r.warning) text += " " + r.warning;
   say("msg", text, r.ok);
   return r.ok;
@@ -57,9 +63,10 @@ function freshPanel(item) {
   const readyForm = el("form", { class: "row" },
     el("div", { class: "field" },
       el("label", { for: portionsId }, "Portions cooked"),
+      // the hint sits above the box, so the button lines up with the box itself
+      el("span", { class: "hint", id: portionsId + "-hint" }, "Empty serves everyone waiting."),
       el("input", { id: portionsId, type: "number", min: 1, max: 10000, placeholder: String(waiting),
-        "aria-describedby": portionsId + "-hint" }),
-      el("span", { class: "hint", id: portionsId + "-hint" }, "Empty serves everyone waiting.")),
+        "aria-describedby": portionsId + "-hint" })),
     readyButton);
   readyForm.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -200,7 +207,7 @@ function renderHistory(o) {
   if (undo.getAttribute("aria-busy") !== "true") undo.disabled = o.historySize === 0;
   document.getElementById("history").replaceChildren(...o.history.map((a, i) =>
     el("li", {}, i === 0 ? el("span", { class: "top" }, "Undo reverses this") : null,
-      a.description, el("span", { class: "when" }, a.at + " by " + a.staff))));
+      plain(a.description), el("span", { class: "when" }, a.at + " by " + a.staff))));
 }
 
 // The boxes above the staff tables carry their loading and error states.
