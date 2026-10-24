@@ -336,10 +336,13 @@ tr.is-ready > * { background: var(--tint); }
 .dish { background: var(--panel); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; }
 .dish__img { aspect-ratio: 3 / 2; background: var(--spotlight); object-fit: contain; width: 100%; }
 .dish__body { padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); flex: 1; }
-.dish__top { display: flex; align-items: baseline; gap: var(--space-2); }
-.dish__name { font-size: var(--step-2); margin: 0; flex: 0 1 auto; min-width: 0; overflow-wrap: anywhere; }
+/* name, dotted leader, price on one line when they fit; when they do not, the
+   leader and price move under the name, so a name never breaks inside a word */
+.dish__top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); }
+.dish__name { font-size: var(--step-2); margin: 0; flex: 0 1 auto; min-width: 0; overflow-wrap: break-word; }
 .leader { flex: 1 1 var(--space-5); min-width: var(--space-5); border-bottom: 2px dotted var(--edge); transform: translateY(-0.3em); }
-.price { flex: none; font: 700 var(--step-1)/1.2 var(--font-body); white-space: nowrap; }
+.price { flex: none; margin-left: auto; font: 700 var(--step-1)/1.2 var(--font-body); white-space: nowrap; }
+.price--ask { font: 600 var(--step--1)/1.2 var(--font-body); color: var(--ink-soft); }  /* "Price at counter" is a note, not a price */
 .dish__meta { color: var(--ink-soft); font: 400 var(--step--1)/1.45 var(--font-body); margin: 0; }
 .dish__left { color: var(--accent-text); font-weight: 600; }
 .dish__flag { margin: 0; font: 600 var(--step--1)/1.45 var(--font-body); color: var(--ink); }
