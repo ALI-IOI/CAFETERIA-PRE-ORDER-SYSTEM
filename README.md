@@ -5,7 +5,7 @@ staff, from the VC's office to the bus drivers) reserves freshly cooked food bef
 cutoff, staff mark food ready, and everyone gets emails. **All reservation logic runs on
 four hand-built data structures** — no STL containers for them (checked by a build test).
 
-**Live demo:** https://ali-ioi.github.io/cafeteria-pre-order-system/ — the real pages from `web/`
+**Live demo:** https://ali-ioi.github.io/CAFETERIA-PRE-ORDER-SYSTEM/ — the real pages from `web/`
 running on an in-browser stand-in for the server (`pages-demo/demo-api.js`): fake data kept in
 your browser, no emails, clock fixed at 08:30. Try `ayon@uni.example` / `demo-student-pass`,
 `guard1@uni.example` / `demo-guard-pass`, or staff `demo.staff` / `demo-staff-pass` at
@@ -113,7 +113,7 @@ hex-only.
 
 ## Publishing to GitHub
 
-The public repository (https://github.com/ALI-IOI/cafeteria-pre-order-system) has its own short
+The public repository (https://github.com/ALI-IOI/CAFETERIA-PRE-ORDER-SYSTEM) has its own short
 history. Commit on `main` as usual, then run `cmake -D MESSAGE="What changed" -P tools/publish.cmake`:
 it turns the files of `main` (without `docs/proposal/`) into one new commit on the
 `public` branch and pushes that. `cmake -D DRY_RUN=1 -P tools/publish.cmake` shows what would

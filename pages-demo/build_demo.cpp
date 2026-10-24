@@ -2,7 +2,7 @@
 // the repo): absolute paths get the Pages base path, and pages-demo/demo-api.js
 // (an in-browser stand-in for the C++ server) loads before js/api.js.
 //
-//   build_demo <output dir> [base path, default /cafeteria-pre-order-system/]
+//   build_demo <output dir> [base path, default /CAFETERIA-PRE-ORDER-SYSTEM/]
 //
 // Run it from the repository root (it reads web/ and pages-demo/ from there).
 #include <cstdio>
@@ -42,11 +42,11 @@ static bool endsWith(const std::string& s, const std::string& tail) {
 
 int main(int argc, char** argv) {
     if (argc < 2 || argc > 3) {
-        std::fprintf(stderr, "Usage: build_demo <output dir> [base path, default /cafeteria-pre-order-system/]\n");
+        std::fprintf(stderr, "Usage: build_demo <output dir> [base path, default /CAFETERIA-PRE-ORDER-SYSTEM/]\n");
         return 2;
     }
     const fs::path out = fs::absolute(argv[1]);
-    const std::string base = argc == 3 ? argv[2] : "/cafeteria-pre-order-system/";
+    const std::string base = argc == 3 ? argv[2] : "/CAFETERIA-PRE-ORDER-SYSTEM/";
     if (base.empty() || base.front() != '/' || base.back() != '/') {
         std::fprintf(stderr, "base path must start and end with /\n");
         return 2;
