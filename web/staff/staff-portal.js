@@ -118,7 +118,7 @@ function itemRow(item) {
   });
 
   return el("tr", {},
-    el("td", {}, el("img", { class: "thumb", src: item.image, alt: "" })),
+    el("td", {}, el("img", { class: "thumb", src: item.image, alt: "", width: 64, height: 44 })),
     el("th", { scope: "row" }, item.name, el("span", { class: "hint" }, item.category + " (" + item.kind + ")")),
     el("td", {}, priceForm),
     el("td", {}, el("label", { for: availId, class: "check" }, el("span", { class: "visually-hidden" }, item.name + " available today"), avail)),
@@ -162,7 +162,7 @@ async function loadReservations(q) {
   try {
     r = await api.get("/api/staff/reservations" + (q ? "?q=" + encodeURIComponent(q) : ""));
   } catch (e) {
-    r = { ok: false, error: "Couldn't load the reservations. Try again." };
+    r = { ok: false, error: "Couldn’t load the reservations. Try again." };
   }
   if (!requireLogin(r, "/staff/login.html")) return;
   if (!r.ok) {
@@ -209,7 +209,7 @@ async function refresh() {
   }
   if (!requireLogin(o, "/staff/login.html")) return;
   if (!o.ok || !Array.isArray(o.items)) {
-    listState(fresh, "error", "Couldn't load the kitchen overview. Check the connection to the server and try again.", refresh);
+    listState(fresh, "error", "Couldn’t load the kitchen overview. Check the connection to the server and try again.", refresh);
     return;
   }
   overview = o;
@@ -229,7 +229,7 @@ async function refresh() {
   renderHistory(o);
   document.getElementById("email-mode").textContent = (o.emailMode === "outbox"
     ? "SMTP is not configured yet: emails are saved in data/outbox on the server."
-    : "Emails are sent through the cafeteria's SMTP account.") +
+    : "Emails are sent through the cafeteria’s SMTP account.") +
     (o.emailsWaiting > 0
       ? " " + o.emailsWaiting + " email(s) failed and will be retried automatically (after 1, 5 and 15 minutes)."
       : " No emails waiting to retry.");

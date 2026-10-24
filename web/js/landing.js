@@ -1,6 +1,6 @@
 "use strict";
 
-// Fills the hero and the "Today's info" strip from the public endpoint
+// Fills the hero and the "Today’s info" strip from the public endpoint
 // (no login, no personal data). The page reads fine if it fails.
 (async () => {
   const info = await api.get("/api/public/info");

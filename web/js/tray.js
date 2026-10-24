@@ -81,7 +81,7 @@ function renderTray(menu, onChange, highlight) {
   document.getElementById("tray-lines").replaceChildren(...rows);
   document.getElementById("tray-empty").hidden = rows.length > 0;
   document.getElementById("tray-total-row").hidden = rows.length === 0;
-  document.getElementById("tray-total").textContent = "৳ " + total;
+  document.getElementById("tray-total").textContent = "৳ " + total;
   const reserveAll = document.getElementById("reserve-all");
   reserveAll.hidden = rows.length === 0;
   if (reserveAll.getAttribute("aria-busy") !== "true") {
@@ -100,7 +100,7 @@ function renderTray(menu, onChange, highlight) {
   const bar = document.getElementById("tray-bar");
   bar.hidden = count === 0;
   document.getElementById("tray-bar-text").textContent =
-    count + (count === 1 ? " dish" : " dishes") + ", ৳ " + total;
+    count + (count === 1 ? " dish" : " dishes") + ", ৳ " + total;
   bar.setAttribute("aria-label", "Review tray: " + count + (count === 1 ? " dish" : " dishes") + ", " + total + " taka");
 }
 

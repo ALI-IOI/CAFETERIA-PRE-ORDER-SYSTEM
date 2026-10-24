@@ -20,7 +20,7 @@ async function load() {
   }
   if (!requireLogin(r, "/login.html")) return;
   if (!r.ok || !Array.isArray(r.reservations)) {
-    listState(state, "error", "Couldn't load your reservations. Check your connection and try again.", load);
+    listState(state, "error", "Couldn’t load your reservations. Check your connection and try again.", load);
     table.hidden = true;
     return;
   }
@@ -34,8 +34,23 @@ async function load() {
           class: "btn btn--danger",
           type: "button",
           "aria-label": "Cancel " + res.code + " (" + res.item + ")",
+          // Cancelling gives the portion away, so the first press only asks
+          // for a second one; after 5 seconds the button goes back.
           onclick: async (e) => {
-            const done = busy(e.currentTarget, "Cancelling…");
+            const button = e.currentTarget;
+            if (button.dataset.confirm !== "yes") {
+              button.dataset.confirm = "yes";
+              button.textContent = "Press again to cancel";
+              button.setAttribute("aria-label", "Press again to cancel " + res.code + " (" + res.item + ")");
+              setTimeout(() => {
+                if (!button.isConnected || button.getAttribute("aria-busy") === "true") return;
+                button.dataset.confirm = "";
+                button.textContent = "Cancel";
+                button.setAttribute("aria-label", "Cancel " + res.code + " (" + res.item + ")");
+              }, 5000);
+              return;
+            }
+            const done = busy(button, "Cancelling…");
             const c = await api.post("/api/reservations/cancel", { id: res.id });
             done();
             say("msg", c.ok ? c.message : c.error, c.ok);
@@ -88,7 +103,7 @@ async function loadHistory() {
   }
   if (!requireLogin(h, "/login.html")) return;
   if (!h.ok || !Array.isArray(h.orders)) {
-    listState(box, "error", "Couldn't load your order history. Check your connection and try again.", loadHistory);
+    listState(box, "error", "Couldn’t load your order history. Check your connection and try again.", loadHistory);
     return;
   }
   const groups = [];

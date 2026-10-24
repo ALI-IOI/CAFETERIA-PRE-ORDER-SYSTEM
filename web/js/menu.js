@@ -51,7 +51,7 @@ function waitlistBox(item) {
       load();
     });
     box.append(
-      el("p", { class: "dish__flag" }, "You're number " + item.yourPosition + " on the waitlist."),
+      el("p", { class: "dish__flag" }, "You’re number " + item.yourPosition + " on the waitlist."),
       el("p", { class: "dish__meta" }, "If a portion becomes free before " + menu.cutoff + ", it is reserved for you and we email you."),
       leave);
     return box;
@@ -83,7 +83,7 @@ function dishCard(item) {
   const soldOut = left <= 0;
   const few = fresh && !soldOut && left < FEW;
   const inTray = fresh ? Tray.lines()[item.index] || 0 : 0;
-  const img = el("img", { class: "dish__img", src: item.image, alt: "Picture of " + item.name, loading: "lazy", width: 300, height: 200 });
+  const img = el("img", { class: "dish__img", src: item.image, alt: "", loading: "lazy", width: 300, height: 200 });
   const body = el("div", { class: "dish__body" },
     el("div", { class: "dish__top" },
       el("h3", { class: "dish__name" }, item.name),
@@ -169,7 +169,7 @@ async function load() {
   }
   if (!requireLogin(m, "/login.html")) return;
   if (!m.ok || !Array.isArray(m.items)) {
-    listState(dishes, "error", "Couldn't load today's menu. Check your connection and try again.", load);
+    listState(dishes, "error", "Couldn’t load today’s menu. Check your connection and try again.", load);
     document.getElementById("count").textContent = "";
     return;
   }

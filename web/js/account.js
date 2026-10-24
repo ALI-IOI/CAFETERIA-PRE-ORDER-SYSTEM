@@ -9,7 +9,7 @@ async function loadDetails() {
   }
   if (!requireLogin(me, "/login.html")) return;
   if (!me.ok) {
-    say("msg", "Couldn't load your details. Reload the page to try again.", false);
+    say("msg", "Couldn’t load your details. Reload the page to try again.", false);
     return;
   }
   const rows = [

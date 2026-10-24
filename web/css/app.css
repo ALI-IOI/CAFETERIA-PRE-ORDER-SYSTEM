@@ -89,6 +89,10 @@ a:hover { text-decoration-thickness: 2px; }
 img { max-width: 100%; display: block; }
 ::selection { background: var(--tint); color: var(--ink); }
 input, select, textarea { caret-color: var(--accent); accent-color: var(--accent); }
+a, button, input, select, label, summary { touch-action: manipulation; -webkit-tap-highlight-color: #E3EDE699; }
+/* anchors land with room above them; on phones the fixed tray bar never covers a focused field */
+[id] { scroll-margin-top: var(--space-4); }
+html:has(.tray-bar:not([hidden])) { scroll-padding-bottom: 72px; }
 
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .skip-link {
@@ -439,7 +443,7 @@ body:has(.tray-bar:not([hidden])) .footer { padding-bottom: calc(var(--space-6) 
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes line-in { from { opacity: 0; transform: translateY(-4px); } }
 @keyframes tint-in { from { background-color: var(--panel); } }
-.msg.is-new, .banner.is-new, .state.is-new { animation: fade-in var(--dur) var(--ease-out); }
+.msg.is-new, .state.is-new { animation: fade-in var(--dur) var(--ease-out); }
 .tray li.is-new { animation: line-in var(--dur-enter) var(--ease-out); }
 .tray li.is-leaving { opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 .tray-count.is-pulse { transform: scale(1.15); }
