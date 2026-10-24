@@ -33,7 +33,6 @@ static const Pair PAIRS[] = {
     {"danger text on linen", "#A3241C", "#F7F3EC", TEXT},
     {"danger text on white", "#A3241C", "#FFFFFF", TEXT},
     {"danger text on danger tint", "#A3241C", "#F6DED8", TEXT},
-    {"demo notice text (online demo only)", "#1F1D1A", "#FFF8D6", TEXT},
     {"field edge on white (UI)", "#8A8174", "#FFFFFF", UI},
     {"field edge on linen (UI)", "#8A8174", "#F7F3EC", UI},
     {"green button edge on linen (UI)", "#1E5B3E", "#F7F3EC", UI},

@@ -2,7 +2,7 @@
 // #RRGGBB or #RRGGBBAA): no rgb()/rgba()/hsl()/hsla()/hwb()/lab()/lch()/oklab()/
 // oklch()/color-mix()/color(), and no colour keywords (white, black,
 // transparent, currentColor, ...). Scans .css, .html, .js and .svg files under
-// the folders given on the command line (ctest: web/ and pages-demo/).
+// the folders given on the command line (ctest: web/).
 //
 //   check_hex_colors <folder>...
 #include <cstdio>

@@ -128,3 +128,14 @@ Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit
 | Contrast | ctest `contrast_check` (`tools/contrast_check.cpp`, replaces the Python script): 24/24 pairs. Rendered pages: 0 failing text elements on all 8 pages at 1280 and 375 px | Pass |
 | Online demo builder | ctest `pages_demo_build` (`pages-demo/build_demo.cpp`, replaces the Python script): byte-for-byte the same output as the old builder on the same input | Pass |
 | Theme check | E2E `theme: no dark-mode stylesheet` now expects `--page: #F7F3EC` | Pass |
+
+## Online demo removed (2026-10-24)
+
+The project is now run only locally by the team, so the GitHub Pages demo (`pages-demo/`, its
+workflow and the `pages_demo_build` test) is gone; the local demo in `demo/` is unchanged.
+
+| Area | Tests | Result |
+|---|---|---|
+| Whole suite | `ctest --test-dir build`: 8/8 (unit_tests, no_stl_guard, console_demo, admin_tool, thread_exit_stress, contrast_check, hex_colors_only, e2e_section12) | Pass |
+| Hex-only colours | `hex_colors_only` now scans `web/` only: 24 files, 0 non-hex colours | Pass |
+| Contrast | `contrast_check`: 21/21 pairs (the demo-notice pair was removed with the demo) | Pass |

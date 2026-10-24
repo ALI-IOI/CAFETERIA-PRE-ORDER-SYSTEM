@@ -5,13 +5,9 @@ staff, from the VC's office to the bus drivers) reserves freshly cooked food bef
 cutoff, staff mark food ready, and everyone gets emails. **All reservation logic runs on
 four hand-built data structures** — no STL containers for them (checked by a build test).
 
-**Live demo:** https://ali-ioi.github.io/CAFETERIA-PRE-ORDER-SYSTEM/ — the real pages from `web/`
-running on an in-browser stand-in for the server (`pages-demo/demo-api.js`): fake data kept in
-your browser, no emails, clock fixed at 08:30. Try `ayon@uni.example` / `demo-student-pass`,
-`guard1@uni.example` / `demo-guard-pass`, or staff `demo.staff` / `demo-staff-pass` at
-`staff/login.html`. The C++ server itself (data structures, persistence, emails, security) runs
-locally: see `demo/README.md`. The student IDs in the sample lists and tests are the team's real
-university IDs; every email uses the reserved test domain `uni.example`.
+It runs locally: build it (below) and start the demo server as `demo/README.md` describes. The
+student IDs in the sample lists and tests are the team's real university IDs; every email uses
+the reserved test domain `uni.example`.
 
 | Structure | Where | Used for |
 |---|---|---|
@@ -47,8 +43,7 @@ ctest --test-dir build --output-on-failure
 | `build/cafeteria_admin` | Creates cafeteria staff accounts (`add-staff`) and accounts for university staff with no university email (`add-person`); stop the server first |
 | `build/e2e_section12` | End-to-end test of the proposal's section 12 plan (run by `ctest`) |
 | `build/contrast_check` | WCAG contrast of every colour pair the pages use (run by `ctest`) |
-| `build/check_hex_colors` | Fails if any colour in `web/` or `pages-demo/` is not written in hex (run by `ctest`) |
-| `build/build_demo` | Builds the GitHub Pages demo from `web/` (run by `ctest` and by the Pages workflow) |
+| `build/check_hex_colors` | Fails if any colour in `web/` is not written in hex (run by `ctest`) |
 
 Everything is C/C++ (plus CMake for the build and its test scripts); the only other languages are
 the web pages themselves (HTML, CSS, JavaScript), which the browser needs. To repeat a test until it
