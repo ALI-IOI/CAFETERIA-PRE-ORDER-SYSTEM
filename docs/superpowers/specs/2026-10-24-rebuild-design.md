@@ -4,8 +4,8 @@ Date: 2026-10-24. Status: approved in conversation, section by section.
 
 ## Goal
 
-Rebuild all eight pages in `web/` to the standard of the design skills (`ui-ux-pro-max`,
-`impeccable`), keeping the "linen and basil" look the team chose. This is a DSA course
+Rebuild all eight pages in `web/` to the standard of the design skills (listed at the end),
+keeping the "linen and basil" look the team chose. This is a DSA course
 project: the C++ server, the hand-built data structures and the API do not change. The pages
 stay plain HTML, CSS and JavaScript; the tools and tests stay C++/CMake.
 
@@ -109,14 +109,16 @@ their API calls and data; they only gain the markup for these states.
 
 ## Checks and done
 
-- `accessibility` (WCAG 2.2) and `web-quality-audit`, standing in for the uninstalled
-  `web-design-guidelines`; a motion review against `impeccable`, standing in for
-  `design-motion-principles` / `review-animations`. Fix what they flag.
+- `web-design-guidelines` (accessibility and UX) and `design-motion-principles` in audit mode.
+  Fix what they flag.
 - C++ checks: `contrast_check`, `hex_colors_only`, `e2e_section12`, and the rest of `ctest`.
 - Every page rendered at 375, 768 and 1280 px: no sideways scroll, no tap target under 44 px,
   no text below AA, every state above shown at least once.
 - Done: 8/8 `ctest`, no build warnings, checks clean, all pages rendered at all three widths,
   committed and pushed.
 
-Not installed, so not used: `design-taste-frontend`, `interface-design`, `ui-refactor`,
-`design-motion-principles`, `animate`, `web-design-guidelines`, `review-animations`.
+Skills loaded before building: `design-taste-frontend`, `ui-ux-pro-max` and `impeccable` (public
+pages); `interface-design` (staff portal); `ui-refactor` (this is an existing UI);
+`design-motion-principles` and `animate` (motion). `review-animations` is not installed. The
+skills apply this spec; where one of them would change the approved look (colours, fonts,
+square corners, wording rules), the spec wins.
