@@ -47,18 +47,19 @@
             <h2 id="undo-h">Undo history <span class="hint">A stack: the newest action is on top, and Undo takes it off.</span></h2>
             <div class="card panel--lead">
               <p class="hint" id="stack-size"></p>
-              <button class="btn btn--block" type="button" id="undo">Undo latest action</button>
+              <button class="btn btn--block" type="button" id="undo" disabled>Undo latest action</button>
               <ol class="stack-list" id="history" aria-label="Staff actions, newest first"></ol>
               <p class="hint">Marking food ready cannot be undone: the emails have already gone.</p>
             </div>
             <h2 id="email-h">Email</h2>
-            <p class="card hint" id="email-mode" aria-labelledby="email-h"></p>
+            <p class="card hint" id="email-mode"></p>
           </aside>
         </div>
 
         <section id="items" aria-labelledby="items-h">
           <h2 id="items-h">Menu items</h2>
           <p class="hint">Items are never deleted, because reservations refer to them. Switch one off to hide it from the menu. Prices are shown only; people pay at the counter.</p>
+          <div id="items-state"></div>
           <div class="card table-wrap">
             <table>
               <caption class="visually-hidden">Menu items with price, availability and picture</caption>
@@ -92,6 +93,7 @@
             <button class="btn" type="submit">Search</button>
             <button class="btn" type="button" id="clear">Show all</button>
           </form>
+          <div id="res-state"></div>
           <div class="card table-wrap">
             <table>
               <caption id="res-caption">Sorted by item, then reservation time</caption>
@@ -108,6 +110,7 @@
 
         <section id="stock" aria-labelledby="stock-h">
           <h2 id="stock-h">Packaged stock</h2>
+          <div id="stock-state"></div>
           <div class="card table-wrap">
             <table>
               <caption class="visually-hidden">Packaged items and stock</caption>

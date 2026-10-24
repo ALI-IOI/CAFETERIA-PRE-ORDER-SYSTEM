@@ -82,7 +82,12 @@ function listState(container, kind, text, onRetry) {
   const box = el("div", { class: "state state--" + kind + " is-new", role: kind === "error" ? "alert" : "status" },
     el("p", {}, text || (kind === "loading" ? "Loading…" : "")));
   if (kind === "error" && onRetry) {
-    box.append(el("button", { class: "btn", type: "button", onclick: onRetry }, "Try again"));
+    // the button is replaced by what loads, so focus moves to the list itself
+    box.append(el("button", { class: "btn", type: "button", onclick: () => {
+      container.setAttribute("tabindex", "-1");
+      container.focus();
+      onRetry();
+    } }, "Try again"));
   }
   container.replaceChildren(box);
 }
