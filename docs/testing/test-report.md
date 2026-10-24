@@ -139,3 +139,23 @@ workflow and the `pages_demo_build` test) is gone; the local demo in `demo/` is 
 | Whole suite | `ctest --test-dir build`: 8/8 (unit_tests, no_stl_guard, console_demo, admin_tool, thread_exit_stress, contrast_check, hex_colors_only, e2e_section12) | Pass |
 | Hex-only colours | `hex_colors_only` now scans `web/` only: 24 files, 0 non-hex colours | Pass |
 | Contrast | `contrast_check`: 21/21 pairs (the demo-notice pair was removed with the demo) | Pass |
+
+## Rebuild of the web pages (2026-10-25)
+
+Plan: `docs/superpowers/plans/2026-10-24-rebuild.md`. The C++ server, API and data structures are unchanged.
+
+| Area | Tests | Result |
+|---|---|---|
+| Whole suite | `ctest --test-dir build`: 9/9 (new: `page_rules`, `tools/check_pages.cpp`, seen failing on the old stylesheet with 53 problems before the rebuild) | Pass |
+| Busy buttons | Browser check: 3 presses of Reserve all, Cancel (after its confirm) and Undo each sent exactly 1 request | Pass |
+| List states | Browser check: with the network failing, the menu, today's reservations, order history and kitchen overview show an error with Try again, and each recovers | Pass |
+| Long names | A 61-character dish name at 375 px wraps, keeps the price inside the tile, no sideways scroll | Pass |
+| Closed for the day | After the fake clock passes the cutoff: closed banner and status, every Add disabled, tray kept, Reserve all disabled | Pass |
+| Empty and filtered | No match for a search shows the empty state with the next step | Pass |
+| History by day | Order history groups under date headings, newest day first (the merge-sorted list) | Pass |
+| Undo stack | Newest action on top marked "Undo reverses this"; empty stack shows "Nothing to undo." and Undo is disabled | Pass |
+| Rendered pages | 8 pages x 375/768/1280 px: no sideways scroll, no control under 44 px, one `h1`, no text below AA | Pass |
+
+Known: `e2e_section12` failed 2 times in about 25 runs on "email retry: sent one minute later once the
+outbox works again" (the person received 2 confirmations instead of 1). It is in the server's email
+retry code, which this change did not touch, and is listed as a follow-up.

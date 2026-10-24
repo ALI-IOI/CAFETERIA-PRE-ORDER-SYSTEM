@@ -135,3 +135,20 @@ headline is gone, phrases joined by middle dots are plain sentences, the arrow i
 "Review tray", and basil green is the only accent (prices are bold charcoal). Re-measured all 8
 pages at 1280 and 375 px: 0 failing text elements, lowest ratio 6.35:1, 0 uppercase elements, no
 horizontal scroll, no control under 44 px. `build/contrast_check`: 22/22 pairs.
+
+## Rebuild on one design system (2026-10-25)
+
+All 8 pages were rebuilt on the same look (spec: `docs/superpowers/specs/2026-10-24-rebuild-design.md`)
+and checked against the Web Interface Guidelines and a motion audit.
+
+| Check | Result |
+|---|---|
+| Rendered pages, every visible text element against its real background | 8 pages x 375, 768 and 1280 px: 0 below AA; lowest ratio 5.79:1 |
+| Contrast, colour pairs | `build/contrast_check`: 24/24 pairs (added: text on the closed banner, secondary text on a ready row, the dotted leader) |
+| Tap targets | No control under 44 px at any width; availability checkboxes sit in a 44 x 44 px label |
+| Reflow | No sideways scroll on any page at any width (the staff section tabs scroll inside their own row) |
+| Page structure | `build/check_pages`: one `h1` per page, skip link to `#main`, every field labelled, no inline styles or scripts |
+| Forms | Errors appear under the field (`aria-describedby`, `aria-invalid`), focus moves to the first; emails, codes and logins have spellcheck off |
+| Status messages | `role="status"` for results, `role="alert"` for load errors |
+| Destructive action | Cancelling a reservation needs a second press within 5 seconds |
+| Motion | Feedback only, under 300 ms, nothing on load or looping; reduced motion keeps short fades and drops all movement |

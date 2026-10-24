@@ -44,6 +44,7 @@ ctest --test-dir build --output-on-failure
 | `build/e2e_section12` | End-to-end test of the proposal's section 12 plan (run by `ctest`) |
 | `build/contrast_check` | WCAG contrast of every colour pair the pages use (run by `ctest`) |
 | `build/check_hex_colors` | Fails if any colour in `web/` is not written in hex (run by `ctest`) |
+| `build/check_pages` | Fails if a page or the stylesheet breaks the static page rules (run by `ctest` as `page_rules`) |
 
 Everything is C/C++ (plus CMake for the build and its test scripts); the only other languages are
 the web pages themselves (HTML, CSS, JavaScript), which the browser needs. To repeat a test until it
@@ -99,8 +100,12 @@ everyone, whatever the device's dark-mode setting, modelled on how acclaimed res
 colour: a warm linen page (`#F7F3EC`), white surfaces, warm charcoal text, and basil green
 (`#1E5B3E`) as the single accent, kept for the brand, buttons and the announcement bar. Labels
 are in sentence case. All colours are hex, defined once as tokens at the top of
-`web/css/app.css`; `build/contrast_check` and `build/check_hex_colors` keep them accessible and
-hex-only.
+`web/css/app.css`, which is one ordered design system: tokens (colours, a 6-step type scale, an
+8-step spacing scale, motion), base, layout, components, states, page rules, motion. Every list
+has its loading, empty and error state, and every button that waits for the server is locked
+until it answers. `build/contrast_check`, `build/check_hex_colors` and `build/check_pages` (one
+title, labelled fields, no inline styles or scripts, sizes only from the scale, no motion over
+300 ms) keep the pages to these rules.
 
 ## Known limits (documented, proposal §10)
 - Sessions are kept in memory; a restart logs everyone out.
