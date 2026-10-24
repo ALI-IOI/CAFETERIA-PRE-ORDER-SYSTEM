@@ -10,7 +10,8 @@ running on an in-browser stand-in for the server (`pages-demo/demo-api.js`): fak
 your browser, no emails, clock fixed at 08:30. Try `ayon@uni.example` / `demo-student-pass`,
 `guard1@uni.example` / `demo-guard-pass`, or staff `demo.staff` / `demo-staff-pass` at
 `staff/login.html`. The C++ server itself (data structures, persistence, emails, security) runs
-locally: see `demo/README.md`. All names, IDs and emails in this repository are made up.
+locally: see `demo/README.md`. The student IDs in the sample lists and tests are the team's real
+university IDs; every email uses the reserved test domain `uni.example`.
 
 | Structure | Where | Used for |
 |---|---|---|
@@ -113,8 +114,6 @@ hex-only.
 
 ## Publishing to GitHub
 
-The public repository (https://github.com/ALI-IOI/CAFETERIA-PRE-ORDER-SYSTEM) has its own short
-history. Commit on `main` as usual, then run `cmake -D MESSAGE="What changed" -P tools/publish.cmake`:
-it turns the files of `main` (without `docs/proposal/`) into one new commit on the
-`public` branch and pushes that. `cmake -D DRY_RUN=1 -P tools/publish.cmake` shows what would
-change first.
+The repository (https://github.com/ALI-IOI/CAFETERIA-PRE-ORDER-SYSTEM) is private and holds the
+full history, including the original proposal in `docs/proposal/`. Commit on `main` and push it
+with `git push`; pull the other developer's work with `git pull`.

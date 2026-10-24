@@ -38,7 +38,7 @@ TEST(uni_blank_email_on_student_refused) {
     UniList list;
     uniInit(list);
     std::string err;
-    CHECK(!uniLoadCsv(list, writeCsv("emp_blank_student.csv", "9990000000009999,,student,X,CSE\n"), err));
+    CHECK(!uniLoadCsv(list, writeCsv("emp_blank_student.csv", "1072520005109999,,student,X,CSE\n"), err));
     CHECK(err.find("line 2") != std::string::npos);
     uniClear(list);
 }
@@ -48,7 +48,7 @@ TEST(uni_duplicate_email_refused) {
     uniInit(list);
     std::string err;
     CHECK(!uniLoadCsv(list,
-                      writeCsv("emp_dup_email.csv", "9990000000000101,a@uni.example,student,A,CSE\n"
+                      writeCsv("emp_dup_email.csv", "1072520005101030,a@uni.example,student,A,CSE\n"
                                                     "3000000000000002,A@uni.example,employee,B,Security\n"),
                       err));
     CHECK(err.find("line 3") != std::string::npos);
@@ -96,7 +96,7 @@ struct EmployeeFixture {
         authInit(auth, &clock, cfg);
         std::string err;
         CHECK(uniLoadCsv(auth.uni,
-                         writeCsv("emp_fixture.csv", "9990000000000101,ayon@uni.example,student,Ayon Das,CSE\n"
+                         writeCsv("emp_fixture.csv", "1072520005101030,ayon@uni.example,student,Ayon Das,CSE\n"
                                                      "3000000000000002,guard1@uni.example,employee,Sample Guard,Security\n"
                                                      "3000000000000001,,employee,Rahim Driver,Transport\n"
                                                      "3000000000000003,,employee,Karim Cleaner,Estate\n"),
@@ -140,7 +140,7 @@ TEST(blank_email_row_personal_email_gets_office_message) {
     CHECK_EQ(registerStart(f.auth, "rahim@gmail.com", "3000000000000001", "driverpass1", f.out),
              AuthResult::NoUniversityEmail);
     CHECK_EQ(f.out.count, 0);
-    CHECK_EQ(registerStart(f.auth, "ayon@gmail.com", "9990000000000101", "studentpass1", f.out),
+    CHECK_EQ(registerStart(f.auth, "ayon@gmail.com", "1072520005101030", "studentpass1", f.out),
              AuthResult::NotUniversityEmail);  // listed rows with an email still need the university domain
 }
 
@@ -157,7 +157,7 @@ TEST(add_person_creates_active_account) {
 
 TEST(add_person_refusals) {
     EmployeeFixture f;
-    CHECK_EQ(addPerson(f.auth, "9990000000000101", "ayon@example.com", "goodpass11"), AuthResult::NotEligible);
+    CHECK_EQ(addPerson(f.auth, "1072520005101030", "ayon@example.com", "goodpass11"), AuthResult::NotEligible);
     CHECK_EQ(addPerson(f.auth, "3000000000000002", "guard@example.com", "goodpass11"), AuthResult::NotEligible);
     CHECK_EQ(addPerson(f.auth, "3999999999999999", "x@example.com", "goodpass11"), AuthResult::IdNotListed);
     CHECK_EQ(addPerson(f.auth, "3000000000000001", "guard1@uni.example", "goodpass11"),

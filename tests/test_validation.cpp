@@ -23,11 +23,11 @@ TEST(email_domain_is_lowercased) {
 }
 
 TEST(university_id_digits_only) {
-    CHECK(validUniversityId("9990000000000102"));
+    CHECK(validUniversityId("1072520005101050"));
     CHECK(!validUniversityId("12345"));          // too short
     CHECK(!validUniversityId("12345678901234567890123"));
     CHECK(!validUniversityId("10725A0005"));
-    CHECK(!validUniversityId("-9990000000"));
+    CHECK(!validUniversityId("-1072520005"));
     CHECK(!validUniversityId(""));
 }
 

@@ -15,14 +15,14 @@
   const img = (f) => BASE + "img/demo/" + f;
 
   const ACCOUNTS = [
-    { login: "ayon@uni.example", password: "demo-student-pass", role: "student", name: "Ayon Das", universityId: "9990000000000101", department: "CSE" },
+    { login: "ayon@uni.example", password: "demo-student-pass", role: "student", name: "Ayon Das", universityId: "1072520005101030", department: "CSE" },
     { login: "teacher1@uni.example", password: "demo-teacher-pass", role: "teacher", name: "Sample Teacher", universityId: "2000000000000001", department: "CSE" },
     { login: "guard1@uni.example", password: "demo-guard-pass", role: "employee", name: "Sample Guard", universityId: "3000000000000002", department: "Security" },
     { login: "demo.staff", password: "demo-staff-pass", role: "staff", name: "Demo Staff", universityId: "", department: "" },
   ];
   // Rows of the (fake) university list that can register in the demo.
   const UNI_LIST = [
-    { id: "9990000000000102", email: "ali@uni.example", role: "student", name: "Mohammad Ali Gazi", department: "CSE" },
+    { id: "1072520005101050", email: "ali@uni.example", role: "student", name: "Mohammad Ali Gazi", department: "CSE" },
     { id: "3000000000000001", email: "", role: "employee", name: "Rahim Driver", department: "Transport" },
   ];
 

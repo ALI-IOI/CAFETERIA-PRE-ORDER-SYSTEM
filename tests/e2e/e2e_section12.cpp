@@ -229,8 +229,8 @@ static void writeFixtures() {
         << "code_minutes=15\ncooking_capacity=100\n";
     std::ofstream uni(g_config + "/university_list.csv");
     uni << "id,email,role,name,department\n"
-        << "9990000000000101,ayon@uni.example,student,Ayon Das,CSE\n"
-        << "9990000000000102,ali@uni.example,student,Mohammad Ali Gazi,CSE\n"
+        << "1072520005101030,ayon@uni.example,student,Ayon Das,CSE\n"
+        << "1072520005101050,ali@uni.example,student,Mohammad Ali Gazi,CSE\n"
         << "2000000000000001,teacher1@uni.example,teacher,Sample Teacher,EEE\n"
         << "3000000000000002,guard1@uni.example,employee,Sample Guard,Security\n"
         << "3000000000000001,,employee,Rahim Driver,Transport\n";
@@ -301,11 +301,11 @@ static int realMain(int argc, char** argv) {
     Browser anon, ayon, ali, teacher, staff, s[13];
 
     // ---- 12.1 registration ------------------------------------------------------
-    auto r = anon.post("/api/register", {{"email", "ayon@gmail.com"}, {"id", "9990000000000101"}, {"password", PW}});
+    auto r = anon.post("/api/register", {{"email", "ayon@gmail.com"}, {"id", "1072520005101030"}, {"password", PW}});
     check(status(r) == 400 && has(body(r), "university email"), "12.1 non-university email rejected", body(r));
-    r = anon.post("/api/register", {{"email", "ayon@uni.example"}, {"id", "9990000000099999"}, {"password", PW}});
+    r = anon.post("/api/register", {{"email", "ayon@uni.example"}, {"id", "1072520009999999"}, {"password", PW}});
     check(status(r) == 400 && has(body(r), "not on the university"), "12.1 unlisted ID rejected", body(r));
-    r = ayon.post("/api/register", {{"email", "ayon@uni.example"}, {"id", "9990000000000101"}, {"password", PW}});
+    r = ayon.post("/api/register", {{"email", "ayon@uni.example"}, {"id", "1072520005101030"}, {"password", PW}});
     check(status(r) == 200 && latestCode("ayon@uni.example").size() == 6, "12.1 valid registration sends a code",
           body(r));
     std::string code = latestCode("ayon@uni.example");
@@ -314,7 +314,7 @@ static int realMain(int argc, char** argv) {
     check(status(r) == 400, "12.1 wrong verification code rejected", body(r));
     r = ayon.post("/api/verify", {{"email", "ayon@uni.example"}, {"code", code}, {"password", "someone-elses-pw"}});
     check(status(r) == 400, "review: verify with a different password refused (no takeover)", body(r));
-    r = ayon.post("/api/register", {{"email", "ayon@uni.example"}, {"id", "9990000000000101"}, {"password", PW}});
+    r = ayon.post("/api/register", {{"email", "ayon@uni.example"}, {"id", "1072520005101030"}, {"password", PW}});
     code = latestCode("ayon@uni.example");
     r = ayon.post("/api/verify", {{"email", "ayon@uni.example"}, {"code", code}, {"password", PW}});
     check(status(r) == 200, "12.1 correct verification code accepted", body(r));
@@ -324,10 +324,10 @@ static int realMain(int argc, char** argv) {
     check(has(sc, "HttpOnly") && has(sc, "SameSite=Strict"), "security: session cookie is HttpOnly + SameSite", sc);
 
     // ---- 12.2 roles and interfaces --------------------------------------------------
-    check(registerUser(ali, "ali@uni.example", "9990000000000102"), "setup: ali registered");
+    check(registerUser(ali, "ali@uni.example", "1072520005101050"), "setup: ali registered");
     check(registerUser(teacher, "teacher1@uni.example", "2000000000000001"), "setup: teacher registered");
     r = ayon.get("/api/me");
-    check(jsonStr(body(r), "role") == "student" && jsonStr(body(r), "universityId") == "9990000000000101",
+    check(jsonStr(body(r), "role") == "student" && jsonStr(body(r), "universityId") == "1072520005101030",
           "12.2 student sees student profile (university ID)", body(r));
     r = teacher.get("/api/me");
     check(jsonStr(body(r), "role") == "teacher" && jsonStr(body(r), "department") == "EEE",
