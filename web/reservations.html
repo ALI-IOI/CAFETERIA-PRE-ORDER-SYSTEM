@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My reservations · BAUSTK Cafeteria</title>
+  <title>My reservations – BAUSTK Cafeteria</title>
   <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
@@ -25,9 +25,11 @@
     <h1>My reservations</h1>
     <p class="lead">You can cancel a reservation while its status is <strong>Reserved</strong> and before the cancellation deadline.</p>
     <p id="msg" class="msg" role="status" aria-live="polite"></p>
-    <div class="card table-wrap">
-      <table>
-        <caption class="visually-hidden">Your reservations, newest first</caption>
+
+    <h2 id="today-h">Today</h2>
+    <div id="rows-state"></div>
+    <div class="card table-wrap" id="today-table">
+      <table aria-labelledby="today-h">
         <thead>
           <tr><th scope="col">Reservation</th><th scope="col">Food</th><th scope="col" class="num">Qty</th>
               <th scope="col">Reserved at</th><th scope="col">Status</th><th scope="col">Fresh until</th>
@@ -35,21 +37,13 @@
         </thead>
         <tbody id="rows"></tbody>
       </table>
-      <p id="empty" hidden>No reservations yet. <a href="/menu.html">See today's menu</a>.</p>
     </div>
+    <p id="empty" class="state state--empty" hidden>No reservations today. <a href="/menu.html">See today's menu</a>.</p>
 
-    <h2 id="history-h">Order history</h2>
-    <p class="hint">Earlier days, newest first.</p>
-    <div class="card table-wrap">
-      <table aria-labelledby="history-h">
-        <thead>
-          <tr><th scope="col">Reservation</th><th scope="col">Date</th><th scope="col">Food</th>
-              <th scope="col" class="num">Qty</th><th scope="col">Reserved at</th><th scope="col">Status</th></tr>
-        </thead>
-        <tbody id="history-rows"></tbody>
-      </table>
-      <p id="history-empty" hidden>No earlier orders yet.</p>
-    </div>
+    <h2 id="history-h">Earlier days</h2>
+    <p class="hint">Your order history, newest day first.</p>
+    <div id="history-rows" aria-labelledby="history-h"></div>
+    <p id="history-empty" class="state state--empty" hidden>No earlier orders yet. Orders from today move here tomorrow.</p>
   </main>
   <script src="/js/api.js"></script>
   <script src="/js/reservations.js"></script>
