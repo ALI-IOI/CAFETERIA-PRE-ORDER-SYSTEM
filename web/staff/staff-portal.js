@@ -78,7 +78,7 @@ function itemRow(item) {
   uploadForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!fileInput.files.length) {
-      say("msg", "Choose a picture first.");
+      say("msg", "Choose a picture first.", false);
       return;
     }
     const data = new FormData();

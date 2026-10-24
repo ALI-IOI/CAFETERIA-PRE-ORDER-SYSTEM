@@ -96,7 +96,7 @@ async function reserveTray(onDone) {
     Tray.clear();
     say("msg", r.message + " Codes: " + r.codes.join(", ") + ". Total " + taka(r.total) + ".", true);
   } else {
-    say("msg", r.error);
+    say("msg", r.error, false);
   }
   onDone();
 }

@@ -19,7 +19,7 @@ step1.addEventListener("submit", async (e) => {
   password = step1.password.value;
   button.disabled = false;
   if (!r.ok) {
-    say("msg1", r.error);
+    say("msg1", r.error, false);
     return;
   }
   document.getElementById("sent-to").textContent = email;
@@ -32,7 +32,7 @@ step2.addEventListener("submit", async (e) => {
   e.preventDefault();
   const r = await api.post("/api/verify", { email, code: step2.code.value.trim(), password });
   if (!r.ok) {
-    say("msg2", r.error);
+    say("msg2", r.error, false);
     step2.code.select();
     return;
   }

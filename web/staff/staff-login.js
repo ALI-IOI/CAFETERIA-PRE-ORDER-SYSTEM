@@ -10,7 +10,7 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
   if (r.ok) {
     window.location.href = "/staff/portal.html";
   } else {
-    say("msg", r.error);
+    say("msg", r.error, false);
     form.password.value = "";
     form.password.focus();
   }
