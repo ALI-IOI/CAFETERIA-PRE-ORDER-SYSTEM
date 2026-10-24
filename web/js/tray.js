@@ -45,7 +45,11 @@ const Tray = {
   },
 };
 
-function renderTray(menu, onChange) {
+let trayCountShown = null;  // the count last drawn, so a change can pulse once
+
+// Draws the tray. highlight: the item index just added or changed (its line
+// slides in once).
+function renderTray(menu, onChange, highlight) {
   const byIndex = new Map(menu.items.map((i) => [String(i.index), i]));
   const entries = Object.entries(Tray.lines()).filter(([idx]) => byIndex.has(idx));
   let total = 0, count = 0;
@@ -60,15 +64,19 @@ function renderTray(menu, onChange) {
     }
     select.addEventListener("change", () => {
       Tray.set(idx, Number(select.value));
-      onChange();
+      onChange(idx);
     });
-    return el("li", {},
-      el("span", {}, item.name, el("br"), el("span", { class: "hint" }, taka(item.price) + " each")),
+    const line = el("li", { class: String(highlight) === idx ? "is-new" : null },
+      el("span", {}, item.name, el("span", { class: "hint" }, taka(item.price) + " each")),
       select,
       el("button", {
-        class: "btn btn--ghost", type: "button", "aria-label": "Remove " + item.name + " from tray",
-        onclick: () => { Tray.set(idx, 0); onChange(); },
+        class: "btn", type: "button", "aria-label": "Remove " + item.name + " from tray",
+        onclick: () => {
+          line.classList.add("is-leaving");
+          setTimeout(() => { Tray.set(idx, 0); onChange(); }, 120);
+        },
       }, "Remove"));
+    return line;
   });
   document.getElementById("tray-lines").replaceChildren(...rows);
   document.getElementById("tray-empty").hidden = rows.length > 0;
@@ -76,27 +84,47 @@ function renderTray(menu, onChange) {
   document.getElementById("tray-total").textContent = "৳ " + total;
   const reserveAll = document.getElementById("reserve-all");
   reserveAll.hidden = rows.length === 0;
-  reserveAll.disabled = !menu.open;
-  document.getElementById("tray-count").textContent = String(count);
+  if (reserveAll.getAttribute("aria-busy") !== "true") {
+    reserveAll.disabled = !menu.open;
+    reserveAll.textContent = menu.open ? "Reserve all" : "Orders are closed for today";
+  }
+  const badge = document.getElementById("tray-count");
+  badge.textContent = String(count);
+  if (trayCountShown !== null && trayCountShown !== count) {
+    badge.classList.add("is-pulse");
+    setTimeout(() => badge.classList.remove("is-pulse"), 120);
+  }
+  trayCountShown = count;
   // Phones and tablets: the tray is below every dish, so a bar at the bottom of
   // the screen shows what is in it and jumps there (CSS hides it on wide screens).
   const bar = document.getElementById("tray-bar");
   bar.hidden = count === 0;
   document.getElementById("tray-bar-text").textContent =
-    count + (count === 1 ? " dish" : " dishes") + ", \u09f3 " + total;
+    count + (count === 1 ? " dish" : " dishes") + ", ৳ " + total;
   bar.setAttribute("aria-label", "Review tray: " + count + (count === 1 ? " dish" : " dishes") + ", " + total + " taka");
 }
 
+// Sends the whole tray. The button stays locked until the server answers, so a
+// second press cannot reserve twice.
 async function reserveTray(onDone) {
   const items = Object.entries(Tray.lines()).map(([idx, qty]) => idx + ":" + qty).join(",");
-  if (!items) return;
-  const r = await api.post("/api/reservations/batch", { items });
+  const button = document.getElementById("reserve-all");
+  if (!items || button.getAttribute("aria-busy") === "true") return;
+  const done = busy(button, "Reserving…");
+  say("tray-msg", "");
+  let r;
+  try {
+    r = await api.post("/api/reservations/batch", { items });
+  } catch (e) {
+    r = { ok: false, error: "Could not reach the cafeteria. Check your connection and try again." };
+  }
+  done();
   if (!requireLogin(r, "/login.html")) return;
   if (r.ok) {
     Tray.clear();
-    say("msg", r.message + " Codes: " + r.codes.join(", ") + ". Total " + taka(r.total) + ".", true);
+    say("tray-msg", r.message + " Codes: " + r.codes.join(", ") + ". Total " + taka(r.total) + ".", true);
   } else {
-    say("msg", r.error, false);
+    say("tray-msg", r.error + " Nothing was reserved.", false);
   }
   onDone();
 }
