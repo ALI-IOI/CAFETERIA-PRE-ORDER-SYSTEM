@@ -20,7 +20,7 @@ the reserved test domain `uni.example`.
 
 Rules live in `src/core/` (`cafeteria.cpp`, `staff.cpp`), storage in `src/storage/`,
 security in `src/auth/`, email in `src/email/`, the HTTP server in `src/server/`, pages in `web/`.
-Design: `docs/architecture/ADR-001-server-architecture.md`. Plan: `docs/superpowers/plans/`.
+Design: `docs/architecture/ADR-001-server-architecture.md`. The working plans were removed on 2026-11-01; they are in the git history (commit 08754aa and earlier).
 Test results: `docs/testing/test-report.md`.
 
 ## Build and test

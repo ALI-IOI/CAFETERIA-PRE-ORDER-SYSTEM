@@ -142,7 +142,7 @@ workflow and the `pages_demo_build` test) is gone; the local demo in `demo/` is 
 
 ## Rebuild of the web pages (2026-10-25)
 
-Plan: `docs/superpowers/plans/2026-10-24-rebuild.md`. The C++ server, API and data structures are unchanged.
+Plan: `2026-10-24-rebuild.md` (now only in the git history). The C++ server, API and data structures are unchanged.
 
 | Area | Tests | Result |
 |---|---|---|

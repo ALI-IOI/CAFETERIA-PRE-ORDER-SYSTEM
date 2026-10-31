@@ -118,4 +118,4 @@ first tick.
 ## Action items
 
 1. [ ] Team confirms library option (D1) and the open decisions in the implementation plan.
-2. [ ] Implement per `docs/superpowers/plans/2026-10-23-cafeteria-pre-order-system.md`.
+2. [ ] Implement per the plan `2026-10-23-cafeteria-pre-order-system.md` (now only in the git history).
