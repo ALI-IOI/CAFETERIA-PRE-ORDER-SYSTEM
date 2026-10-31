@@ -5,7 +5,10 @@
 //   4. runs the handler (core functions on the hand-built structures),
 //   5. saves the data files if anything changed,
 //   6. unlocks, then sends the queued emails.
+// Register and login call handle() twice, with the password hashing between the
+// two calls and outside the lock (see HashSlot).
 #include "server/routes.h"
+#include "auth/crypto.h"
 #include "auth/validation.h"
 #include "server/json.h"
 #include "storage/file_util.h"
@@ -24,6 +27,7 @@ static std::string imageUrl(const MenuItem& m) {
     return "/img/demo/bottle.svg";
 }
 #include <cstdlib>
+#include <condition_variable>
 #include <functional>
 
 using httplib::Request;
@@ -96,6 +100,42 @@ static void handle(AppState& app, const Request& req, Response& res, Access acce
     sendAll(app, c.out);
 }
 
+// Login and registration hash passwords (Argon2: 0.1-0.3 s and 64 MiB each) with
+// app.mu free, so one person's login never holds up anyone else's request. At most
+// two hash at once and a few more may wait; past that the request is turned away
+// (503) instead of tying up the server's worker threads. A slot is taken before
+// app.mu, never while holding it. (Verifying a code and changing a password still
+// hash under app.mu: both are limited to a few tries.)
+static std::mutex g_hashMu;
+static std::condition_variable g_hashFree;
+static int g_hashBusy = 0, g_hashWaiting = 0;
+static const int HASH_SLOTS = 2, HASH_QUEUE = 6;
+
+struct HashSlot {
+    bool entered = false;
+    HashSlot() {
+        std::unique_lock<std::mutex> lock(g_hashMu);
+        if (g_hashBusy + g_hashWaiting >= HASH_SLOTS + HASH_QUEUE) return;
+        g_hashWaiting++;
+        g_hashFree.wait(lock, [] { return g_hashBusy < HASH_SLOTS; });
+        g_hashWaiting--;
+        g_hashBusy++;
+        entered = true;
+    }
+    ~HashSlot() {
+        if (!entered) return;
+        {
+            std::lock_guard<std::mutex> lock(g_hashMu);
+            g_hashBusy--;
+        }
+        g_hashFree.notify_one();
+    }
+};
+
+static void busyReply(Response& res) {
+    reply(res, 503, jsonError("The server is busy checking passwords. Try again in a moment."));
+}
+
 static std::string param(const Request& req, const char* name) {
     return req.has_param(name) ? req.get_param_value(name) : "";
 }
@@ -122,6 +162,7 @@ static int httpStatus(AuthResult r) {
         case AuthResult::NotVerified: return 403;
         case AuthResult::AlreadyRegistered: return 409;
         case AuthResult::CryptoError: return 500;
+        case AuthResult::CodeRecentlySent: return 429;
         default: return 400;
     }
 }
@@ -193,14 +234,25 @@ static void routeAuth(httplib::Server& svr, AppState& app) {
     svr.Get("/api/health", [&](const Request&, Response& res) { reply(res, 200, "{\"ok\":true}"); });
 
     svr.Post("/api/register", [&](const Request& req, Response& res) {
-        handle(app, req, res, Access::Public, [](Ctx& c) {
-            std::string email = param(c.req, "email"), id = param(c.req, "id"), pw = param(c.req, "password");
+        const std::string email = param(req, "email"), id = param(req, "id"), pw = param(req, "password");
+        HashSlot slot;
+        if (!slot.entered) return busyReply(res);
+        bool checked = false;
+        handle(app, req, res, Access::Public, [&](Ctx& c) {
             if (email.size() > (size_t)MAX_EMAIL_LEN || id.size() > (size_t)MAX_UNI_ID_LEN ||
                 pw.size() > (size_t)MAX_PASSWORD_LEN) {
                 fail(c, 400, "Input too long.");
                 return;
             }
-            AuthResult r = registerStart(c.app.auth, email, id, pw, c.out);
+            AuthResult r = registerCheck(c.app.auth, email, id, pw);
+            if (r != AuthResult::Ok) fail(c, httpStatus(r), authMessage(r));
+            else checked = true;
+        });
+        if (!checked) return;
+        RegisterHashes h;
+        bool made = makeRegisterHashes(pw, h);
+        handle(app, req, res, Access::Public, [&](Ctx& c) {
+            AuthResult r = made ? registerStart(c.app.auth, email, id, pw, c.out, &h) : AuthResult::CryptoError;
             if (r != AuthResult::Ok) {
                 fail(c, httpStatus(r), authMessage(r));
                 return;
@@ -224,11 +276,23 @@ static void routeAuth(httplib::Server& svr, AppState& app) {
     });
 
     auto doLogin = [&](const Request& req, Response& res, bool staffPortal) {
-        handle(app, req, res, Access::Public, [staffPortal](Ctx& c) {
-            std::string login = param(c.req, staffPortal ? "login" : "email");
-            std::string token;
-            AuthResult r = ::login(c.app.auth, login, param(c.req, "password"), staffPortal, token);
+        const std::string login = param(req, staffPortal ? "login" : "email"), password = param(req, "password");
+        HashSlot slot;
+        if (!slot.entered) return busyReply(res);
+        LoginTicket t;
+        bool begun = false;
+        handle(app, req, res, Access::Public, [&](Ctx& c) {
+            AuthResult r = loginBegin(c.app.auth, login, password, staffPortal, t);
             c.changed = true;  // failed-login counters
+            if (r != AuthResult::Ok) fail(c, httpStatus(r), authMessage(r));
+            else begun = true;
+        });
+        if (!begun) return;
+        bool passwordOk = verifyPassword(t.hash, password);
+        handle(app, req, res, Access::Public, [&](Ctx& c) {
+            std::string token;
+            AuthResult r = loginFinish(c.app.auth, t, passwordOk, token);
+            c.changed = true;
             if (r != AuthResult::Ok) {
                 fail(c, httpStatus(r), authMessage(r));
                 return;
@@ -819,7 +883,7 @@ static void routeRedesign(httplib::Server& svr, AppState& app) {
                 return;
             }
             MenuItem* m = menuAt(c.app.caf.menu, item);
-            if (m == nullptr) {
+            if (m == nullptr || m->removed) {  // checked before the file is written
                 fail(c, 400, resultMessage(Result::BadItem));
                 return;
             }
@@ -839,9 +903,21 @@ static void routeRedesign(httplib::Server& svr, AppState& app) {
     });
 }
 
+// The dev clock answers only a browser on this computer that asked for this
+// computer by name: a page from another site that re-points its own name at
+// 127.0.0.1 (DNS rebinding) sends its own Host, and a request relayed by a
+// proxy carries Forwarded / X-Forwarded-For.
+static bool localDevRequest(const Request& req) {
+    if (req.remote_addr != "127.0.0.1" && req.remote_addr != "::1") return false;
+    if (req.has_header("X-Forwarded-For") || req.has_header("Forwarded")) return false;
+    std::string host = toLower(req.get_header_value("Host"));
+    std::string name = host.rfind('[', 0) == 0 ? host.substr(0, host.find(']') + 1) : host.substr(0, host.find(':'));
+    return name == "localhost" || name == "127.0.0.1" || name == "[::1]";
+}
+
 static void routeDev(httplib::Server& svr, AppState& app) {
     svr.Post("/api/dev/advance", [&](const Request& req, Response& res) {
-        if (req.remote_addr != "127.0.0.1" && req.remote_addr != "::1") {
+        if (!localDevRequest(req)) {
             reply(res, 403, jsonError("Local only."));
             return;
         }
@@ -883,8 +959,17 @@ void registerRoutes(httplib::Server& svr, AppState& app, bool devRoutes) {
                 res.set_header("Connection", "close");  // the body is left unread
             return httplib::Server::HandlerResponse::Handled;
         }
-        bool staffPage = req.path == "/staff/portal.html";
-        if (req.path == "/home.html") {  // old address of the menu page
+        // Windows opens "menu.html.", "menu.html ", "menu.html::$DATA" and "MENU.HTML" as
+        // menu.html. No real link ends in a dot or a space or has a ':' (a stream name),
+        // so those are refused, and page names are compared without case.
+        if (!req.path.empty() &&
+            (req.path.back() == '.' || req.path.back() == ' ' || req.path.find(':') != std::string::npos)) {
+            res.status = 404;
+            return httplib::Server::HandlerResponse::Handled;
+        }
+        const std::string page = toLower(req.path);
+        bool staffPage = page == "/staff/portal.html";
+        if (page == "/home.html") {  // old address of the menu page
             res.set_redirect("/menu.html");
             return httplib::Server::HandlerResponse::Handled;
         }
@@ -897,7 +982,7 @@ void registerRoutes(httplib::Server& svr, AppState& app, bool devRoutes) {
             res.set_header("Connection", "close");  // the unread body must not be parsed as a request
             return httplib::Server::HandlerResponse::Handled;
         }
-        bool userPage = req.path == "/menu.html" || req.path == "/reservations.html" || req.path == "/account.html";
+        bool userPage = page == "/menu.html" || page == "/reservations.html" || page == "/account.html";
         if ((staffPage || userPage) && !pageAllowed(app, req, staffPage)) {
             res.set_redirect(staffPage ? "/staff/login.html" : "/");
             return httplib::Server::HandlerResponse::Handled;
@@ -905,12 +990,15 @@ void registerRoutes(httplib::Server& svr, AppState& app, bool devRoutes) {
         return httplib::Server::HandlerResponse::Unhandled;
     });
 
-    svr.set_post_routing_handler([](const Request& req, Response& res) {
+    svr.set_post_routing_handler([&app](const Request& req, Response& res) {
         res.set_header("X-Content-Type-Options", "nosniff");
         res.set_header("X-Frame-Options", "DENY");
         res.set_header("Referrer-Policy", "no-referrer");
         res.set_header("Content-Security-Policy",
-                       "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'; form-action 'self'");
+                       "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'; form-action 'self'; "
+                       "base-uri 'none'; object-src 'none'");
+        // behind HTTPS only, and short: a browser keeps this for a day even if the site moves back
+        if (app.secureCookies) res.set_header("Strict-Transport-Security", "max-age=86400");
         if (req.path.rfind("/api/", 0) == 0) res.set_header("Cache-Control", "no-store");
     });
 

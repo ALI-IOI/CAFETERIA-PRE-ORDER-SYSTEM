@@ -33,11 +33,17 @@ const char* authMessage(AuthResult r) {
         case AuthResult::NoUniversityEmail:
             return "You have no university email. Ask the cafeteria office to create your account.";
         case AuthResult::NotEligible: return "That ID is not a university staff member without a university email.";
+        case AuthResult::CodeRecentlySent:
+            return "We sent you a code less than a minute ago. Use that code with the password you chose then, "
+                   "or wait a minute and try again.";
     }
     return "Unknown error.";
 }
 
+static const std::string& dummyHash();
+
 void authInit(AuthState& a, Clock* clock, const AuthConfig& cfg) {
+    dummyHash();  // made now, once, not under the server lock at the first login
     ulInit(a.users);
     uniInit(a.uni);
     a.sessions.head = nullptr;
@@ -64,10 +70,11 @@ void authFree(AuthState& a) {
     clearSessions(a.sessions);
 }
 
-AuthResult registerStart(AuthState& a, const std::string& emailIn, const std::string& universityId,
-                         const std::string& password, NotificationList& out) {
-    std::string email = toLower(emailIn);
-    UniEntry* entry = validUniversityId(universityId) ? uniFindById(a.uni, universityId) : nullptr;
+// The checks registerStart makes before it hashes anything.
+static AuthResult registerChecks(AuthState& a, const std::string& email, const std::string& universityId,
+                                 const std::string& password, UniEntry*& entry, User*& u) {
+    u = nullptr;
+    entry = validUniversityId(universityId) ? uniFindById(a.uni, universityId) : nullptr;
     // Staff without a university email will type a personal one: tell them where to go
     // before the domain check, whatever they typed.
     if (entry != nullptr && entry->email.empty()) return AuthResult::NoUniversityEmail;
@@ -77,28 +84,58 @@ AuthResult registerStart(AuthState& a, const std::string& emailIn, const std::st
     if (entry->email != email) return AuthResult::EmailIdMismatch;
     if (!validPassword(password)) return AuthResult::WeakPassword;
 
-    User* u = ulFind(a.users, email);
+    u = ulFind(a.users, email);
     if (u != nullptr && u->verified) return AuthResult::AlreadyRegistered;
+    // One code a minute per email: repeating the request cannot flood an inbox or keep
+    // replacing the pending password.
+    if (u != nullptr && u->lastCodeSent != 0 && a.clock->now() - u->lastCodeSent < CODE_RESEND_SECONDS)
+        return AuthResult::CodeRecentlySent;
+    return AuthResult::Ok;
+}
 
-    std::string code = randomDigits(6);
-    std::string pwHash = hashPassword(password);
-    std::string codeHash = hashPassword(code);
-    if (pwHash.empty() || codeHash.empty()) return AuthResult::CryptoError;
+AuthResult registerCheck(AuthState& a, const std::string& emailIn, const std::string& universityId,
+                         const std::string& password) {
+    UniEntry* entry;
+    User* u;
+    return registerChecks(a, toLower(emailIn), universityId, password, entry, u);
+}
 
+bool makeRegisterHashes(const std::string& password, RegisterHashes& h) {
+    h.code = randomDigits(6);
+    h.passwordHash = hashPassword(password);
+    h.codeHash = hashPassword(h.code);
+    return !h.passwordHash.empty() && !h.codeHash.empty();
+}
+
+AuthResult registerStart(AuthState& a, const std::string& emailIn, const std::string& universityId,
+                         const std::string& password, NotificationList& out, const RegisterHashes* pre) {
+    std::string email = toLower(emailIn);
+    UniEntry* entry;
+    User* u;
+    AuthResult r = registerChecks(a, email, universityId, password, entry, u);
+    if (r != AuthResult::Ok) return r;
+
+    RegisterHashes made;
+    if (pre == nullptr) {
+        if (!makeRegisterHashes(password, made)) return AuthResult::CryptoError;
+        pre = &made;
+    }
+    time_t now = a.clock->now();
     if (u == nullptr) u = ulAppend(a.users);
     u->login = email;
     u->universityId = entry->id;
     u->role = entry->role;
     u->name = entry->name;
     u->department = entry->department;
-    u->passwordHash = pwHash;
+    u->passwordHash = pre->passwordHash;
     u->verified = false;
-    u->codeHash = codeHash;
-    u->codeExpires = a.clock->now() + (time_t)a.cfg.codeMinutes * 60;
+    u->codeHash = pre->codeHash;
+    u->codeExpires = now + (time_t)a.cfg.codeMinutes * 60;
     u->codeAttempts = 0;
+    u->lastCodeSent = now;
 
     nlAppend(out, NotifType::VerificationCode, email, "Your cafeteria verification code",
-             "Your verification code is " + code + ". It expires in " + std::to_string(a.cfg.codeMinutes) +
+             "Your verification code is " + pre->code + ". It expires in " + std::to_string(a.cfg.codeMinutes) +
                  " minutes.\nIf you did not try to register, you can ignore this email.",
              0);
     return AuthResult::Ok;
@@ -122,19 +159,70 @@ AuthResult registerVerify(AuthState& a, const std::string& emailIn, const std::s
     return AuthResult::Ok;
 }
 
-AuthResult login(AuthState& a, const std::string& loginIn, const std::string& password, bool staffPortal,
-                 std::string& tokenOut) {
-    tokenOut.clear();
+// Unlinks and frees the session after `prev` (or the head when prev is null).
+static void removeAfter(SessionList& list, Session* prev, Session* cur) {
+    if (prev == nullptr) list.head = cur->next;
+    else prev->next = cur->next;
+    delete cur;
+    list.count--;
+}
+
+// More than MAX_SESSIONS_PER_USER sessions for one person: sign out the oldest.
+// New sessions go in at the head, so the oldest is the last one in the list.
+static void capSessions(SessionList& list, const std::string& login) {
+    int n = 0;
+    Session *oldest = nullptr, *oldestPrev = nullptr, *prev = nullptr;
+    for (Session* s = list.head; s != nullptr; prev = s, s = s->next) {
+        if (s->login != login) continue;
+        n++;
+        oldest = s;
+        oldestPrev = prev;
+    }
+    if (n > MAX_SESSIONS_PER_USER) removeAfter(list, oldestPrev, oldest);
+}
+
+// Unknown names are checked against this, so a reply takes as long whether or
+// not the name has an account. Made once, on first use.
+static const std::string& dummyHash() {
+    static const std::string h = hashPassword("no account has this password");
+    return h;
+}
+
+AuthResult loginBegin(AuthState& a, const std::string& loginIn, const std::string& password, bool staffPortal,
+                      LoginTicket& t) {
+    t.login.clear();
+    t.hash = dummyHash();
     if (loginIn.empty() || loginIn.size() > (size_t)MAX_EMAIL_LEN || password.size() > (size_t)MAX_PASSWORD_LEN)
         return AuthResult::BadCredentials;
     User* u = ulFind(a.users, toLower(loginIn));
-    if (u == nullptr) return AuthResult::BadCredentials;
-    if ((u->role == Role::Staff) != staffPortal) return AuthResult::BadCredentials;
+    if (u == nullptr || (u->role == Role::Staff) != staffPortal) return AuthResult::Ok;  // dummy check, then refused
 
     time_t now = a.clock->now();
     if (now < u->lockedUntil) return AuthResult::Locked;
-    if (!verifyPassword(u->passwordHash, password)) {
-        u->failedLogins++;
+    // Counted as a failure before the check: guesses sent at the same time cannot
+    // all be checked before the first one is counted. A right password resets it.
+    // Enough guesses still being checked locks the account for the usual time, so
+    // it unlocks even if those checks never finish.
+    if (u->failedLogins >= a.cfg.lockoutFailures) {
+        u->failedLogins = 0;
+        u->lockedUntil = now + (time_t)a.cfg.lockoutMinutes * 60;
+        return AuthResult::Locked;
+    }
+    u->failedLogins++;
+    t.login = u->login;
+    t.hash = u->passwordHash;
+    return AuthResult::Ok;
+}
+
+AuthResult loginFinish(AuthState& a, const LoginTicket& t, bool passwordOk, std::string& tokenOut) {
+    tokenOut.clear();
+    if (t.login.empty()) return AuthResult::BadCredentials;
+    // Found again by name: the account may have changed while the lock was free.
+    User* u = ulFind(a.users, t.login);
+    if (u == nullptr || u->passwordHash != t.hash) return AuthResult::BadCredentials;
+
+    time_t now = a.clock->now();
+    if (!passwordOk) {
         if (u->failedLogins >= a.cfg.lockoutFailures) {
             u->failedLogins = 0;
             u->lockedUntil = now + (time_t)a.cfg.lockoutMinutes * 60;
@@ -142,6 +230,7 @@ AuthResult login(AuthState& a, const std::string& loginIn, const std::string& pa
         }
         return AuthResult::BadCredentials;
     }
+    if (now < u->lockedUntil) return AuthResult::Locked;  // other guesses locked it meanwhile
     u->failedLogins = 0;
     if (!u->verified) return AuthResult::NotVerified;
 
@@ -154,15 +243,18 @@ AuthResult login(AuthState& a, const std::string& loginIn, const std::string& pa
     a.sessions.head = s;
     a.sessions.count++;
     tokenOut = s->token;
+    capSessions(a.sessions, u->login);
     return AuthResult::Ok;
 }
 
-// Unlinks and frees the session after `prev` (or the head when prev is null).
-static void removeAfter(SessionList& list, Session* prev, Session* cur) {
-    if (prev == nullptr) list.head = cur->next;
-    else prev->next = cur->next;
-    delete cur;
-    list.count--;
+// The one-call form (tests and tools); the server uses the three steps above.
+AuthResult login(AuthState& a, const std::string& loginIn, const std::string& password, bool staffPortal,
+                 std::string& tokenOut) {
+    tokenOut.clear();
+    LoginTicket t;
+    AuthResult r = loginBegin(a, loginIn, password, staffPortal, t);
+    if (r != AuthResult::Ok) return r;
+    return loginFinish(a, t, verifyPassword(t.hash, password), tokenOut);
 }
 
 Session* sessionGet(AuthState& a, const std::string& token) {

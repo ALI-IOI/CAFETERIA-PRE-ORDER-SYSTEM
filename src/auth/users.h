@@ -22,6 +22,7 @@ struct User {
     std::string codeHash;      // hash of the pending verification code
     time_t codeExpires;
     int codeAttempts;
+    time_t lastCodeSent;       // when the last verification code was sent (memory only; 0 = none)
     User* next;
 };
 

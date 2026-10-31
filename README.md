@@ -60,7 +60,7 @@ staff account and a fake clock you can move forward to show reminders and expiry
 1. Fill every `[CONFIRM]` placeholder — the server prints the remaining ones at start-up:
    - `config/app.cfg` — university email domain, session/lockout times
    - `config/university_list.csv` — the official list of students, teachers and university staff (`student`, `teacher` or `employee`; format in `config/university_list.sample.csv`). Only `employee` rows may leave the email blank
-   - `config/staff_computers.txt` — the cafeteria counter computers' IP addresses (one per line). Once it lists any, every other computer gets "not found" for the staff terminal
+   - `config/staff_computers.txt` — the cafeteria counter computers' IP addresses (one per line). Once it lists any, every other computer gets "not found" for the staff terminal; while it is empty, only the server computer itself can open it
    - `config/smtp.cfg` — the sender account; set the password in the `CAFE_SMTP_PASSWORD` environment variable
    - `seed/menu.txt`, `seed/settings.txt` — menu, daily limits, cutoff, freshness, reminder interval (used on first start only; staff change them in the portal later)
 2. Create cafeteria staff: `build/cafeteria_admin add-staff <login> "<full name>"`.
@@ -87,7 +87,7 @@ them apart: restrict `/staff/` and `/api/staff/` to the counter PCs at the proxy
 
 | Page | Who | What |
 |---|---|---|
-| `/` | everyone | Landing page: BAUST Khulna photo (save the real one as `web/img/campus-hero.jpg`; a placeholder shows until then), how it works, today's times |
+| `/` | everyone | Landing page: a drawn table of plates (`web/img/hero-food.svg`, made for this site), how it works, today's times |
 | `/login.html`, `/register.html` | students, teachers, university staff | Log in; register with university email + ID and an emailed code |
 | `/menu.html` | students, teachers, university staff | Menu with category tabs, search and sort; dish cards with picture and price; a tray that reserves several dishes at once (all or nothing); waitlist for sold-out dishes |
 | `/reservations.html` | students, teachers, university staff | Today's reservations (cancel before the deadline) and your order history from earlier days, newest first |
@@ -98,8 +98,9 @@ Prices are shown only; people pay at the counter. Staff pictures must be JPEG, P
 Demo food pictures are simple drawings in `web/img/demo/`. Headings use the serif Cormorant
 Garamond (SIL Open Font License, self-hosted in `web/fonts/`) over the system sans. One theme for
 everyone, whatever the device's dark-mode setting, modelled on how acclaimed restaurant sites use
-colour: a warm linen page (`#F7F3EC`), white surfaces, warm charcoal text, and basil green
-(`#1E5B3E`) as the single accent, kept for the brand, buttons and the announcement bar. Labels
+colour: a white page, navy text (`#002855`), a teal header band and teal (`#007377`) for
+buttons and links, a navy announcement bar, a pale card teal (`#B9DADB`) for the home field, and
+orange (`#E87722`) only as a filled mark with navy text on it ("Ready", the tray count). Labels
 are in sentence case. All colours are hex, defined once as tokens at the top of
 `web/css/app.css`, which is one ordered design system: tokens (colours, a 6-step type scale, an
 8-step spacing scale, motion), base, layout, components, states, page rules, motion. Every list

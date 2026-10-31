@@ -1,9 +1,11 @@
-/* BAUSTK Cafeteria — "linen and basil", one light theme for everyone.
-   A warm linen page, white surfaces, warm charcoal text and one accent, basil
-   green, for the brand, the main buttons, the selected tab and "ready". Serif
-   headings (Cormorant Garamond, self-hosted) over the system sans, square
-   corners, 1px warm lines, a 3px green rule on top of each lead surface and a
-   dotted leader between a dish and its price, as on a printed menu card.
+/* BAUSTK Cafeteria — "teal and navy", one light theme for everyone.
+   A white page, navy text, a teal header band and teal for the main buttons,
+   links and the selected tab; a navy announcement bar; a pale card teal for the
+   home field; orange only as a filled mark with navy on it ("Ready", the tray
+   count), never as text or a line. Serif headings (Cormorant Garamond,
+   self-hosted) over the system sans, square corners, no shadows, a dotted
+   leader between a dish and its price, as on a printed menu card. Colours are
+   from the IEEE colour guide's "Teal" palette (colours only, no IEEE marks).
 
    Order: tokens, base, layout, components, states, pages, motion, reduced motion.
    Colours are hex only (build/check_hex_colors) and checked for contrast
@@ -22,23 +24,28 @@
 :root {
   color-scheme: light;  /* form controls stay light on devices set to dark mode */
 
-  --page: #F7F3EC;         /* linen */
+  /* ratios are WCAG 2.2, checked by build/contrast_check */
+  --page: #FFFFFF;         /* the page */
   --panel: #FFFFFF;        /* cards, dish tiles, tray, tables */
-  --bar: #FFFFFF;          /* top bar, home panel, fields, outline buttons */
-  --line: #E2DACD;         /* warm lines: decoration only (grid, rows, card edges) */
-  --edge: #8A8174;         /* edges that must be seen: fields, selects, the leader (3.5:1 on linen) */
-  --well: #EFE9DE;         /* inset areas, empty states, hover on outline buttons */
-  --ink: #1F1D1A;          /* warm charcoal text */
-  --ink-soft: #5E5850;     /* secondary text */
-  --accent: #1E5B3E;       /* basil green */
-  --accent-ink: #FFFFFF;   /* text on basil */
-  --accent-hover: #143F2B; /* deep basil */
-  --accent-text: #1E5B3E;  /* green text and links (7.2:1 on linen) */
-  --tint: #E3EDE6;         /* pale basil: ready rows, selection */
+  --bar: #007377;          /* the header band (white on it 5.7:1) */
+  --bar-ink: #FFFFFF;      /* text, links and the focus ring on the band */
+  --field: #FFFFFF;        /* fields, outline buttons, the home panel */
+  --card: #B9DADB;         /* card teal: the home field; navy text only (9.8:1) */
+  --line: #D5E6E7;         /* pale lines: decoration only (grid, rows, card edges) */
+  --edge: #5B5F63;         /* edges that must be seen: fields, selects, the leader (6.4:1 on white) */
+  --well: #EEF5F5;         /* inset areas, empty states, hover on outline buttons */
+  --ink: #002855;          /* navy text (14.6:1 on white) */
+  --ink-soft: #5B5F63;     /* secondary text (6.4:1 on white; never on --card) */
+  --accent: #007377;       /* teal: main buttons, selected tab, tray bar */
+  --accent-ink: #FFFFFF;   /* text on teal */
+  --accent-hover: #005B5E; /* deep teal (white on it 7.9:1) */
+  --accent-text: #007377;  /* teal text and links (5.7:1 on white) */
+  --tint: #DCEDEE;         /* pale teal: ready rows, selection */
+  --mark: #E87722;         /* orange: filled marks only, navy text on them (4.9:1) */
   --danger: #A3241C;
   --danger-tint: #F6DED8;
-  --focus: #1E5B3E;
-  --spotlight: radial-gradient(ellipse at 50% 40%, #FFFFFF 0%, #F3EEE4 60%, #E9E0D1 100%);
+  --focus: #002855;        /* navy ring; white on the teal band (--bar-ink) */
+  --spotlight: var(--well); /* behind dish pictures */
 
   --font-head: "Cormorant Garamond", Garamond, "Times New Roman", serif;
   --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Bengali", sans-serif;
@@ -49,7 +56,7 @@
   --step-1: 1.25rem;
   --step-2: 1.625rem;
   --step-3: 2.1875rem;
-  --step-4: clamp(2.4rem, 1.6rem + 3vw, 3.625rem);
+  --step-4: clamp(1.875rem, 1.2rem + 3vw, 3.625rem);  /* 30px at 360 wide: a page title stays on two lines */
 
   /* spacing: 4, 8, 12, 16, 24, 32, 48, 64 */
   --space-1: 0.25rem;
@@ -90,7 +97,7 @@ a:hover { text-decoration-thickness: 2px; }
 img { max-width: 100%; display: block; }
 ::selection { background: var(--tint); color: var(--ink); }
 input, select, textarea { caret-color: var(--accent); accent-color: var(--accent); }
-a, button, input, select, label, summary { touch-action: manipulation; -webkit-tap-highlight-color: #E3EDE699; }
+a, button, input, select, label, summary { touch-action: manipulation; -webkit-tap-highlight-color: #DCEDEE99; }
 /* anchors land with room above them; on phones the fixed tray bar never covers a focused field */
 [id] { scroll-margin-top: var(--space-4); }
 html:has(.tray-bar:not([hidden])) { scroll-padding-bottom: 72px; }
@@ -101,12 +108,13 @@ html:has(.tray-bar:not([hidden])) { scroll-padding-bottom: 72px; }
   background: var(--panel); color: var(--ink); padding: var(--space-3) var(--space-4);
 }
 .skip-link:focus { left: var(--space-2); }
+.skip-link:focus-visible { outline-offset: -5px; }  /* the ring sits on the link's white, whatever bar is behind */
 .visually-hidden {
   position: absolute !important; width: 1px; height: 1px; overflow: hidden;
   clip: rect(0 0 0 0); white-space: nowrap;
 }
 
-h1, h2, h3, .brand, .dish__name, .step__num, .figure {
+h1, h2, h3, .brand, .dish__name, .figure {
   font-family: var(--font-head); font-weight: 600; letter-spacing: -0.01em; line-height: 1.08; text-wrap: balance;
   font-variant-numeric: lining-nums;
 }
@@ -120,12 +128,13 @@ p { margin: 0 0 var(--space-3); text-wrap: pretty; }
 
 /* ==== layout ================================================================== */
 .announce {
-  margin: 0; background: var(--accent); color: var(--accent-ink); text-align: center;
+  margin: 0; background: var(--ink); color: var(--accent-ink); text-align: center;  /* navy, so it reads apart from the teal header */
   padding: var(--space-2) var(--gutter); font: 500 var(--step--1)/1.4 var(--font-body);
 }
 .announce:empty { display: none; }
 
-.topbar { background: var(--bar); border-bottom: var(--rule); }
+.topbar { background: var(--bar); color: var(--bar-ink); }
+.topbar :focus-visible { outline-color: var(--bar-ink); }  /* a navy ring on teal is only 2.6:1 */
 .topbar__inner {
   max-width: var(--content); margin: 0 auto; padding: var(--space-1) var(--gutter);
   display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-4);
@@ -134,14 +143,14 @@ p { margin: 0 0 var(--space-3); text-wrap: pretty; }
   color: inherit; text-decoration: none; font-size: var(--step-2); margin-right: auto;
   min-height: var(--control); display: flex; flex-direction: column; justify-content: center;
 }
-.brand small { display: block; font: 500 var(--step--1)/1.2 var(--font-body); color: var(--ink-soft); letter-spacing: 0; }
+.brand small { display: block; font: 500 var(--step--1)/1.2 var(--font-body); color: var(--bar-ink); letter-spacing: 0; }
 .topbar nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-4); }
 .topbar nav a, .topbar .linkbtn {
-  color: var(--ink); font: 600 var(--step--1)/1.2 var(--font-body);
+  color: var(--bar-ink); font: 600 var(--step--1)/1.2 var(--font-body);
   min-height: var(--control); display: inline-flex; align-items: center; gap: var(--space-2);
 }
-.topbar nav a[aria-current="page"] { text-decoration-thickness: 2px; text-decoration-color: var(--accent); }
-.topbar .who { color: var(--ink-soft); font: 400 var(--step--1)/1.2 var(--font-body); }
+.topbar nav a[aria-current="page"] { text-decoration-thickness: 2px; text-decoration-color: var(--bar-ink); }
+.topbar .who { color: var(--bar-ink); font: 400 var(--step--1)/1.2 var(--font-body); }
 
 main { max-width: var(--content); margin: 0 auto; padding: var(--space-5) var(--gutter) var(--space-7); }
 .narrow { max-width: 30rem; margin: var(--space-6) auto var(--space-7); padding-top: 0; }
@@ -149,6 +158,7 @@ main { max-width: var(--content); margin: 0 auto; padding: var(--space-5) var(--
   max-width: var(--content); margin: 0 auto; padding: var(--space-6) var(--gutter);
   color: var(--ink-soft); font-size: var(--step--1); border-top: 1px solid var(--line);
 }
+.footer p { margin: 0 0 var(--space-1); }
 .split { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1fr); }
 /* form grids: every cell sits on the row's bottom line, so the boxes and the
    button in a row line up whether or not a field has a hint above its box */
@@ -163,7 +173,7 @@ main { max-width: var(--content); margin: 0 auto; padding: var(--space-5) var(--
 .portal { display: grid; gap: var(--space-5); grid-template-columns: minmax(0, 1fr); }
 .portal__nav {
   display: flex; gap: var(--space-2); overflow-x: auto; scrollbar-width: thin;
-  margin: 0; padding: 0 0 var(--space-1);  /* stays inside the page margins */
+  margin: 0; padding: var(--space-1) var(--space-1) var(--space-1);  /* inside the page margins, with room for the focus ring */
   border-bottom: 1px solid var(--line);
 }
 .portal__nav a {
@@ -180,7 +190,7 @@ main { max-width: var(--content); margin: 0 auto; padding: var(--space-5) var(--
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
   min-height: var(--control); padding: var(--space-2) var(--space-4);
   font: 600 var(--step--1)/1.2 var(--font-body); text-decoration: none; cursor: pointer;
-  border: 1px solid var(--accent); border-radius: var(--radius); background: var(--bar); color: var(--accent-text);
+  border: 1px solid var(--accent); border-radius: var(--radius); background: var(--field); color: var(--accent-text);
   transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease,
               color var(--dur-fast) ease, transform var(--dur-fast) var(--ease-out);
 }
@@ -198,6 +208,7 @@ main { max-width: var(--content); margin: 0 auto; padding: var(--space-5) var(--
 .linkbtn {
   background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer;
   text-decoration: underline; text-underline-offset: 0.2em;
+  min-height: var(--control); display: inline-flex; align-items: center;  /* a full-size tap target */
 }
 
 /* fields */
@@ -205,7 +216,7 @@ main { max-width: var(--content); margin: 0 auto; padding: var(--space-5) var(--
 label { display: block; font-weight: 600; margin-bottom: var(--space-1); }
 input, select, textarea {
   width: 100%; min-height: var(--control); padding: var(--space-2) var(--space-3);
-  font: inherit; color: var(--ink); background: var(--bar);
+  font: inherit; color: var(--ink); background: var(--field);
   border: 1px solid var(--edge); border-radius: var(--radius);
   transition: border-color var(--dur-fast) ease;
 }
@@ -221,13 +232,13 @@ input[disabled], select[disabled] { background: var(--well); color: var(--ink-so
 
 /* tabs */
 .tabs {
-  display: flex; flex-wrap: nowrap; gap: var(--space-2); margin: 0; padding: 0 0 var(--space-1); list-style: none;
+  display: flex; flex-wrap: nowrap; gap: var(--space-2); margin: 0; padding: var(--space-1); list-style: none;  /* room for the focus ring */
   overflow-x: auto; scrollbar-width: thin; scroll-snap-type: x proximity;
 }
 .tabs li { flex: none; scroll-snap-align: start; }
 .tab {
   min-height: var(--control); padding: var(--space-2) var(--space-4); cursor: pointer;
-  border: 1px solid var(--accent); border-radius: var(--radius); background: var(--bar); color: var(--accent-text);
+  border: 1px solid var(--accent); border-radius: var(--radius); background: var(--field); color: var(--accent-text);
   font: 600 var(--step--1)/1.2 var(--font-body);
   transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease;
 }
@@ -235,10 +246,10 @@ input[disabled], select[disabled] { background: var(--well); color: var(--ink-so
 @media (hover: hover) and (pointer: fine) { .tab:hover { background: var(--well); } .tab[aria-pressed="true"]:hover { background: var(--accent-hover); } }
 
 /* surfaces */
-.card, .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--space-5); }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--space-5); }
 .panel--lead, .tray, .kpi { border-top: var(--rule); }
 .card + .card, section.card + form.card { margin-top: var(--space-4); }
-.card > h2:first-child, .card > h3:first-child, .panel > h2:first-child { margin-top: 0; font-size: var(--step-2); }
+.card > h2:first-child, .card > h3:first-child { margin-top: 0; font-size: var(--step-2); }
 
 /* messages and banners */
 .msg { margin: var(--space-3) 0; font-weight: 600; min-height: 1.5rem; }
@@ -255,7 +266,6 @@ input[disabled], select[disabled] { background: var(--well); color: var(--ink-so
 
 /* list states: loading, empty, error */
 .state { margin: 0; padding: var(--space-5); background: var(--well); color: var(--ink-soft); grid-column: 1 / -1; }
-.state--loading { color: var(--ink-soft); }
 .state--empty { color: var(--ink); }
 .state--error { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-top: 3px solid var(--danger); }
 .state .btn { margin-top: var(--space-3); }
@@ -272,7 +282,7 @@ input[disabled], select[disabled] { background: var(--well); color: var(--ink-so
   font: 600 var(--step--1)/1.6 var(--font-body); white-space: nowrap;
 }
 .chip--Reserved { background: var(--well); }
-.chip--Ready { color: var(--accent-text); border-color: var(--accent-text); background: var(--tint); }
+.chip--Ready { color: var(--ink); border-color: var(--ink); background: var(--mark); }
 .chip--Collected { color: var(--ink-soft); border-color: var(--ink-soft); }
 .chip--Cancelled { color: var(--ink-soft); border-color: var(--ink-soft); text-decoration: line-through; }
 .chip--Expired { color: var(--danger); border-color: var(--danger); background: var(--danger-tint); }
@@ -299,21 +309,21 @@ tr.is-ready > * { background: var(--tint); }
 
 /* ==== pages ================================================================== */
 /* home */
-.hero {
-  background-color: var(--well);
-  /* the real photo, when saved as campus-hero.jpg, covers the drawn placeholder */
-  background-image: url("/img/campus-hero.jpg"), url("/img/campus-hero.svg");
-  background-size: cover, cover; background-position: center, center;
-  border-bottom: 1px solid var(--line);
+/* a field of card teal: the drawn table (hero-food.svg) beside the white panel;
+   on phones the drawing is a cropped band above the panel */
+.hero { background: var(--card); overflow: hidden; }
+.hero__inner {
+  max-width: var(--content); margin: 0 auto; padding: 0 var(--gutter) var(--space-7);
+  display: grid; grid-template-columns: minmax(0, 1fr); align-items: center;
 }
-.hero__inner { max-width: var(--content); margin: 0 auto; padding: var(--space-8) var(--gutter); }
-.hero__panel { max-width: 40rem; background: #FFFFFFEB; border-top: var(--rule); padding: var(--space-5) var(--space-5) var(--space-6); }
+.hero__art { width: 100%; height: 11rem; object-fit: cover; object-position: 60% 45%; margin: 0 0 var(--space-5); }
+.hero__panel { background: var(--field); border-top: var(--rule); padding: var(--space-5) var(--space-5) var(--space-6); }
 .hero__panel p { color: var(--ink-soft); max-width: 46ch; }
 .hero__status { font-weight: 600; color: var(--ink); }
+/* how it works: three short steps in order (the <ol> carries the order, no numbers shown) */
 .steps { display: grid; gap: var(--space-5); grid-template-columns: minmax(0, 1fr); list-style: none; padding: 0; margin: 0; }
-.step { border-top: 1px solid var(--line); padding-top: var(--space-4); }
-.step__num { display: block; font-size: var(--step-4); color: var(--accent-text); line-height: 1; margin-bottom: var(--space-2); }
-.step p { max-width: 42ch; }
+.step { background: var(--well); padding: var(--space-5); border-top: var(--rule); }
+.step p { max-width: 42ch; margin: 0; }
 .info-strip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: var(--space-7) 0 0; background: var(--panel); border: 1px solid var(--line); border-top: var(--rule); }
 .info-strip div { padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--line); }
 .info-strip div:nth-child(odd) { border-right: 1px solid var(--line); }
@@ -322,10 +332,7 @@ tr.is-ready > * { background: var(--tint); }
 .info-strip dd { margin: var(--space-1) 0 0; font: 600 var(--step-3)/1.1 var(--font-head); font-variant-numeric: lining-nums tabular-nums; }
 
 /* menu */
-.menu-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2) var(--space-5); }
 .profile { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); align-items: baseline; margin-bottom: var(--space-3); }
-.menu-status { font-weight: 600; margin: 0 0 var(--space-3); }
-.menu-status--closed { color: var(--danger); }
 .toolbar { display: grid; gap: var(--space-3); grid-template-columns: minmax(0, 1fr); margin: var(--space-4) 0 var(--space-5); }
 .toolbar .field { margin: 0; }
 .toolbar__fields { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); }
@@ -368,7 +375,7 @@ tr.is-ready > * { background: var(--tint); }
 .tray__total { display: flex; justify-content: space-between; gap: var(--space-3); font: 700 var(--step-1)/1.3 var(--font-body); margin: var(--space-2) 0 var(--space-4); }
 .tray-count {
   display: inline-block; min-width: 1.5em; padding: 0 var(--space-1); text-align: center;
-  background: var(--accent); color: var(--accent-ink); font-variant-numeric: tabular-nums;
+  background: var(--mark); color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums;
   transition: transform var(--dur-pulse) var(--ease-out);
 }
 .tray-bar {
@@ -404,10 +411,13 @@ body:has(.tray-bar:not([hidden])) .footer { padding-bottom: calc(var(--space-6) 
   .info-strip div:last-child { border-right: 0; }
   .toolbar { grid-template-columns: minmax(0, 1fr) minmax(0, 22rem); align-items: end; }
   .tabs { flex-wrap: wrap; overflow: visible; }
+  .hero__inner { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-6); padding-block: var(--space-7); }
+  .hero__art { order: 2; height: auto; object-fit: contain; margin: 0; }
 }
 @media (min-width: 1001px) {
   .topbar__inner { padding-block: var(--space-2); gap: 0 var(--space-5); }
   .topbar nav { gap: 0 var(--space-5); }
+  .hero__inner { gap: var(--space-7); }
   .menu-layout { grid-template-columns: minmax(0, 1fr) 20rem; }
   /* a grid item stretches to the dish column; start keeps it its own height, so it can stick */
   .tray { position: sticky; top: var(--space-4); align-self: start; max-height: calc(100vh - 2rem); overflow-y: auto; }
@@ -439,6 +449,7 @@ body:has(.tray-bar:not([hidden])) .footer { padding-bottom: calc(var(--space-6) 
   .table-wrap td .btn { width: 100%; }
   tr.is-ready { background: var(--tint); }
   .brand { font-size: var(--step-1); }
+  .topbar nav { gap: 0 var(--space-3); }  /* the five student links fit one row at 360 wide */
 }
 
 /* ==== motion ================================================================== */
@@ -451,6 +462,12 @@ body:has(.tray-bar:not([hidden])) .footer { padding-bottom: calc(var(--space-6) 
 .tray li.is-leaving { opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 .tray-count.is-pulse { transform: scale(1.15); }
 tr.is-changed > * { animation: tint-in var(--dur-slow) var(--ease-out); }
+
+/* ==== forced colours (Windows contrast themes): the selected tab is not a colour only */
+@media (forced-colors: active) {
+  .tab[aria-pressed="true"] { border-width: 3px; text-decoration: underline; }
+  .portal__nav a[aria-current="true"] { text-decoration: underline; }  /* its border is already 3px */
+}
 
 /* ==== reduced motion: every change is instant ==================================== */
 @media (prefers-reduced-motion: reduce) {

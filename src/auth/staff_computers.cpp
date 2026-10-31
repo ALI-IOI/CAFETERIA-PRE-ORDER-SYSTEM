@@ -77,10 +77,12 @@ bool staffComputersLoad(StaffComputers& sc, const std::string& path, std::string
 }
 
 bool staffComputerAllowed(const StaffComputers& sc, const std::string& remoteAddr) {
-    if (sc.count == 0) return true;
     std::string a = toLower(remoteAddr);
     const std::string mapped = "::ffff:";
     if (a.rfind(mapped, 0) == 0 && validIPv4(a.substr(mapped.size()))) a = a.substr(mapped.size());
+    // No list yet: only this computer. A server started with --host 0.0.0.0 before
+    // the counter PCs were listed must not show the staff terminal to the campus.
+    if (sc.count == 0) return a == "127.0.0.1" || a == "::1";
     for (int i = 0; i < sc.count; i++)
         if (sc.addr[i] == a) return true;
     return false;

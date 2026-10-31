@@ -18,7 +18,7 @@ void staffComputersInit(StaffComputers& sc);
 // err = "<path> line <n>: <reason>".
 bool staffComputersLoad(StaffComputers& sc, const std::string& path, std::string& err);
 
-// Empty list -> true. Otherwise exact match; "::ffff:a.b.c.d" (an IPv4 address
+// Empty list -> this computer only (127.0.0.1, ::1). Otherwise exact match; "::ffff:a.b.c.d" (an IPv4 address
 // seen through an IPv6 socket) also matches "a.b.c.d".
 bool staffComputerAllowed(const StaffComputers& sc, const std::string& remoteAddr);
 

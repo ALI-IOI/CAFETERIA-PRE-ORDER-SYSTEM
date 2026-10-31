@@ -9,6 +9,7 @@ function dayText(day) {
 let shownStatus = null;  // code -> status at the last draw, so a change can fade in
 
 async function load() {
+  const restoreFocus = keepFocus();
   const state = document.getElementById("rows-state");
   const table = document.getElementById("today-table");
   if (shownStatus === null) { listState(state, "loading"); table.hidden = true; }
@@ -23,6 +24,7 @@ async function load() {
     listState(state, "error", "Couldn’t load your reservations. Check your connection and try again.", load);
     table.hidden = true;
     document.getElementById("empty").hidden = true;  // the list is unknown, not empty
+    restoreFocus();
     return;
   }
   listState(state, null);
@@ -61,6 +63,7 @@ async function load() {
   document.getElementById("rows").replaceChildren(...rows);
   table.hidden = rows.length === 0;
   document.getElementById("empty").hidden = rows.length > 0;
+  restoreFocus();
 }
 
 // The history comes merge-sorted newest first from the server; each day gets

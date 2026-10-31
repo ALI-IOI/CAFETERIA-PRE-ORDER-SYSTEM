@@ -36,6 +36,7 @@ User* ulAppend(UserList& list) {
     u->lockedUntil = 0;
     u->codeExpires = 0;
     u->codeAttempts = 0;
+    u->lastCodeSent = 0;
     u->next = nullptr;
     if (list.tail == nullptr) list.head = u;
     else list.tail->next = u;

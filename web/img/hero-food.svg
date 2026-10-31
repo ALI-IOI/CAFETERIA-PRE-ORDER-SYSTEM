@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 520" aria-hidden="true" focusable="false">
+  <!-- A cafeteria table from above: a plate of khichuri, a bowl of rice and a
+       bowl of dal, a spoon. Drawn for this site in its palette; decorative. -->
+  <!-- the big plate -->
+  <circle cx="330" cy="285" r="196" fill="#FFFFFF"/>
+  <circle cx="330" cy="285" r="160" fill="#EEF5F5"/>
+  <circle cx="330" cy="285" r="122" fill="#E87722"/>
+  <g fill="#FFFFFF">
+    <circle cx="282" cy="242" r="9"/><circle cx="351" cy="226" r="8"/><circle cx="392" cy="276" r="9"/>
+    <circle cx="300" cy="318" r="8"/><circle cx="366" cy="338" r="9"/><circle cx="262" cy="292" r="7"/>
+    <circle cx="330" cy="275" r="8"/><circle cx="410" cy="320" r="7"/><circle cx="318" cy="370" r="7"/>
+  </g>
+  <g fill="#007377">
+    <path d="M300 258c14-12 30-12 40 0-14 10-28 10-40 0z"/>
+    <path d="M362 300c12-14 28-16 40-6-12 12-28 14-40 6z"/>
+    <path d="M262 330c10-14 26-18 38-10-10 14-26 18-38 10z"/>
+  </g>
+  <!-- bowl of rice, top right -->
+  <circle cx="548" cy="104" r="84" fill="#002855"/>
+  <circle cx="548" cy="104" r="64" fill="#FFFFFF"/>
+  <g fill="#D5E6E7">
+    <rect x="520" y="84" width="14" height="5" transform="rotate(-20 527 86)"/>
+    <rect x="552" y="78" width="14" height="5" transform="rotate(15 559 80)"/>
+    <rect x="566" y="110" width="14" height="5" transform="rotate(-35 573 112)"/>
+    <rect x="530" y="118" width="14" height="5" transform="rotate(25 537 120)"/>
+    <rect x="546" y="98" width="14" height="5" transform="rotate(-5 553 100)"/>
+  </g>
+  <!-- bowl of dal, bottom left -->
+  <circle cx="92" cy="444" r="80" fill="#E87722"/>
+  <circle cx="92" cy="444" r="58" fill="#B9DADB"/>
+  <circle cx="92" cy="444" r="26" fill="#FFFFFF"/>
+  <circle cx="92" cy="444" r="12" fill="#007377"/>
+  <!-- spoon -->
+  <g transform="rotate(-38 560 400)">
+    <rect x="470" y="392" width="150" height="14" fill="#002855"/>
+    <ellipse cx="636" cy="399" rx="34" ry="22" fill="#002855"/>
+  </g>
+</svg>

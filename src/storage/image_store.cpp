@@ -55,9 +55,13 @@ bool storeItemImage(const std::string& dataDir, int itemIndex, const std::string
         return false;
     }
     std::string dir = dataDir + "/images";
-    if (!ensureDir(dir, err)) return false;
     std::string name = "item-" + std::to_string(itemIndex) + "-" + randomToken(8) + "." + extensionOf(kind);
-    if (!atomicWrite(dir + "/" + name, bytes, err)) return false;
+    std::string ioErr;
+    if (!ensureDir(dir, ioErr) || !atomicWrite(dir + "/" + name, bytes, ioErr)) {
+        std::fprintf(stderr, "Cannot store a picture: %s\n", ioErr.c_str());  // the path is for the log only
+        err = "The picture could not be saved. Try again; if it keeps failing, tell the administrator.";
+        return false;
+    }
     if (validImageFileName(oldFile) && oldFile != name) std::remove((dir + "/" + oldFile).c_str());
     newFile = name;
     return true;

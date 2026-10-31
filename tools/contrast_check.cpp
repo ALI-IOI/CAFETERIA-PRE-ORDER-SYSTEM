@@ -1,7 +1,12 @@
-// WCAG 2.2 contrast check for the "linen and basil" palette (web/css/app.css).
+// WCAG 2.2 contrast check for the "teal and navy" palette (web/css/app.css).
 // Every text/background and control/background pair the pages use is listed
 // here with the ratio it must reach: 4.5:1 for text, 3:1 for controls and lines
 // a person must see. Exit code 1 if any pair fails (run by ctest as contrast_check).
+//
+// Two pairs are never used, on purpose, because they fail:
+//   secondary grey #5B5F63 on the card teal #B9DADB (4.33:1) - only navy goes there;
+//   orange #E87722 as text, a line or a ring on white (2.96:1) - orange is only ever
+//   a filled shape with navy text on it.
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -17,31 +22,35 @@ struct Pair {
 static const double TEXT = 4.5, UI = 3.0;
 
 static const Pair PAIRS[] = {
-    {"text on linen page", "#1F1D1A", "#F7F3EC", TEXT},
-    {"text on white surface", "#1F1D1A", "#FFFFFF", TEXT},
-    {"text on well", "#1F1D1A", "#EFE9DE", TEXT},
-    {"text on pale basil (selection, Ready chip)", "#1F1D1A", "#E3EDE6", TEXT},
-    {"secondary text on linen", "#5E5850", "#F7F3EC", TEXT},
-    {"secondary text on white", "#5E5850", "#FFFFFF", TEXT},
-    {"secondary text on well", "#5E5850", "#EFE9DE", TEXT},
-    {"white on basil (bar, buttons, badge)", "#FFFFFF", "#1E5B3E", TEXT},
-    {"white on deep basil (button hover)", "#FFFFFF", "#143F2B", TEXT},
-    {"green text on linen", "#1E5B3E", "#F7F3EC", TEXT},
-    {"green text on white", "#1E5B3E", "#FFFFFF", TEXT},
-    {"green text on pale basil", "#1E5B3E", "#E3EDE6", TEXT},
-    {"green text on well (button hover)", "#1E5B3E", "#EFE9DE", TEXT},
-    {"danger text on linen", "#A3241C", "#F7F3EC", TEXT},
+    {"navy text on white page", "#002855", "#FFFFFF", TEXT},
+    {"navy text on well", "#002855", "#EEF5F5", TEXT},
+    {"navy text on pale teal (selection, ready row)", "#002855", "#DCEDEE", TEXT},
+    {"navy text on card teal (hero field, lead surfaces)", "#002855", "#B9DADB", TEXT},
+    {"navy text on orange (Ready chip, tray count)", "#002855", "#E87722", TEXT},
+    {"secondary text on white", "#5B5F63", "#FFFFFF", TEXT},
+    {"secondary text on well", "#5B5F63", "#EEF5F5", TEXT},
+    {"secondary text on pale teal (ready row)", "#5B5F63", "#DCEDEE", TEXT},
+    {"white on teal (header, buttons, tray bar)", "#FFFFFF", "#007377", TEXT},
+    {"white on deep teal (button hover)", "#FFFFFF", "#005B5E", TEXT},
+    {"white on navy (announcement bar)", "#FFFFFF", "#002855", TEXT},
+    {"teal text and links on white", "#007377", "#FFFFFF", TEXT},
+    {"teal text on well (button hover)", "#007377", "#EEF5F5", TEXT},
+    {"teal text on pale teal (stack top)", "#007377", "#DCEDEE", TEXT},
     {"danger text on white", "#A3241C", "#FFFFFF", TEXT},
+    {"danger text on well", "#A3241C", "#EEF5F5", TEXT},
     {"danger text on danger tint", "#A3241C", "#F6DED8", TEXT},
-    {"text on danger tint (closed banner)", "#1F1D1A", "#F6DED8", TEXT},
-    {"secondary text on pale basil (ready row)", "#5E5850", "#E3EDE6", TEXT},
-    {"dotted leader on white (UI)", "#8A8174", "#FFFFFF", UI},
-    {"field edge on white (UI)", "#8A8174", "#FFFFFF", UI},
-    {"field edge on linen (UI)", "#8A8174", "#F7F3EC", UI},
-    {"green button edge on linen (UI)", "#1E5B3E", "#F7F3EC", UI},
-    {"focus ring on linen (UI)", "#1E5B3E", "#F7F3EC", UI},
-    {"focus ring on white (UI)", "#1E5B3E", "#FFFFFF", UI},
-    {"tray bar focus ring on basil (UI)", "#FFFFFF", "#1E5B3E", UI},
+    {"navy text on danger tint (closed banner)", "#002855", "#F6DED8", TEXT},
+    {"secondary text on danger tint", "#5B5F63", "#F6DED8", TEXT},
+    {"field edge on white (UI)", "#5B5F63", "#FFFFFF", UI},
+    {"field edge on well (UI)", "#5B5F63", "#EEF5F5", UI},
+    {"dotted leader on white (UI)", "#5B5F63", "#FFFFFF", UI},
+    {"teal button edge on white (UI)", "#007377", "#FFFFFF", UI},
+    {"teal edge on card teal (UI)", "#007377", "#B9DADB", UI},
+    {"navy outline of the orange chip on white (UI)", "#002855", "#FFFFFF", UI},
+    {"focus ring on white (UI)", "#002855", "#FFFFFF", UI},
+    {"focus ring on well (UI)", "#002855", "#EEF5F5", UI},
+    {"focus ring on card teal (UI)", "#002855", "#B9DADB", UI},
+    {"header and tray bar focus ring: white on teal (UI)", "#FFFFFF", "#007377", UI},
 };
 
 // "#RRGGBB" -> relative luminance (WCAG 2.2).

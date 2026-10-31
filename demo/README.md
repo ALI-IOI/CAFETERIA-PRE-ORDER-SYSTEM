@@ -12,8 +12,8 @@ build/cafeteria_server --config demo/config --data demo/data --fake-clock 2026-1
 
 Open http://127.0.0.1:8080 for the landing page; students, teachers and university staff log in at
 `/login.html`. Cafeteria staff open `/staff/login.html` directly: no public page links to it.
-`demo/config/staff_computers.txt` is empty, so any computer can reach it in the demo (the server
-says so at start-up); list addresses there to see the terminal disappear for everyone else.
+`demo/config/staff_computers.txt` is empty, so only this computer can reach it in the demo (the server
+says so at start-up); list other addresses there to open it on those computers too.
 
 | Account | Login | Password (test only) |
 |---|---|---|
