@@ -138,7 +138,7 @@ horizontal scroll, no control under 44 px. `build/contrast_check`: 22/22 pairs.
 
 ## Rebuild on one design system (2026-10-25)
 
-All 8 pages were rebuilt on the same look (spec: `docs/superpowers/specs/2026-10-24-rebuild-design.md`)
+All 8 pages were rebuilt on the same look (spec `2026-10-24-rebuild-design.md`, now only in the git history)
 and checked against the Web Interface Guidelines and a motion audit.
 
 | Check | Result |
