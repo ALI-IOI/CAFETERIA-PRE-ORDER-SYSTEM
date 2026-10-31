@@ -50,8 +50,11 @@ step2.addEventListener("submit", async (e) => {
     step2.code.select();
     return;
   }
-  say("msg2", r.message + " Taking you to the login page…", true);
-  setTimeout(() => (window.location.href = "/login.html"), 1500);
+  say("msg2", r.message, true);
+  // a link the person follows when ready, not a timed jump (WCAG 2.2.1)
+  const go = el("a", { class: "btn btn--primary btn--block", href: "/login.html" }, "Go to the login page");
+  step2.querySelector("button[type=submit]").replaceWith(go);
+  go.focus();
 });
 
 document.getElementById("restart").addEventListener("click", () => {

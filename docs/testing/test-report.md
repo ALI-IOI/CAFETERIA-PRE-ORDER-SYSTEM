@@ -1,16 +1,16 @@
 # Test report — proposal section 12
 
-**Date:** 2026-10-24 (re-run after university staff, the hidden staff terminal and the eggshell theme) · **Build:** MinGW-w64 g++ 13.1, `-Wall -Wextra`, 0 warnings
+**Date:** 2026-11-01 (re-run after the teal and navy redesign and the security hardening) · **Build:** MinGW-w64 g++ 13.1, `-Wall -Wextra`, 0 warnings
 **Run:** `ctest --test-dir build --output-on-failure`
 
 | Suite | What it is | Result |
 |---|---|---|
-| `unit_tests` | 221 unit tests: data structures (incl. linked-list merge sort), rules, storage, auth, email, lock file, waitlist, email retry, menu items, tray, pictures, order history, password change, university staff, staff computer list (fake clock) | **221 / 221 pass** |
+| `unit_tests` | 235 unit tests: data structures (incl. linked-list merge sort), rules, storage, auth, email, lock file, waitlist, email retry, menu items, tray, pictures, order history, password change, university staff, staff computer list, login lockout with parallel guesses, code resend cooldown, session cap (fake clock) | **235 / 235 pass** |
 | `no_stl_guard` | Fails the build if `vector/list/queue/stack/deque/map/set/array` appear in `src/ds`, `src/core`, `src/auth`, `src/storage`, `src/console`, `src/email` | **pass** (proven to fail on an injected `#include <vector>`) |
 | `console_demo` | Scripted run of the stage-2 console program, checks the transcript | **pass** |
 | `admin_tool` | `add-staff` and `add-person`: hashed, duplicate/short/mismatched password refused, a student ID refused for `add-person`, refused while a live server holds the lock, allowed with a stale lock | **pass** |
 | `thread_exit_stress` | 640 short-lived client threads against an in-process HTTP server (guards the MinGW thread-exit crash fix below) | **pass** |
-| `e2e_section12` | Starts the real server (fake clock, temp data, email outbox), drives it over HTTP, crashes and restarts it | **113 / 113 checks pass** |
+| `e2e_section12` | Starts the real server (fake clock, temp data, email outbox), drives it over HTTP, crashes and restarts it; also headers, Windows path spellings, the dev clock's Host check, parallel wrong passwords | **126 / 126 checks pass** |
 
 Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit_tests_output.txt),
 [e2e_section12_output.txt](e2e_section12_output.txt).
@@ -100,7 +100,7 @@ Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit
 | `addPerson` / `add-person` | unit: active account with the list's name and department; refusals (student ID, row that has an email, unknown ID, email of another account or row, same ID twice, weak password, invalid email); mixed-case email stored lower-case, login in any case. `admin_tool`: success, refusals, live lock | Pass |
 | Same rules as teachers | unit `employee_same_limit_as_teacher`: per-person limit applies alike | Pass |
 | End to end | E2E `employee:` (3): university-email sign-up and reservation; blank-email row refused with the office message; admin-added account logs in, reserves and gets the confirmation email. `pages: copy names university staff` | Pass |
-| Staff computer list (fixed array) | unit `test_staff_computers.cpp` (8): missing file = empty; comments and blanks; bad address refused with its line; more than 16 refused; empty list allows all; exact match only; `::ffff:a.b.c.d` matches `a.b.c.d`; `isStaffPath` ignores case and matches any `staff` segment | Pass |
+| Staff computer list (fixed array) | unit `test_staff_computers.cpp` (8): missing file = empty; comments and blanks; bad address refused with its line; more than 16 refused; empty list allows this computer only; exact match only; `::ffff:a.b.c.d` matches `a.b.c.d`; `isStaffPath` ignores case and matches any `staff` segment | Pass |
 | Hidden staff terminal | E2E (4): no public page links to `/staff/`; with only `10.20.30.40` listed, staff pages and APIs (GET and POST) answer exactly like a missing page; `/STAFF/login.html`, `/Staff/portal.html`, `/staff`, `/api/staff`, `/x/../staff/login.html` too (before the fix Windows served the uppercase and `..` spellings: 200); with an empty list the start-up notice is printed and the page opens | Pass |
 | Eggshell theme | E2E `theme:` (2): `/api/public/info` says whether orders are open (true before the cutoff, false after); the stylesheet has no dark-mode rules and sets `color-scheme: light`. `tools/contrast_check.py`: 19/19 pairs. Browser: 8 pages at 375 px with dark mode emulated — eggshell background, 0 dark elements, no sideways scroll | Pass |
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#F7F3EC">
+  <meta name="theme-color" content="#007377">
   <link rel="preload" href="/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
   <title>Today’s menu – BAUSTK Cafeteria</title>
   <link rel="stylesheet" href="/css/app.css">
@@ -16,20 +16,17 @@
       <a class="brand" href="/menu.html">BAUSTK Cafeteria <small>Fresh food pre-order</small></a>
       <nav aria-label="Main">
         <a href="/menu.html" aria-current="page">Menu</a>
-        <a href="/reservations.html">My reservations</a>
+        <a href="/reservations.html">Reservations</a>
         <a href="#tray" class="tray-link">Tray <span class="tray-count" id="tray-count">0</span><span class="visually-hidden"> dishes</span></a>
-        <a href="/account.html">My account</a>
+        <a href="/account.html">Account</a>
         <button class="linkbtn" type="button" id="logout">Log out</button>
       </nav>
     </div>
   </header>
 
   <main id="main">
-    <div class="menu-head">
-      <div class="profile" id="profile"></div>
-      <p class="menu-status" id="menu-status"></p>
-    </div>
     <h1>Today’s menu</h1>
+    <div class="profile" id="profile"></div>
     <div id="banner" class="banner" role="note"></div>
     <p id="msg" class="msg" role="status" aria-live="polite"></p>
 
@@ -57,7 +54,7 @@
 
     <div class="menu-layout">
       <section aria-labelledby="dishes-h">
-        <h2 class="visually-hidden" id="dishes-h">Dishes</h2>
+        <h2 class="visually-hidden" id="dishes-h" tabindex="-1">Dishes</h2>
         <p id="count" class="hint" aria-live="polite"></p>
         <div class="dish-grid" id="dishes"></div>
       </section>
@@ -73,7 +70,7 @@
     </div>
   </main>
   <a class="tray-bar" id="tray-bar" href="#tray" hidden><span id="tray-bar-text"></span><span aria-hidden="true">Review tray</span></a>
-  <footer class="footer">Food stays fresh for a limited time after it is ready. We email you reminders until you collect it.</footer>
+  <footer class="footer"><p>Food stays fresh for a limited time after it is ready. We email you reminders until you collect it.</p><p>A student project, not an official university service.</p></footer>
   <script src="/js/api.js"></script>
   <script src="/js/tray.js"></script>
   <script src="/js/menu.js"></script>

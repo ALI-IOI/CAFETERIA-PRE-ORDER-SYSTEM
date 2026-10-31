@@ -70,7 +70,7 @@ function renderTray(menu, onChange, highlight) {
       el("span", {}, item.name, el("span", { class: "hint" }, taka(item.price) + " each")),
       select,
       el("button", {
-        class: "btn", type: "button", "aria-label": "Remove " + item.name + " from tray",
+        id: "tray-remove-" + idx, class: "btn", type: "button", "aria-label": "Remove " + item.name + " from tray",
         onclick: () => {
           line.classList.add("is-leaving");
           setTimeout(() => { Tray.set(idx, 0); onChange(); }, 120);

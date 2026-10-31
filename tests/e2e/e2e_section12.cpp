@@ -8,6 +8,7 @@
 #include "auth/user_store.h"
 #include "httplib.h"
 #include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -243,7 +244,7 @@ static void writeFixtures() {
         << "2000000000000001,teacher1@uni.example,teacher,Sample Teacher,EEE\n"
         << "3000000000000002,guard1@uni.example,employee,Sample Guard,Security\n"
         << "3000000000000001,,employee,Rahim Driver,Transport\n";
-    for (int i = 1; i <= 12; i++) uni << uniId(i) << "," << uniEmail(i) << ",student,Student " << i << ",CSE\n";
+    for (int i = 1; i <= 13; i++) uni << uniId(i) << "," << uniEmail(i) << ",student,Student " << i << ",CSE\n";
     std::ofstream(g_config + "/staff_computers.txt") << "# the test computer is the counter PC\n127.0.0.1\n::1\n";
     std::ofstream smtp(g_config + "/smtp.cfg");
     smtp << "host=[CONFIRM]\nsender=[CONFIRM]\n";
@@ -617,6 +618,75 @@ static int realMain(int argc, char** argv) {
               std::to_string(countMailsFor("confirmation", retryId)) +
               " outbox-is-dir=" + std::to_string(fs::is_directory(g_data + "/outbox")));
 
+    // ---- hardening: headers, page paths, the dev route, codes, sessions, parallel guesses ---
+    {
+        Browser guest;
+        auto home = guest.get("/");
+        std::string csp = home ? home->get_header_value("Content-Security-Policy") : "";
+        check(has(csp, "base-uri 'none'") && has(csp, "object-src 'none'") && home &&
+                  !home->has_header("Strict-Transport-Security"),
+              "hardening: CSP forbids <base> and plugins; no HSTS without --behind-https", csp);
+        int upper = status(guest.get("/Menu.html")), dotted = status(guest.get("/menu.html.")),
+            spaced = status(guest.get("/account.html%20")), stream = status(guest.get("/menu.html::$DATA"));
+        check(upper == 302 && dotted == 404 && spaced == 404 && stream == 404,
+              "hardening: a page path in another case or with a trailing dot or space needs a login",
+              std::to_string(upper) + " " + std::to_string(dotted) + " " + std::to_string(spaced) + " " +
+                  std::to_string(stream));
+
+        httplib::Client raw("127.0.0.1", g_port);
+        auto d1 = raw.Post("/api/dev/advance", httplib::Headers{{"X-Cafe", "1"}, {"Host", "evil.example"}},
+                           httplib::Params{{"minutes", "1"}});
+        auto d2 = raw.Post("/api/dev/advance", httplib::Headers{{"X-Cafe", "1"}, {"X-Forwarded-For", "203.0.113.9"}},
+                           httplib::Params{{"minutes", "1"}});
+        check(status(d1) == 403 && status(d2) == 403,
+              "hardening: the dev clock refuses a foreign Host (DNS rebinding) and proxied requests",
+              std::to_string(status(d1)) + " " + std::to_string(status(d2)));
+
+        const std::string s13 = uniEmail(13);
+        Browser reg;
+        readOutbox();
+        int codeFrom = g_mailCount;
+        auto r1 = reg.post("/api/register", {{"email", s13}, {"id", uniId(13)}, {"password", PW}});
+        auto r2 = reg.post("/api/register", {{"email", s13}, {"id", uniId(13)}, {"password", "otherpass99"}});
+        check(status(r1) == 200 && status(r2) == 429 && has(body(r2), "less than a minute ago") &&
+                  countMails("verification", s13, codeFrom) == 1,
+              "hardening: a second code request within a minute sends no email and says so",
+              body(r2) + " codes=" + std::to_string(countMails("verification", s13, codeFrom)));
+        auto v = reg.post("/api/verify", {{"email", s13}, {"code", latestCode(s13)}, {"password", PW}});
+        check(status(v) == 200, "hardening: the first password still completes the registration", body(v));
+
+        Browser oldest;
+        oldest.post("/api/login", {{"email", s13}, {"password", PW}});
+        static Browser more[10];
+        for (auto& b : more) b.post("/api/login", {{"email", s13}, {"password", PW}});
+        check(status(oldest.get("/api/me")) == 401 && status(more[9].get("/api/me")) == 200,
+              "hardening: an 11th login signs out the oldest session, never refuses",
+              std::to_string(status(oldest.get("/api/me"))));
+
+        // six wrong passwords at once: the lockout still holds and other requests keep moving
+        std::atomic<int> lockedReplies(0);
+        std::thread guesses[6];
+        for (auto& g : guesses)
+            g = std::thread([&]() {
+                Browser b;
+                if (status(b.post("/api/login", {{"email", s13}, {"password", "wrong-guess-1"}})) == 423) lockedReplies++;
+            });
+        long long worstMs = 0;
+        for (int k = 0; k < 6; k++) {
+            auto t0 = std::chrono::steady_clock::now();
+            guest.get("/api/public/info");
+            long long ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
+            if (ms > worstMs) worstMs = ms;
+        }
+        for (auto& g : guesses) g.join();
+        Browser after;
+        auto locked = after.post("/api/login", {{"email", s13}, {"password", PW}});
+        check(lockedReplies >= 1 && status(locked) == 423, "hardening: parallel wrong passwords still lock the account",
+              std::to_string(lockedReplies.load()) + " / " + body(locked));
+        check(worstMs < 150, "hardening: other requests are served while passwords are checked",
+              "slowest " + std::to_string(worstMs) + " ms");
+    }
+
     // ---- redesign: public info, staff-managed items, pictures, tray -----------------------
     {
         Browser guest;
@@ -677,6 +747,14 @@ static int realMain(int argc, char** argv) {
         // the undo history still names it ("Removed ..."), so look at the item records only
         check(status(r) == 200 && !has(m4, "Halwa") && !has(ov4, "\"name\":\"\\u003cb\\u003eHalwa"),
               "remove: item gone from the menu and the staff lists", body(r));
+        int picsBefore = 0;
+        for (auto& e : fs::directory_iterator(g_data + "/images")) picsBefore += e.is_regular_file() ? 1 : 0;
+        r = staff.postMultipart("/api/staff/items/image",
+                                {{"item", HALWA, "", ""}, {"image", png, "halwa.png", "image/png"}});
+        int picsAfter = 0;
+        for (auto& e : fs::directory_iterator(g_data + "/images")) picsAfter += e.is_regular_file() ? 1 : 0;
+        check(status(r) == 400 && picsAfter == picsBefore, "remove: no picture is stored for a removed item",
+              body(r) + " files " + std::to_string(picsBefore) + "->" + std::to_string(picsAfter));
         r = staff.post("/api/staff/undo", {});
         check(status(r) == 200 && has(body(s[9].get("/api/menu")), "Halwa"), "remove: undo brings it back", body(r));
         // s8 holds a Biryani (past the cancel deadline, so it stays; later checks use s9 and the teacher)
@@ -818,7 +896,7 @@ static int realMain(int argc, char** argv) {
         check(startServer(server, "2026-10-24T09:00"), "setup: restart with an empty counter list");
         std::ifstream logIn(g_work + "/server.log");
         std::string log((std::istreambuf_iterator<char>(logIn)), std::istreambuf_iterator<char>());
-        check(has(log, "NOTICE: config/staff_computers.txt is empty - the staff terminal is reachable from any computer.") &&
+        check(has(log, "NOTICE: config/staff_computers.txt is empty - the staff terminal opens only on this computer.") &&
                   status(guest.get("/staff/login.html")) == 200,
               "staff hidden: empty list prints the notice and the page opens");
     }
@@ -837,8 +915,8 @@ static int realMain(int argc, char** argv) {
         check(now >= 0 && now < cutoff && openBefore && has(after, "\"open\":false"),
               "theme: public info says whether orders are open", info + " / " + after);
         std::string css = body(guest.get("/css/app.css"));
-        check(!has(css, "prefers-color-scheme") && has(css, "color-scheme: light") && has(css, "--page: #F7F3EC") &&
-                  has(css, "--bar: #FFFFFF"),
+        check(!has(css, "prefers-color-scheme") && has(css, "color-scheme: light") && has(css, "--page: #FFFFFF") &&
+                  has(css, "--bar: #007377") && has(css, "--field: #FFFFFF") && !has(css, "campus-hero"),
               "theme: no dark-mode stylesheet", css.substr(0, 80));
     }
 

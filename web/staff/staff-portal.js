@@ -48,7 +48,7 @@ function freshPanel(item) {
     : item.reserved > 0 ? "Everything reserved so far is ready." : "Nothing reserved yet.";
 
   const limitId = "limit-" + item.index, portionsId = "portions-" + item.index;
-  const limitButton = el("button", { class: "btn", type: "submit" }, "Set limit");
+  const limitButton = el("button", { id: "limit-btn-" + item.index, class: "btn", type: "submit" }, "Set limit");
   const limitForm = el("form", { class: "row" },
     el("div", { class: "field" },
       el("label", { for: limitId }, "Daily limit"),
@@ -59,7 +59,8 @@ function freshPanel(item) {
     action("/api/staff/limit", { item: item.index, value: document.getElementById(limitId).value }, limitButton);
   });
 
-  const readyButton = el("button", { class: "btn btn--primary", type: "submit", disabled: waiting === 0 }, "Mark ready");
+  const readyButton = el("button", { id: "ready-" + item.index, class: "btn btn--primary", type: "submit",
+    disabled: waiting === 0 }, "Mark ready");
   const readyForm = el("form", { class: "row" },
     el("div", { class: "field" },
       el("label", { for: portionsId }, "Portions cooked"),
@@ -128,7 +129,7 @@ function itemRow(item) {
 
   return el("tr", {},
     el("td", {}, el("img", { class: "thumb", src: item.image, alt: "", width: 64, height: 44 })),
-    el("th", { scope: "row" }, item.name, el("span", { class: "hint" }, item.category + " (" + item.kind + ")")),
+    el("th", { scope: "row" }, item.name, el("span", { class: "hint" }, item.category + ", " + (item.kind === "fresh" ? "cooked to order" : "packaged"))),
     el("td", {}, priceForm),
     el("td", {}, el("label", { for: availId, class: "check" }, el("span", { class: "visually-hidden" }, item.name + " available today"), avail)),
     el("td", {}, uploadForm),
@@ -218,6 +219,7 @@ function renderHistory(o) {
 const LIST_STATES = ["items-state", "stock-state", "res-state"];
 
 async function refresh() {
+  const restoreFocus = keepFocus();
   const fresh = document.getElementById("fresh");
   if (!overview) {
     listState(fresh, "loading");
@@ -256,12 +258,13 @@ async function refresh() {
   fillSettings(o.settings);
   renderHistory(o);
   document.getElementById("email-mode").textContent = (o.emailMode === "outbox"
-    ? "SMTP is not configured yet: emails are saved in data/outbox on the server."
+    ? "Email sending is not set up yet: emails are saved as files on the server instead."
     : "Emails are sent through the cafeteria’s SMTP account.") +
     (o.emailsWaiting > 0
-      ? " " + o.emailsWaiting + " email(s) failed and will be retried automatically (after 1, 5 and 15 minutes)."
+      ? " " + o.emailsWaiting + (o.emailsWaiting === 1 ? " email" : " emails") + " could not be sent and will be tried again after 1, 5 and 15 minutes."
       : " No emails waiting to retry.");
   await loadReservations(document.getElementById("q").value.trim());
+  restoreFocus();
 }
 
 // The section list marks the section on screen.

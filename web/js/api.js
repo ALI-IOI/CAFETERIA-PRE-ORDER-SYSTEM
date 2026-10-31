@@ -132,6 +132,7 @@ function checkFields(form) {
 function busy(button, label) {
   if (button.getAttribute("aria-busy") === "true") return () => {};
   const before = { text: button.textContent, disabled: button.disabled };
+  if (document.activeElement === button) busyFocus = button;
   button.disabled = true;
   button.setAttribute("aria-busy", "true");
   button.classList.add("is-busy");
@@ -141,6 +142,32 @@ function busy(button, label) {
     button.disabled = before.disabled;
     button.removeAttribute("aria-busy");
     button.classList.remove("is-busy");
+  };
+}
+
+// Drawing a list again replaces its controls, which would drop keyboard focus to
+// the page. Call before re-drawing; the function it returns puts focus back on the
+// control with the same id, or on the heading of the section it was in.
+// A focused button made busy (disabled) loses focus before the list is drawn again;
+// busy() notes it here so keepFocus can still bring focus back to it.
+let busyFocus = null;
+function keepFocus() {
+  let active = document.activeElement;
+  if (!active || active === document.body) active = busyFocus;
+  busyFocus = null;
+  if (!active) return () => {};
+  const id = active.id;
+  const region = active.closest("[aria-labelledby]");
+  const headingId = region ? region.getAttribute("aria-labelledby").split(" ")[0] : "";
+  return () => {
+    const now = document.activeElement;
+    if (now && now !== document.body && document.contains(now)) return;  // focus is still somewhere real
+    const same = id && document.getElementById(id);
+    const usable = same && !same.disabled && same.getClientRects().length > 0;  // not hidden or disabled
+    const target = usable ? same : headingId && document.getElementById(headingId);
+    if (!target) return;
+    if (!target.matches("a[href], button, input, select, textarea, [tabindex]")) target.setAttribute("tabindex", "-1");
+    target.focus();
   };
 }
 
@@ -186,7 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// The green bar at the top of the public and student pages.
+// The navy bar at the top of the public and student pages.
 async function fillAnnouncement(id) {
   const bar = document.getElementById(id || "announce");
   if (!bar) return;

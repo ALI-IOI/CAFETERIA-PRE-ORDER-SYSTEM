@@ -53,12 +53,6 @@ TEST(staff_computers_too_many_refused) {
     CHECK(err.find("line 17") != std::string::npos);
 }
 
-TEST(staff_computer_empty_list_allows_all) {
-    StaffComputers sc;
-    staffComputersInit(sc);
-    CHECK(staffComputerAllowed(sc, "203.0.113.9"));
-}
-
 TEST(staff_computer_exact_match) {
     StaffComputers sc;
     staffComputersInit(sc);
@@ -101,4 +95,15 @@ TEST(is_staff_path_windows_spellings) {
     CHECK(isStaffPath("/staff::$INDEX_ALLOCATION/login.html"));
     CHECK(isStaffPath("/STAFF:x/login.html"));
     CHECK(!isStaffPath("/staffs/login.html"));
+}
+
+TEST(staff_computers_empty_list_allows_this_computer_only) {
+    StaffComputers sc;
+    staffComputersInit(sc);
+    CHECK(staffComputerAllowed(sc, "127.0.0.1"));
+    CHECK(staffComputerAllowed(sc, "::1"));
+    CHECK(staffComputerAllowed(sc, "::ffff:127.0.0.1"));
+    CHECK(!staffComputerAllowed(sc, "192.168.10.21"));  // with --host 0.0.0.0 and no list, others are refused
+    CHECK(!staffComputerAllowed(sc, "10.0.0.5"));
+    CHECK(!staffComputerAllowed(sc, "fe80::1"));
 }

@@ -133,7 +133,7 @@ int main(int argc, char** argv) {
         return 1;
     }
     if (app.staffComputers.count == 0)
-        std::printf("NOTICE: config/staff_computers.txt is empty - the staff terminal is reachable from any computer.\n");
+        std::printf("NOTICE: config/staff_computers.txt is empty - the staff terminal opens only on this computer.\n");
     if (cfg.emailDomain.empty() || app.auth.uni.count == 0)
         std::printf("NOTE: registration is disabled until email_domain in %s/app.cfg and %s are set.\n",
                     configDir.c_str(), uniPath.c_str());

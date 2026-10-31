@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" role="img" aria-label="Demo picture: a bowl of rice">
   
-  <ellipse cx="120" cy="78" rx="66" ry="22" fill="#F7F3EC" stroke="#8A8174" stroke-width="2"/>
-  <path d="M60 74c8-20 30-30 60-30s52 10 60 30" fill="#E9E0D1" stroke="#8A8174" stroke-width="2"/>
-  <circle cx="92" cy="60" r="4" fill="#1E5B3E"/><circle cx="128" cy="54" r="4" fill="#1E5B3E"/><circle cx="150" cy="64" r="4" fill="#1E5B3E"/>
-  <path d="M54 80h132l-14 40c-3 8-10 12-18 12H86c-8 0-15-4-18-12z" fill="#8A8174" stroke="#1F1D1A" stroke-width="2"/>
-  <rect x="96" y="132" width="48" height="6" rx="1" fill="#1F1D1A"/>
+  <ellipse cx="120" cy="78" rx="66" ry="22" fill="#FFFFFF" stroke="#002855" stroke-width="2"/>
+  <path d="M60 74c8-20 30-30 60-30s52 10 60 30" fill="#DCEDEE" stroke="#002855" stroke-width="2"/>
+  <circle cx="92" cy="60" r="4" fill="#007377"/><circle cx="128" cy="54" r="4" fill="#007377"/><circle cx="150" cy="64" r="4" fill="#007377"/>
+  <path d="M54 80h132l-14 40c-3 8-10 12-18 12H86c-8 0-15-4-18-12z" fill="#E87722" stroke="#002855" stroke-width="2"/>
+  <rect x="96" y="132" width="48" height="6" rx="1" fill="#002855"/>
 </svg>

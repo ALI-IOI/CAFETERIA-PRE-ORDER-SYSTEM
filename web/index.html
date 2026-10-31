@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#F7F3EC">
+  <meta name="theme-color" content="#007377">
   <link rel="preload" href="/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
   <title>BAUSTK Cafeteria – fresh food pre-order</title>
   <link rel="stylesheet" href="/css/app.css">
@@ -22,6 +22,7 @@
 
   <section class="hero" aria-labelledby="hero-h">
     <div class="hero__inner">
+      <img class="hero__art" src="/img/hero-food.svg" alt="" width="640" height="520">
       <div class="hero__panel">
         <h1 id="hero-h">Fresh food, reserved before <span id="hero-cutoff">the cutoff</span></h1>
         <p>Khichuri, Fried Rice and Tehari are cooked to order. Reserve your portion and we email you the moment it is ready.</p>
@@ -38,17 +39,14 @@
     <h2>How it works</h2>
     <ol class="steps">
       <li class="step">
-        <span class="step__num" aria-hidden="true">1</span>
         <h3>Reserve before the cutoff</h3>
         <p>Pick your dishes on the menu and reserve them before <span class="js-cutoff">the cutoff</span>. Each person can reserve a few portions of each dish; the menu shows how many.</p>
       </li>
       <li class="step">
-        <span class="step__num" aria-hidden="true">2</span>
         <h3>We cook and email you</h3>
         <p>The kitchen cooks what was reserved and emails you when your food is ready, first come, first served.</p>
       </li>
       <li class="step">
-        <span class="step__num" aria-hidden="true">3</span>
         <h3>Collect while it’s fresh</h3>
         <p>Pay at the counter when you collect. Food stays fresh for about <span class="js-freshness">7 hours</span>, and we remind you every hour.</p>
       </li>
@@ -62,7 +60,7 @@
       <div><dt>Server time</dt><dd id="info-now">–</dd></div>
     </dl>
   </main>
-  <footer class="footer">For BAUSTK students, teachers and university staff. You pay at the counter when you collect.</footer>
+  <footer class="footer"><p>For BAUSTK students, teachers and university staff. You pay at the counter when you collect.</p><p>A student project, not an official university service.</p></footer>
   <script src="/js/api.js"></script>
   <script src="/js/landing.js"></script>
 </body>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#F7F3EC">
+  <meta name="theme-color" content="#007377">
   <link rel="preload" href="/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
   <title>My account – BAUSTK Cafeteria</title>
   <link rel="stylesheet" href="/css/app.css">
@@ -16,8 +16,8 @@
       <a class="brand" href="/menu.html">BAUSTK Cafeteria <small>Fresh food pre-order</small></a>
       <nav aria-label="Main">
         <a href="/menu.html">Menu</a>
-        <a href="/reservations.html">My reservations</a>
-        <a href="/account.html" aria-current="page">My account</a>
+        <a href="/reservations.html">Reservations</a>
+        <a href="/account.html" aria-current="page">Account</a>
         <button class="linkbtn" type="button" id="logout">Log out</button>
       </nav>
     </div>
@@ -25,7 +25,6 @@
 
   <main id="main" class="narrow">
     <h1>My account</h1>
-    <p id="msg" class="msg" role="status" aria-live="polite"></p>
 
     <section class="card" aria-labelledby="details-h">
       <h2 id="details-h">Your details</h2>
@@ -52,9 +51,11 @@
                data-error="Repeat the new password.">
       </div>
       <button class="btn btn--primary btn--block" type="submit">Change password</button>
+      <p id="msg" class="msg" role="status" aria-live="polite"></p>
       <p class="hint">Changing it signs you out on your other devices.</p>
     </form>
   </main>
+  <footer class="footer"><p>A student project, not an official university service.</p></footer>
   <script src="/js/api.js"></script>
   <script src="/js/account.js"></script>
 </body>

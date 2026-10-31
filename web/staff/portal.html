@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#F7F3EC">
+  <meta name="theme-color" content="#007377">
   <link rel="preload" href="/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
   <title>Staff portal – BAUSTK Cafeteria</title>
   <link rel="stylesheet" href="/css/app.css">
@@ -44,7 +44,8 @@
           </section>
 
           <aside aria-labelledby="undo-h">
-            <h2 id="undo-h">Undo history <span class="hint">A stack: the newest action is on top, and Undo takes it off.</span></h2>
+            <h2 id="undo-h">Undo history</h2>
+            <p class="hint">A stack: the newest action is on top, and Undo takes it off.</p>
             <div class="card panel--lead">
               <p class="hint" id="stack-size"></p>
               <button class="btn btn--block" type="button" id="undo" disabled>Undo latest action</button>
@@ -141,6 +142,7 @@
       </div>
     </div>
   </main>
+  <footer class="footer"><p>A student project, not an official university service.</p></footer>
   <script src="/js/api.js"></script>
   <script src="/staff/staff-portal.js"></script>
 </body>

@@ -25,9 +25,9 @@ function freshControls(item) {
   const selectId = "qty-" + item.index;
   const select = el("select", { id: selectId, disabled: !menu.open || room === 0 });
   for (let q = 1; q <= Math.max(1, room); q++) select.append(el("option", { value: q, selected: q === inTray }, q));
-  const button = el("button", { class: "btn", type: "submit", disabled: !menu.open || room === 0 },
-    inTray ? "Update tray" : "Add to tray");
-  const form = el("form", { class: "row", "aria-label": "Add " + item.name + " to your tray" },
+  const button = el("button", { id: "add-" + item.index, class: "btn", type: "submit", disabled: !menu.open || room === 0,
+    "aria-describedby": "dish-" + item.index }, inTray ? "Update tray" : "Add to tray");
+  const form = el("form", { class: "row" },
     el("div", { class: "field" }, el("label", { for: selectId }, "Portions"), select), button);
   form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -43,7 +43,8 @@ function freshControls(item) {
 function waitlistBox(item) {
   const box = el("div", { class: "waitlist" });
   if (item.yourPosition > 0) {
-    const leave = el("button", { class: "btn btn--block", type: "button" }, "Leave waitlist");
+    const leave = el("button", { id: "leave-" + item.index, class: "btn btn--block", type: "button",
+      "aria-describedby": "dish-" + item.index }, "Leave waitlist");
     leave.addEventListener("click", async () => {
       const done = busy(leave, "Leaving…");
       const r = await api.post("/api/waitlist/leave", { item: item.index });
@@ -62,8 +63,9 @@ function waitlistBox(item) {
   const id = "wait-" + item.index;
   const select = el("select", { id });
   for (let q = 1; q <= room; q++) select.append(el("option", { value: q }, q));
-  const join = el("button", { class: "btn", type: "submit" }, "Join waitlist");
-  const form = el("form", { class: "row", "aria-label": "Join the " + item.name + " waitlist" },
+  const join = el("button", { id: "join-" + item.index, class: "btn", type: "submit",
+    "aria-describedby": "dish-" + item.index }, "Join waitlist");
+  const form = el("form", { class: "row" },
     el("div", { class: "field" }, el("label", { for: id }, "Portions wanted"), select), join);
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -87,11 +89,11 @@ function dishCard(item) {
   const img = el("img", { class: "dish__img", src: item.image, alt: "", loading: "lazy", width: 300, height: 200 });
   const body = el("div", { class: "dish__body" },
     el("div", { class: "dish__top" },
-      el("h3", { class: "dish__name" }, item.name),
+      el("h3", { class: "dish__name", id: "dish-" + item.index }, item.name),
       el("span", { class: "leader", "aria-hidden": "true" }),
       el("span", { class: item.price > 0 ? "price" : "price price--ask" }, taka(item.price))));
   if (fresh) {
-    const pct = item.limit > 0 ? Math.round(((item.limit - left) / item.limit) * 100) : 100;
+    const pct = item.limit > 0 ? Math.round((left / item.limit) * 100) : 0;  // the bar is what is left
     const meter = el("div", { class: "meter", role: "img", "aria-label": left + " of " + item.limit + " portions left" }, el("span"));
     meter.firstChild.style.width = pct + "%";
     const leftText = soldOut ? "Sold out" : few ? "Only " + left + " left" : left + " portions left";
@@ -119,7 +121,7 @@ function renderTabs() {
   if (!categories.includes(activeCategory)) activeCategory = "All";
   document.getElementById("tabs").replaceChildren(...categories.map((c) => el("li", {},
     el("button", {
-      class: "tab", type: "button", "aria-pressed": String(c === activeCategory),
+      id: "tab-" + categories.indexOf(c), class: "tab", type: "button", "aria-pressed": String(c === activeCategory),
       onclick: () => { activeCategory = c; render(); },
     }, c))));
 }
@@ -141,6 +143,7 @@ function visibleItems() {
 // highlight: the item index whose tray line just changed.
 function render(highlight) {
   if (!menu) return;  // search or sort before the menu has loaded
+  const restoreFocus = keepFocus();
   renderTabs();
   const items = visibleItems();
   const dishes = document.getElementById("dishes");
@@ -149,14 +152,15 @@ function render(highlight) {
     : "Nothing was on the menu today. You can order again tomorrow morning.");
   else if (items.length === 0) listState(dishes, "empty", "No dishes match. Clear the search or pick another category.");
   else dishes.replaceChildren(...items.map(dishCard));
-  document.getElementById("count").textContent = items.length + (items.length === 1 ? " item" : " items");
+  // a live region: changed only when the number changes, so a tray change is not announced again
+  const count = document.getElementById("count");
+  const countText = items.length + (items.length === 1 ? " item" : " items");
+  if (count.textContent !== countText) count.textContent = countText;
   renderTray(menu, render, highlight);
+  restoreFocus();
 }
 
 function showStatus() {
-  const status = document.getElementById("menu-status");
-  status.textContent = menu.open ? "Open until " + menu.cutoff : "Closed for today";
-  status.className = "menu-status" + (menu.open ? "" : " menu-status--closed");
   const banner = document.getElementById("banner");
   banner.className = "banner" + (menu.open ? "" : " banner--closed");
   banner.textContent = menu.open

@@ -79,3 +79,13 @@ TEST(valid_image_file_names) {
     CHECK(!validImageFileName("item--0123456789abcdef.png"));
     CHECK(!validImageFileName(""));
 }
+
+TEST(write_failure_message_has_no_server_path) {
+    std::string dir = freshDataDir("img_blocked");
+    std::ofstream(dir + "/images") << "a file where the folder should be";
+    std::string newFile, err;
+    CHECK(!storeItemImage(dir, 3, PNG_BYTES, "", newFile, err));
+    CHECK(!err.empty());
+    CHECK(err.find(dir) == std::string::npos);  // staff see a plain sentence, the path goes to the log
+    CHECK(err.find("images") == std::string::npos);
+}

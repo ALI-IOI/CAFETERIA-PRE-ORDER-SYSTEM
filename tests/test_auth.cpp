@@ -260,16 +260,43 @@ TEST(bad_university_list_line_reported) {
 TEST(pending_registration_cannot_be_taken_over) {
     AuthFixture f;
     CHECK_EQ(registerStart(f.auth, "ayon@uni.example", "1072520005101030", "victim-password", f.out), AuthResult::Ok);
-    CHECK_EQ(registerStart(f.auth, "ayon@uni.example", "1072520005101030", "attacker-password", f.out), AuthResult::Ok);
-    std::string newestCode = f.lastCode();  // arrives in the victim's inbox
-    CHECK_EQ(registerVerify(f.auth, "ayon@uni.example", newestCode, "victim-password"), AuthResult::BadCode);
-    CHECK(!ulFind(f.auth.users, "ayon@uni.example")->verified);
+    std::string victimCode = f.lastCode();
+    // within the resend cooldown a second request changes nothing and sends nothing
+    int mails = f.out.count;
+    CHECK_EQ(registerStart(f.auth, "ayon@uni.example", "1072520005101030", "attacker-password", f.out),
+             AuthResult::CodeRecentlySent);
+    CHECK_EQ(f.out.count, mails);
     std::string token;
     CHECK(login(f.auth, "ayon@uni.example", "attacker-password", false, token) != AuthResult::Ok);
-    // the victim simply registers again and completes it
-    CHECK_EQ(registerStart(f.auth, "ayon@uni.example", "1072520005101030", "victim-password", f.out), AuthResult::Ok);
-    CHECK_EQ(registerVerify(f.auth, "ayon@uni.example", f.lastCode(), "victim-password"), AuthResult::Ok);
+    CHECK_EQ(registerVerify(f.auth, "ayon@uni.example", victimCode, "victim-password"), AuthResult::Ok);
     CHECK_EQ(login(f.auth, "ayon@uni.example", "victim-password", false, token), AuthResult::Ok);
+}
+
+TEST(verification_code_resend_waits_a_minute) {
+    AuthFixture f;
+    CHECK_EQ(registerStart(f.auth, "ali@uni.example", "1072520005101050", "first-password", f.out), AuthResult::Ok);
+    int mails = f.out.count;
+    CHECK_EQ(registerStart(f.auth, "ali@uni.example", "1072520005101050", "first-password", f.out),
+             AuthResult::CodeRecentlySent);
+    CHECK_EQ(f.out.count, mails);  // an inbox cannot be flooded with codes
+    f.clock.advanceMinutes(1);
+    CHECK_EQ(registerStart(f.auth, "ali@uni.example", "1072520005101050", "second-password", f.out), AuthResult::Ok);
+    CHECK_EQ(f.out.count, mails + 1);  // after a minute a lost code can be replaced
+    CHECK_EQ(registerVerify(f.auth, "ali@uni.example", f.lastCode(), "second-password"), AuthResult::Ok);
+}
+
+TEST(sessions_per_person_capped_oldest_signed_out) {
+    AuthFixture f;
+    f.registerAndVerify("ayon@uni.example", "1072520005101030", "studentpass1");
+    std::string first, token;
+    CHECK_EQ(login(f.auth, "ayon@uni.example", "studentpass1", false, first), AuthResult::Ok);
+    for (int i = 1; i < MAX_SESSIONS_PER_USER; i++)
+        CHECK_EQ(login(f.auth, "ayon@uni.example", "studentpass1", false, token), AuthResult::Ok);
+    CHECK(sessionGet(f.auth, first) != nullptr);  // the cap itself is still allowed
+    CHECK_EQ(login(f.auth, "ayon@uni.example", "studentpass1", false, token), AuthResult::Ok);  // never refused
+    CHECK(sessionGet(f.auth, first) == nullptr);  // the oldest one made room
+    CHECK(sessionGet(f.auth, token) != nullptr);
+    CHECK_EQ(f.auth.sessions.count, MAX_SESSIONS_PER_USER);
 }
 
 TEST(change_password_success_signs_out_other_sessions) {
@@ -307,4 +334,43 @@ TEST(change_password_weak_new_refused) {
     CHECK_EQ(changePassword(f.auth, "ayon@uni.example", "studentpass1", "studentpass1", tok), AuthResult::WeakPassword);
     std::string t;
     CHECK_EQ(login(f.auth, "ayon@uni.example", "studentpass1", false, t), AuthResult::Ok);  // unchanged
+}
+
+TEST(guesses_checked_at_once_still_hit_the_lockout) {
+    AuthFixture f;
+    f.registerAndVerify("ayon@uni.example", "1072520005101030", "studentpass1");
+    LoginTicket t[5];
+    for (auto& ticket : t)  // five wrong guesses begun before any finishes
+        CHECK_EQ(loginBegin(f.auth, "ayon@uni.example", "wrong-guess", false, ticket), AuthResult::Ok);
+    LoginTicket sixth;
+    CHECK_EQ(loginBegin(f.auth, "ayon@uni.example", "studentpass1", false, sixth), AuthResult::Locked);
+    std::string token;
+    AuthResult last = AuthResult::Ok;
+    for (auto& ticket : t) last = loginFinish(f.auth, ticket, false, token);
+    CHECK(last == AuthResult::Locked || ulFind(f.auth.users, "ayon@uni.example")->lockedUntil > f.clock.now());
+    CHECK_EQ(login(f.auth, "ayon@uni.example", "studentpass1", false, token), AuthResult::Locked);
+}
+
+TEST(password_changed_during_the_check_refuses_the_login) {
+    AuthFixture f;
+    f.registerAndVerify("ayon@uni.example", "1072520005101030", "studentpass1");
+    LoginTicket t;
+    CHECK_EQ(loginBegin(f.auth, "ayon@uni.example", "studentpass1", false, t), AuthResult::Ok);
+    ulFind(f.auth.users, "ayon@uni.example")->passwordHash = hashPassword("a-new-password");
+    std::string token;
+    CHECK_EQ(loginFinish(f.auth, t, true, token), AuthResult::BadCredentials);
+    CHECK(token.empty());
+}
+
+TEST(guesses_that_never_finish_still_unlock_after_the_lockout) {
+    AuthFixture f;
+    f.registerAndVerify("ayon@uni.example", "1072520005101030", "studentpass1");
+    LoginTicket t[5];
+    for (auto& ticket : t) loginBegin(f.auth, "ayon@uni.example", "wrong-guess", false, ticket);
+    // the server stops (or the checks are lost) before any of them finishes
+    LoginTicket next;
+    CHECK_EQ(loginBegin(f.auth, "ayon@uni.example", "studentpass1", false, next), AuthResult::Locked);
+    f.clock.advanceMinutes(16);
+    std::string token;
+    CHECK_EQ(login(f.auth, "ayon@uni.example", "studentpass1", false, token), AuthResult::Ok);
 }

@@ -152,3 +152,20 @@ and checked against the Web Interface Guidelines and a motion audit.
 | Status messages | `role="status"` for results, `role="alert"` for load errors |
 | Cancel | One press cancels; while the request is out the button is locked ("Cancelling…"), so a double-click cancels once |
 | Motion | Feedback only, under 300 ms, nothing on load or looping; with reduced motion every change is instant (`build/check_pages` checks it) |
+
+## Re-check after the "teal and navy" palette (2026-11-01)
+
+The palette, the landing page and the remaining pages were redone. The sections above describe
+the earlier palettes and are kept as history.
+
+| Check | Result |
+|---|---|
+| Contrast pairs | All 29 pairs in `tools/contrast_check.cpp` pass. Body text navy #002855 on white 14.6:1, secondary grey #5B5F63 6.4:1, white on the teal band #007377 5.7:1, navy on the orange marks #E87722 4.9:1. Two pairs are never used on purpose: grey on the card teal (4.33:1) and orange as text or lines (2.96:1) |
+| Controls | Field and select edges #5B5F63, 6.4:1 on white; buttons and tabs a teal edge, 5.7:1 |
+| Focus | Navy ring on white; white ring inside the teal header and the tray bar (a navy ring on teal is only 2.6:1); the skip link's ring sits on its own white box; scrolling tab rows leave room so the ring is not clipped |
+| Focus after a change | Adding to or removing from the tray, cancelling a reservation and every staff action redraw their list; focus comes back to the same control, or to the section heading when that control is gone (`keepFocus` in `web/js/api.js`), checked by keyboard in the browser |
+| Landmarks and names | Dish forms no longer each carry a form label (no landmark per dish); each dish's buttons are described by the dish name. The item count is announced only when it changes |
+| Timing | After email verification the page shows a focused "Go to the login page" link instead of moving on after 1.5 s |
+| Targets | Link-style buttons ("Use a different email", "Log out") are 44 px tall |
+| Windows contrast themes | The selected category tab gets a thicker border and an underline; the current staff section an underline |
+| Phones | All 8 pages at 360 px without sideways scrolling; the five student links fit one row |
