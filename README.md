@@ -133,3 +133,7 @@ title, labelled fields, no inline styles or scripts, sizes only from the scale, 
 The repository (https://github.com/ALI-IOI/CAFETERIA-PRE-ORDER-SYSTEM) is public and holds the
 full history, including the original proposal in `docs/proposal/`. Commit on `main` and push it
 with `git push`; pull the other developer's work with `git pull`.
+
+## Licence
+
+MIT (see `LICENSE`). Included third-party code keeps its own licence: cpp-httplib (MIT, `third_party/httplib/LICENSE`), libsodium (ISC, `third_party/libsodium/LICENSE`) and the Cormorant Garamond font (SIL Open Font License, `web/fonts/OFL.txt`).
