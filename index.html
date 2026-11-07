@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#007377">
+  <link rel="preload" href="/CAFETERIA-PRE-ORDER-SYSTEM/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <title>BAUSTK Cafeteria – fresh food pre-order</title>
+  <link rel="stylesheet" href="/CAFETERIA-PRE-ORDER-SYSTEM/css/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="/CAFETERIA-PRE-ORDER-SYSTEM/">BAUSTK Cafeteria <small>Fresh food pre-order</small></a>
+      <nav aria-label="Main">
+        <a href="/CAFETERIA-PRE-ORDER-SYSTEM/login.html">Log in</a>
+        <a href="/CAFETERIA-PRE-ORDER-SYSTEM/register.html">Create account</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero" aria-labelledby="hero-h">
+    <div class="hero__inner">
+      <img class="hero__art" src="/CAFETERIA-PRE-ORDER-SYSTEM/img/hero-food.svg" alt="" width="640" height="520">
+      <div class="hero__panel">
+        <h1 id="hero-h">Fresh food, reserved before <span id="hero-cutoff">the cutoff</span></h1>
+        <p>Khichuri, Fried Rice and Tehari are cooked to order. Reserve your portion and we email you the moment it is ready.</p>
+        <p class="hero__status" id="hero-status" hidden></p>
+        <div class="actions">
+          <a class="btn btn--primary" href="/CAFETERIA-PRE-ORDER-SYSTEM/login.html">Log in</a>
+          <a class="btn" href="/CAFETERIA-PRE-ORDER-SYSTEM/register.html">Create account</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main id="main">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li class="step">
+        <h3>Reserve before the cutoff</h3>
+        <p>Pick your dishes on the menu and reserve them before <span class="js-cutoff">the cutoff</span>. Each person can reserve a few portions of each dish; the menu shows how many.</p>
+      </li>
+      <li class="step">
+        <h3>We cook and email you</h3>
+        <p>The kitchen cooks what was reserved and emails you when your food is ready, first come, first served.</p>
+      </li>
+      <li class="step">
+        <h3>Collect while it’s fresh</h3>
+        <p>Pay at the counter when you collect. Food stays fresh for about <span class="js-freshness">7 hours</span>, and we remind you every hour.</p>
+      </li>
+    </ol>
+
+    <h2>Today’s times</h2>
+    <dl class="info-strip">
+      <div><dt>Reserve before</dt><dd id="info-cutoff">–</dd></div>
+      <div><dt>Cancel until</dt><dd id="info-cancel">–</dd></div>
+      <div><dt>Stays fresh</dt><dd id="info-fresh">–</dd></div>
+      <div><dt>Server time</dt><dd id="info-now">–</dd></div>
+    </dl>
+  </main>
+  <footer class="footer"><p>For BAUSTK students, teachers and university staff. You pay at the counter when you collect.</p><p>A student project, not an official university service.</p></footer>
+  <script src="/CAFETERIA-PRE-ORDER-SYSTEM/demo/demo.js"></script>
+  <script src="/CAFETERIA-PRE-ORDER-SYSTEM/js/api.js"></script>
+  <script src="/CAFETERIA-PRE-ORDER-SYSTEM/js/landing.js"></script>
+</body>
+</html>

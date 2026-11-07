@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#007377">
+  <link rel="preload" href="/CAFETERIA-PRE-ORDER-SYSTEM/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <title>Today’s menu – BAUSTK Cafeteria</title>
+  <link rel="stylesheet" href="/CAFETERIA-PRE-ORDER-SYSTEM/css/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <p class="announce" id="announce" role="note"></p>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="/CAFETERIA-PRE-ORDER-SYSTEM/menu.html">BAUSTK Cafeteria <small>Fresh food pre-order</small></a>
+      <nav aria-label="Main">
+        <a href="/CAFETERIA-PRE-ORDER-SYSTEM/menu.html" aria-current="page">Menu</a>
+        <a href="/CAFETERIA-PRE-ORDER-SYSTEM/reservations.html">Reservations</a>
+        <a href="#tray" class="tray-link">Tray <span class="tray-count" id="tray-count">0</span><span class="visually-hidden"> dishes</span></a>
+        <a href="/CAFETERIA-PRE-ORDER-SYSTEM/account.html">Account</a>
+        <button class="linkbtn" type="button" id="logout">Log out</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <h1>Today’s menu</h1>
+    <div class="profile" id="profile"></div>
+    <div id="banner" class="banner" role="note"></div>
+    <p id="msg" class="msg" role="status" aria-live="polite"></p>
+
+    <div class="toolbar">
+      <div>
+        <span class="visually-hidden" id="tabs-label">Category</span>
+        <ul class="tabs" id="tabs" aria-labelledby="tabs-label"></ul>
+      </div>
+      <div class="toolbar__fields">
+        <div class="field">
+          <label for="search">Search</label>
+          <input id="search" name="q" type="search" spellcheck="false" placeholder="Khichuri, Tehari…" autocomplete="off" maxlength="60">
+        </div>
+        <div class="field">
+          <label for="sort">Sort by</label>
+          <select id="sort">
+            <option value="menu">Menu order</option>
+            <option value="name">Name</option>
+            <option value="left">Portions left</option>
+            <option value="price">Price</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="menu-layout">
+      <section aria-labelledby="dishes-h">
+        <h2 class="visually-hidden" id="dishes-h" tabindex="-1">Dishes</h2>
+        <p id="count" class="hint" aria-live="polite"></p>
+        <div class="dish-grid" id="dishes"></div>
+      </section>
+      <aside id="tray" class="tray" aria-labelledby="tray-h" tabindex="-1">
+        <h2 id="tray-h">Your tray</h2>
+        <p class="hint" id="tray-empty">Add fresh dishes, then reserve them all at once.</p>
+        <ul id="tray-lines"></ul>
+        <div class="tray__total" id="tray-total-row" hidden><span>Total to pay at the counter</span><span id="tray-total" class="num"></span></div>
+        <button class="btn btn--primary btn--block" type="button" id="reserve-all" hidden>Reserve all</button>
+        <p id="tray-msg" class="msg" role="status" aria-live="polite"></p>
+        <p class="hint">You pay in cash when you collect. No payment online.</p>
+      </aside>
+    </div>
+  </main>
+  <a class="tray-bar" id="tray-bar" href="#tray" hidden><span id="tray-bar-text"></span><span aria-hidden="true">Review tray</span></a>
+  <footer class="footer"><p>Food stays fresh for a limited time after it is ready. We email you reminders until you collect it.</p><p>A student project, not an official university service.</p></footer>
+  <script src="/CAFETERIA-PRE-ORDER-SYSTEM/demo/demo.js"></script>
+  <script src="/CAFETERIA-PRE-ORDER-SYSTEM/js/api.js"></script>
+  <script src="/CAFETERIA-PRE-ORDER-SYSTEM/js/tray.js"></script>
+  <script src="/CAFETERIA-PRE-ORDER-SYSTEM/js/menu.js"></script>
+</body>
+</html>

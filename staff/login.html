@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#007377">
+  <link rel="preload" href="/CAFETERIA-PRE-ORDER-SYSTEM/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <title>Staff login – BAUSTK Cafeteria</title>
+  <link rel="stylesheet" href="/CAFETERIA-PRE-ORDER-SYSTEM/css/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="/CAFETERIA-PRE-ORDER-SYSTEM/staff/login.html">BAUSTK Cafeteria <small>Staff portal</small></a>
+      <nav aria-label="Main"><a href="/CAFETERIA-PRE-ORDER-SYSTEM/login.html">Public login</a></nav>
+    </div>
+  </header>
+  <main id="main" class="narrow">
+    <h1>Staff login</h1>
+    <p class="lead">Staff accounts are created by the administrator. There is no public sign-up.</p>
+    <form id="login-form" class="card panel--lead" novalidate>
+      <div class="field">
+        <label for="login">Staff login</label>
+        <input id="login" name="login" spellcheck="false" autocomplete="username" required maxlength="32" autocapitalize="none"
+               data-error="Enter your staff login.">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="128"
+               data-error="Enter your password.">
+      </div>
+      <button class="btn btn--primary btn--block" type="submit">Log in to the staff portal</button>
+      <p id="msg" class="msg" role="status" aria-live="polite"></p>
+    </form>
+  </main>
+  <footer class="footer"><p>A student project, not an official university service.</p></footer>
+  <script src="/CAFETERIA-PRE-ORDER-SYSTEM/demo/demo.js"></script>
+  <script src="/CAFETERIA-PRE-ORDER-SYSTEM/js/api.js"></script>
+  <script src="/CAFETERIA-PRE-ORDER-SYSTEM/staff/staff-login.js"></script>
+</body>
+</html>
