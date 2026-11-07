@@ -54,6 +54,14 @@ foreach(f ${html})
   string(REPLACE "</title>" "</title>\n  ${tags}\n  <link rel=\"icon\" href=\"${ICON}\">" text "${text}")
   file(WRITE "${f}" "${text}")
 endforeach()
+file(WRITE "${OUT}/sitemap.xml" "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">
+  <url><loc>${SITE}/</loc></url>
+  <url><loc>${SITE}/login.html</loc></url>
+  <url><loc>${SITE}/register.html</loc></url>
+  <url><loc>${SITE}/staff/login.html</loc></url>
+</urlset>
+")
 
 # Every page must have picked up the demo script.
 file(GLOB_RECURSE html "${OUT}/*.html")
