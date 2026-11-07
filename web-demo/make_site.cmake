@@ -67,6 +67,9 @@ file(WRITE "${OUT}/sitemap.xml" "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 # Every page must have picked up the demo script.
 file(GLOB_RECURSE html "${OUT}/*.html")
 foreach(f ${html})
+  if(f MATCHES "/google[0-9a-f]+\\.html$")  # the Search Console file is not a page
+    continue()
+  endif()
   file(READ "${f}" text)
   string(FIND "${text}" "/demo/demo.js" at)
   if(at EQUAL -1)
