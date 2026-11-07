@@ -8,6 +8,7 @@
 file(REMOVE_RECURSE "${OUT}")
 file(COPY "${ROOT}/web/" DESTINATION "${OUT}")
 file(COPY "${ROOT}/web-demo/demo.js" "${ROOT}/web-demo/cafe-worker.js" DESTINATION "${OUT}/demo")
+file(COPY "${ROOT}/web-demo/google2071cf636cb837d6.html" DESTINATION "${OUT}")  # Google Search Console ownership check
 get_filename_component(JS_DIR "${JS}" DIRECTORY)
 file(COPY "${JS}" "${JS_DIR}/cafe_demo.wasm" DESTINATION "${OUT}/demo")
 file(WRITE "${OUT}/.nojekyll" "")
