@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#007377">
+  <link rel="preload" href="/CAFETERIA-PRE-ORDER-SYSTEM/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <title>My account – BAUSTK Cafeteria</title>
+  <link rel="stylesheet" href="/CAFETERIA-PRE-ORDER-SYSTEM/css/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <p class="announce" id="announce" role="note"></p>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="/CAFETERIA-PRE-ORDER-SYSTEM/menu.html">BAUSTK Cafeteria <small>Fresh food pre-order</small></a>
+      <nav aria-label="Main">
+        <a href="/CAFETERIA-PRE-ORDER-SYSTEM/menu.html">Menu</a>
+        <a href="/CAFETERIA-PRE-ORDER-SYSTEM/reservations.html">Reservations</a>
+        <a href="/CAFETERIA-PRE-ORDER-SYSTEM/account.html" aria-current="page">Account</a>
+        <button class="linkbtn" type="button" id="logout">Log out</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="narrow">
+    <h1>My account</h1>
+
+    <section class="card" aria-labelledby="details-h">
+      <h2 id="details-h">Your details</h2>
+      <p class="hint">These come from the university’s records. Ask the university office to correct them.</p>
+      <dl class="details" id="details"></dl>
+    </section>
+
+    <form id="password-form" class="card" novalidate aria-labelledby="pw-h">
+      <h2 id="pw-h">Change password</h2>
+      <div class="field">
+        <label for="current">Current password</label>
+        <input id="current" name="current-password" type="password" autocomplete="current-password" required maxlength="128"
+               data-error="Enter your current password.">
+      </div>
+      <div class="field">
+        <label for="new1">New password</label>
+        <span class="hint" id="new1-hint">At least 8 characters.</span>
+        <input id="new1" name="new-password" type="password" autocomplete="new-password" required minlength="8" maxlength="128"
+               aria-describedby="new1-hint" data-error="Choose a new password of at least 8 characters.">
+      </div>
+      <div class="field">
+        <label for="new2">Repeat new password</label>
+        <input id="new2" name="new-password-repeat" type="password" autocomplete="new-password" required minlength="8" maxlength="128"
+               data-error="Repeat the new password.">
+      </div>
+      <button class="btn btn--primary btn--block" type="submit">Change password</button>
+      <p id="msg" class="msg" role="status" aria-live="polite"></p>
+      <p class="hint">Changing it signs you out on your other devices.</p>
+    </form>
+  </main>
+  <footer class="footer"><p>A student project, not an official university service.</p></footer>
+  <script src="/CAFETERIA-PRE-ORDER-SYSTEM/demo/demo.js"></script>
+  <script src="/CAFETERIA-PRE-ORDER-SYSTEM/js/api.js"></script>
+  <script src="/CAFETERIA-PRE-ORDER-SYSTEM/js/account.js"></script>
+</body>
+</html>
