@@ -9,6 +9,20 @@ It runs locally: build it (below) and start the demo server as `demo/README.md` 
 student IDs in the sample lists and tests are the team's real university IDs; every email uses
 the reserved test domain `uni.example`.
 
+## ▶ Live demo
+
+The system has two login terminals. Both are live, with the demo accounts listed on each page:
+
+| Terminal | Who logs in there | Live page | Demo login |
+|---|---|---|---|
+| **Public login** | Students, teachers and university staff | [ali-ioi.github.io/CAFETERIA-PRE-ORDER-SYSTEM/login.html](https://ali-ioi.github.io/CAFETERIA-PRE-ORDER-SYSTEM/login.html) | `ayon@uni.example` / `demo-student-pass` (more on the page) |
+| **Staff login** | Cafeteria staff only | [ali-ioi.github.io/CAFETERIA-PRE-ORDER-SYSTEM/staff/login.html](https://ali-ioi.github.io/CAFETERIA-PRE-ORDER-SYSTEM/staff/login.html) | `demo.staff` / `demo-staff-pass` |
+
+The real C++ server runs in your browser, compiled to WebAssembly: each browser gets its own demo
+cafeteria, with a clock that starts at 08:30, an inbox for the emails and a reset button. Open both
+terminals in two tabs to reserve as a student and mark food ready as staff. How it works and how to
+build it: `web-demo/README.md`.
+
 | Structure | Where | Used for |
 |---|---|---|
 | Array | `src/ds/menu_array.*` | Menu, packaged stock, fresh portions (O(1) by index) |
@@ -116,6 +130,6 @@ title, labelled fields, no inline styles or scripts, sizes only from the scale, 
 
 ## Publishing to GitHub
 
-The repository (https://github.com/ALI-IOI/CAFETERIA-PRE-ORDER-SYSTEM) is private and holds the
+The repository (https://github.com/ALI-IOI/CAFETERIA-PRE-ORDER-SYSTEM) is public and holds the
 full history, including the original proposal in `docs/proposal/`. Commit on `main` and push it
 with `git push`; pull the other developer's work with `git pull`.

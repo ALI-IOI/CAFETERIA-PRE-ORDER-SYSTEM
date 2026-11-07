@@ -5,6 +5,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options(-Wall -Wextra)
 
+# Emscripten (emcmake cmake): only the WebAssembly live demo, see web-demo/README.md.
+if(EMSCRIPTEN)
+  include(web-demo/wasm.cmake)
+  return()
+endif()
+
 if(WIN32)
   # cpp-httplib uses Windows 8+ APIs (CreateFile2); target Windows 10.
   add_compile_definitions(_WIN32_WINNT=0x0A00)
