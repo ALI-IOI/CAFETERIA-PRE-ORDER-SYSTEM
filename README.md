@@ -117,7 +117,7 @@ them apart: restrict `/staff/` and `/api/staff/` to the counter PCs at the proxy
 | `/staff/portal.html` | cafeteria staff (not linked from any public page; only from the listed counter computers) | Token counter (hand over by token), kitchen (mark ready), orders placed today, menu items (add, remove, price, picture, available today, everyone or teachers only), coupons, reservations, packaged stock, settings, undo |
 
 Prices are shown only; people pay at the counter. Staff pictures must be JPEG, PNG or WebP up to 2 MB.
-Demo food pictures are simple drawings in `web/img/demo/`. Headings use the serif Cormorant
+Fresh dishes use simple drawings in `web/img/demo/`. The packaged snacks and drinks the cafeteria sells (bought from the official importers) have product photos in `web/img/products/` (600 × 400 PNG, background removed), named in `seed/menu.txt` as `product-*.png`; staff can still upload their own picture. Starting prices are Bangladesh retail prices read on chaldal.com and arogga.com on 2026-11-09; items whose pack price could not be confirmed show "Price at counter" until staff set it. The online demo starts each packaged item at 24 in stock. Headings use the serif Cormorant
 Garamond (SIL Open Font License, self-hosted in `web/fonts/`) over the system sans. One theme for
 everyone, whatever the device's dark-mode setting, inspired by the restaurant site Délice (a red
 field, cream type, a light high-contrast serif and round stamps with a double ring) and set in the

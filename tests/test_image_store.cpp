@@ -78,6 +78,13 @@ TEST(valid_image_file_names) {
     CHECK(!validImageFileName("item-1-0123456789abcdef.exe"));
     CHECK(!validImageFileName("item--0123456789abcdef.png"));
     CHECK(!validImageFileName(""));
+    CHECK(validProductPictureName("product-7up.png"));
+    CHECK(validProductPictureName("product-lays-magic-masala.png"));
+    CHECK(!validProductPictureName("product-../menu.png"));
+    CHECK(!validProductPictureName("product-Pepsi.png"));
+    CHECK(!validProductPictureName("product-.png"));
+    CHECK(!validProductPictureName("product-pepsi.jpg"));
+    CHECK(!validImageFileName("product-pepsi.png"));  // never deleted as an uploaded picture
 }
 
 TEST(write_failure_message_has_no_server_path) {

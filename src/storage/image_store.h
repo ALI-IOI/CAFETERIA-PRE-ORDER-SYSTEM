@@ -14,6 +14,8 @@ ImageKind detectImage(const std::string& bytes);
 
 // "item-<index>-<16 hex>.<jpg|png|webp>" and nothing else.
 bool validImageFileName(const std::string& name);
+// A product picture shipped with the site in web/img/products/: product-<a-z, 0-9, ->.png
+bool validProductPictureName(const std::string& name);
 
 // Writes <dataDir>/images/item-<index>-<random>.<ext> atomically and then
 // deletes <dataDir>/images/<oldFile> if oldFile is a valid picture name.
