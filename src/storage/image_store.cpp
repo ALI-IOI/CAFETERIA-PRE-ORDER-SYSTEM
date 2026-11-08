@@ -38,6 +38,17 @@ bool validImageFileName(const std::string& name) {
     return ext == "jpg" || ext == "png" || ext == "webp";
 }
 
+bool validProductPictureName(const std::string& name) {
+    const std::string pre = "product-", ext = ".png";
+    if (name.size() <= pre.size() + ext.size() || name.size() > 64) return false;
+    if (name.compare(0, pre.size(), pre) != 0 || name.compare(name.size() - ext.size(), ext.size(), ext) != 0) return false;
+    for (size_t i = pre.size(); i < name.size() - ext.size(); i++) {
+        char c = name[i];
+        if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-')) return false;
+    }
+    return true;
+}
+
 bool storeItemImage(const std::string& dataDir, int itemIndex, const std::string& bytes, const std::string& oldFile,
                     std::string& newFile, std::string& err) {
     newFile.clear();

@@ -117,6 +117,10 @@ static void createDemoCoupons() {
     c.value = 50;
     c.audience = "teacher";
     addCoupon(g_app->caf, "demo.staff", c);
+    // The seed starts packaged stock at 0 (staff count it in); the demo shelf starts full.
+    for (int i = 0; i < g_app->caf.menu.count; i++)
+        if (g_app->caf.menu.items[i].kind == ItemKind::Packaged && g_app->caf.menu.items[i].stock == 0)
+            g_app->caf.menu.items[i].stock = 24;
 }
 
 // ---- form decoding -------------------------------------------------------------------

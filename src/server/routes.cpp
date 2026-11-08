@@ -18,8 +18,10 @@
 static const size_t SMALL_BODY_LIMIT = 4096;
 static const char* const IMAGE_UPLOAD_PATH = "/api/staff/items/image";
 
-// "/images/<file>" for an uploaded picture, else a demo drawing by category.
+// "/images/<file>" for an uploaded picture, "/img/products/<file>" for a product
+// picture shipped with the site, else a demo drawing by category.
 static std::string imageUrl(const MenuItem& m) {
+    if (validProductPictureName(m.imageFile)) return "/img/products/" + m.imageFile;
     if (!m.imageFile.empty()) return "/images/" + m.imageFile;
     if (m.kind == ItemKind::Fresh) return "/img/demo/bowl.svg";
     if (m.category == "Chips") return "/img/demo/chips.svg";

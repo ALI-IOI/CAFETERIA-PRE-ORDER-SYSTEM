@@ -1,6 +1,8 @@
-# Starting menu, copied into data/ on first start. Staff change stock and
-# limits in the portal afterwards. Format: category|name|kind|stock|dailyLimit
-# Line order = item index. At most 32 items.
+# Starting menu, copied into data/ on first start. Staff change stock, prices,
+# pictures and limits in the portal afterwards. Line order = item index. At most 32 items.
+# Format: category|name|kind|stock|dailyLimit  or, with a price and picture,
+#         category|name|kind|stock|dailyLimit|priceTaka|picture|available|removed|teachersOnly
+# A picture named product-*.png is shipped with the site in web/img/products/.
 #
 # [CONFIRM] Daily limits 12 / 8 / 10 are the proposal's "indicative only" sample (section 9).
 Fresh food|Khichuri|fresh|0|12
@@ -8,15 +10,26 @@ Fresh food|Fried Rice|fresh|0|8
 Fresh food|Tehari|fresh|0|10
 #
 # [CONFIRM] Packaged stock counts are not given in the proposal: all start at 0.
-# [CONFIRM] Proposal section 7 says 17 packaged items but names only these 9 + water.
-# [CONFIRM] Add biscuit names (and water brands) here before the first start.
-Chips|Alloz|packaged|0|0
-Chips|Mr. Twist|packaged|0|0
-Chips|Lays|packaged|0|0
+# Prices: Bangladesh retail prices read on chaldal.com and arogga.com on 2026-11-09
+# (price 0 = "price at counter": not confirmed for that pack size). Staff can change them.
+Chips|Alooz Spanish Tomato (20 g)|packaged|0|0|20|product-alooz-spanish-tomato.png|1|0|0
+Chips|Mr. Twist (22 g)|packaged|0|0|25|product-mr-twist.png|1|0|0
+Chips|Lay's Spanish Tomato Tango (25 g)|packaged|0|0|25|product-lays-spanish-tomato-tango.png|1|0|0
 Chips|Sun|packaged|0|0
 Soft drinks|Dew|packaged|0|0
-Soft drinks|Pepsi|packaged|0|0
-Soft drinks|Mirinda|packaged|0|0
-Soft drinks|7UP|packaged|0|0
+Soft drinks|Pepsi (500 ml)|packaged|0|0|50|product-pepsi.png|1|0|0
+Soft drinks|Mirinda (500 ml)|packaged|0|0|50|product-mirinda.png|1|0|0
+Soft drinks|7UP (500 ml)|packaged|0|0|50|product-7up.png|1|0|0
 Soft drinks|Coca-Cola|packaged|0|0
-Water|Drinking water|packaged|0|0
+Water|Aquafina drinking water (500 ml)|packaged|0|0|20|product-aquafina.png|1|0|0
+Chips|Lay's Thai Style Spicy Chicken (13 g)|packaged|0|0|15|product-lays-thai-spicy-chicken.png|1|0|0
+Chips|Lay's India's Magic Masala|packaged|0|0|0|product-lays-magic-masala.png|1|0|0
+Chips|Kurkure Spicy Chicken|packaged|0|0|0|product-kurkure-spicy-chicken.png|1|0|0
+Chips|Kurkure Chilli Chatka (25 g)|packaged|0|0|20|product-kurkure-chilli-chatka.png|1|0|0
+Chips|Kurkure Cream & Onion (25 g)|packaged|0|0|20|product-kurkure-cream-onion.png|1|0|0
+Chips|Kurkure Masala Munch (25 g)|packaged|0|0|20|product-kurkure-masala-munch.png|1|0|0
+Biscuits & cakes|Wonder Muffin Cake (16 g)|packaged|0|0|10|product-wonder-muffin-cake.png|1|0|0
+Biscuits & cakes|Olympic Orange Plus (42 g)|packaged|0|0|10|product-olympic-orange-plus.png|1|0|0
+Biscuits & cakes|Olympic Energy Plus (16 g)|packaged|0|0|0|product-olympic-energy-plus.png|1|0|0
+Biscuits & cakes|Olympic Elachi Plus|packaged|0|0|0|product-olympic-elachi-plus.png|1|0|0
+Biscuits & cakes|Lexus Vegetable Crackers (20 g)|packaged|0|0|5|product-lexus-vegetable-crackers.png|1|0|0

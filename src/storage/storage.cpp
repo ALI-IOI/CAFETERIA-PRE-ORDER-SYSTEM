@@ -53,7 +53,7 @@ static bool loadMenu(Cafeteria& caf, const std::string& path, std::string& err) 
         }
         if (n >= 8) {
             int avail;
-            bool badImage = !f[6].empty() && !validImageFileName(f[6]);  // only server-chosen names
+            bool badImage = !f[6].empty() && !validImageFileName(f[6]) && !validProductPictureName(f[6]);  // server-chosen or shipped
             if (!parseIntStrict(f[5], m.priceTaka) || m.priceTaka < 0 || m.priceTaka > MAX_PRICE_TAKA ||
                 badImage || !parseIntStrict(f[7], avail) || (avail != 0 && avail != 1)) {
                 err = lineError("menu.txt", lineNo, "bad price, picture name or availability");

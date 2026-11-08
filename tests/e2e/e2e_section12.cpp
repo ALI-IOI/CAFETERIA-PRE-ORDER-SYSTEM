@@ -521,9 +521,9 @@ static int realMain(int argc, char** argv) {
     check(status(r) == 200, "setup: staff set Lays stock 25", body(r));
     r = staff.post("/api/staff/undo", {});
     std::string ov = body(staff.get("/api/staff/overview"));
-    size_t laysPos = ov.find("\"name\":\"Lays\"");
+    size_t laysPos = ov.find("Spanish Tomato Tango (25 g)\"");
     // '>' arrives JSON-escaped as > (the server escapes < and > in all JSON text)
-    check(status(r) == 200 && has(body(r), "Set Lays stock 0 -\\u003e 25") && jsonInt(ov, "stock", laysPos) == 0,
+    check(status(r) == 200 && has(body(r), "Spanish Tomato Tango (25 g) stock 0 -\\u003e 25") && jsonInt(ov, "stock", laysPos) == 0,
           "12.8 undo restores Lays stock", body(r));
 
     // ---- 12.10 restart: crash the server at 12:00 and start it again -------------------------
@@ -713,7 +713,7 @@ static int realMain(int argc, char** argv) {
         r = staff.post("/api/staff/items", {{"category", "Fresh food"}, {"name", "Biryani"}, {"kind", "fresh"},
                                             {"price", "150"}, {"amount", "10"}});
         int idx = (int)jsonInt(body(r), "index");
-        check(status(r) == 200 && idx == 13, "redesign: staff adds an item", body(r));
+        check(status(r) == 200 && idx == 24, "redesign: staff adds an item after the 24 seed items", body(r));
         const std::string IDX = std::to_string(idx);
         s[9].post("/api/login", {{"email", uniEmail(9)}, {"password", PW}});
         std::string menu9 = body(s[9].get("/api/menu"));
@@ -726,7 +726,7 @@ static int realMain(int argc, char** argv) {
                                 {{"item", IDX, "", ""}, {"image", png, "biryani.png", "image/png"}});
         std::string img = jsonStr(body(r), "image");
         auto served = guest.get(img);
-        check(status(r) == 200 && img.rfind("/images/item-13-", 0) == 0 && status(served) == 200 &&
+        check(status(r) == 200 && img.rfind("/images/item-" + IDX + "-", 0) == 0 && status(served) == 200 &&
                   served->get_header_value("Content-Type") == "image/png" && served->body == png,
               "redesign: upload_picture_then_served", body(r));
         r = staff.postMultipart("/api/staff/items/image",
