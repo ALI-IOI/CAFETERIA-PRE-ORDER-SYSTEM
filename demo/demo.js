@@ -247,7 +247,7 @@
     const ul = document.createElement("ul");
     const accounts = staffLogin
       ? [["Cafeteria staff", "demo.staff", "demo-staff-pass"]]
-      : [["Student", "ayon@uni.example", "demo-student-pass"],
+      : [["Student", "ali@uni.example", "demo-student-pass"],
          ["Teacher", "teacher1@uni.example", "demo-teacher-pass"],
          ["University staff", "guard1@uni.example", "demo-guard-pass"],
          ["University staff, no university email", "rahim@example.com", "demo-driver-pass"]];
