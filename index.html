@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#007377">
+  <meta name="theme-color" content="#B42318">
   <link rel="preload" href="/CAFETERIA-PRE-ORDER-SYSTEM/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
   <title>BAUSTK Cafeteria – fresh food pre-order</title>
-  <meta name="description" content="Pre-order freshly cooked cafeteria food at BAUSTK before the cutoff: students, teachers and university staff reserve, the kitchen marks food ready and everyone gets an email. Live demo of a C++ data-structures project (BAUSTK DSA I) running in the browser as WebAssembly.">
+  <meta name="description" content="Pre-order freshly cooked cafeteria food at BAUSTK before the cutoff: students, teachers and university staff reserve, get an order token, and collect at the counter when the token board shows it ready. Live demo of a C++ data-structures project (BAUSTK DSA I) running in the browser as WebAssembly.">
   <link rel="canonical" href="https://ali-ioi.github.io/CAFETERIA-PRE-ORDER-SYSTEM/">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://ali-ioi.github.io/CAFETERIA-PRE-ORDER-SYSTEM/">
   <meta property="og:title" content="BAUSTK Cafeteria – fresh food pre-order">
-  <meta property="og:description" content="Pre-order freshly cooked cafeteria food at BAUSTK before the cutoff: students, teachers and university staff reserve, the kitchen marks food ready and everyone gets an email. Live demo of a C++ data-structures project (BAUSTK DSA I) running in the browser as WebAssembly.">
+  <meta property="og:description" content="Pre-order freshly cooked cafeteria food at BAUSTK before the cutoff: students, teachers and university staff reserve, get an order token, and collect at the counter when the token board shows it ready. Live demo of a C++ data-structures project (BAUSTK DSA I) running in the browser as WebAssembly.">
   <meta name="twitter:card" content="summary">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23007377'/%3E%3Cpath d='M6 15h20a10 10 0 0 1-20 0z' fill='%23E87722'/%3E%3Cpath d='M12 6c-1 2 1 3 0 5M16 5c-1 2 1 3 0 5M20 6c-1 2 1 3 0 5' stroke='%23ffffff' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23B42318'/%3E%3Cpath d='M6 15h20a10 10 0 0 1-20 0z' fill='%23F2B531'/%3E%3Cpath d='M12 6c-1 2 1 3 0 5M16 5c-1 2 1 3 0 5M20 6c-1 2 1 3 0 5' stroke='%23FBF1E4' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="/CAFETERIA-PRE-ORDER-SYSTEM/css/app.css">
 </head>
 <body>
@@ -22,6 +22,7 @@
     <div class="topbar__inner">
       <a class="brand" href="/CAFETERIA-PRE-ORDER-SYSTEM/">BAUSTK Cafeteria <small>Fresh food pre-order</small></a>
       <nav aria-label="Main">
+        <a href="/CAFETERIA-PRE-ORDER-SYSTEM/board.html">Token board</a>
         <a href="/CAFETERIA-PRE-ORDER-SYSTEM/login.html">Log in</a>
         <a href="/CAFETERIA-PRE-ORDER-SYSTEM/register.html">Create account</a>
       </nav>
@@ -30,42 +31,54 @@
 
   <section class="hero" aria-labelledby="hero-h">
     <div class="hero__inner">
-      <img class="hero__art" src="/CAFETERIA-PRE-ORDER-SYSTEM/img/hero-food.svg" alt="" width="640" height="520">
-      <div class="hero__panel">
-        <h1 id="hero-h">Fresh food, reserved before <span id="hero-cutoff">the cutoff</span></h1>
-        <p>Khichuri, Fried Rice and Tehari are cooked to order. Reserve your portion and we email you the moment it is ready.</p>
+      <div>
+        <h1 id="hero-h"><span>Cooked to order,</span> <span>served</span> <span>by token</span></h1>
+        <p class="hero__lead">Reserve Khichuri, Fried Rice or Tehari before <span class="js-cutoff">the cutoff</span>. You get a token number; when it shows as ready, show it at the counter and pay as you collect.</p>
         <p class="hero__status" id="hero-status" hidden></p>
         <div class="actions">
-          <a class="btn btn--primary" href="/CAFETERIA-PRE-ORDER-SYSTEM/login.html">Log in</a>
-          <a class="btn" href="/CAFETERIA-PRE-ORDER-SYSTEM/register.html">Create account</a>
+          <a class="btn btn--cream" href="/CAFETERIA-PRE-ORDER-SYSTEM/login.html">Log in and order</a>
+          <a class="btn btn--ghost" href="/CAFETERIA-PRE-ORDER-SYSTEM/register.html">Create account</a>
         </div>
+      </div>
+      <div class="hero__side" id="serving" aria-live="polite">
+        <div class="stamp stamp--cream stamp--big">
+          <span class="stamp__label">Now serving</span>
+          <span class="stamp__num">–</span>
+          <span class="stamp__note">Loading</span>
+        </div>
+        <a href="/CAFETERIA-PRE-ORDER-SYSTEM/board.html">See every token</a>
       </div>
     </div>
   </section>
 
   <main id="main">
-    <h2>How it works</h2>
-    <ol class="steps">
-      <li class="step">
-        <h3>Reserve before the cutoff</h3>
-        <p>Pick your dishes on the menu and reserve them before <span class="js-cutoff">the cutoff</span>. Each person can reserve a few portions of each dish; the menu shows how many.</p>
-      </li>
-      <li class="step">
-        <h3>We cook and email you</h3>
-        <p>The kitchen cooks what was reserved and emails you when your food is ready, first come, first served.</p>
-      </li>
-      <li class="step">
-        <h3>Collect while it’s fresh</h3>
-        <p>Pay at the counter when you collect. Food stays fresh for about <span class="js-freshness">7 hours</span>, and we remind you every hour.</p>
-      </li>
-    </ol>
+    <div class="how">
+      <div>
+        <h2>How it works</h2>
+        <ol class="steps">
+          <li class="step">
+            <h3>Reserve before the cutoff</h3>
+            <p>Pick your dishes on the menu and reserve them before <span class="js-cutoff">the cutoff</span>. Your whole tray gets one token number.</p>
+          </li>
+          <li class="step">
+            <h3>We cook and call your token</h3>
+            <p>The kitchen cooks what was reserved, first come, first served. When your food is ready, your token moves to Ready on the token board and we email you.</p>
+          </li>
+          <li class="step">
+            <h3>Show your token, collect, pay</h3>
+            <p>Show the token at the counter and pay as you collect. Food stays fresh for about <span class="js-freshness">7 hours</span>, and we remind you every hour.</p>
+          </li>
+        </ol>
+      </div>
+      <img class="how__art" src="/CAFETERIA-PRE-ORDER-SYSTEM/img/hero-food.svg" alt="" width="640" height="520">
+    </div>
 
     <h2>Today’s times</h2>
     <dl class="info-strip">
-      <div><dt>Reserve before</dt><dd id="info-cutoff">–</dd></div>
-      <div><dt>Cancel until</dt><dd id="info-cancel">–</dd></div>
-      <div><dt>Stays fresh</dt><dd id="info-fresh">–</dd></div>
-      <div><dt>Server time</dt><dd id="info-now">–</dd></div>
+      <div class="stamp"><dt>Reserve before</dt><dd id="info-cutoff">–</dd></div>
+      <div class="stamp stamp--mint"><dt>Cancel until</dt><dd id="info-cancel">–</dd></div>
+      <div class="stamp stamp--turmeric"><dt>Stays fresh</dt><dd id="info-fresh">–</dd></div>
+      <div class="stamp stamp--ink"><dt>Server time</dt><dd id="info-now">–</dd></div>
     </dl>
   </main>
   <footer class="footer"><p>For BAUSTK students, teachers and university staff. You pay at the counter when you collect.</p><p>A student project, not an official university service.</p></footer>

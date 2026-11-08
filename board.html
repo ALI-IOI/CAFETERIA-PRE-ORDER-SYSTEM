@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#B42318">
+  <link rel="preload" href="/CAFETERIA-PRE-ORDER-SYSTEM/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <title>Token board – BAUSTK Cafeteria</title>
+  <meta name="description" content="The BAUSTK cafeteria token board: which order tokens are ready at the counter and which are still cooking. Token numbers only. Live demo of a C++ data-structures project (BAUSTK DSA I) running in the browser as WebAssembly.">
+  <link rel="canonical" href="https://ali-ioi.github.io/CAFETERIA-PRE-ORDER-SYSTEM/board.html">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ali-ioi.github.io/CAFETERIA-PRE-ORDER-SYSTEM/board.html">
+  <meta property="og:title" content="Token board – BAUSTK Cafeteria">
+  <meta property="og:description" content="The BAUSTK cafeteria token board: which order tokens are ready at the counter and which are still cooking. Token numbers only. Live demo of a C++ data-structures project (BAUSTK DSA I) running in the browser as WebAssembly.">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23B42318'/%3E%3Cpath d='M6 15h20a10 10 0 0 1-20 0z' fill='%23F2B531'/%3E%3Cpath d='M12 6c-1 2 1 3 0 5M16 5c-1 2 1 3 0 5M20 6c-1 2 1 3 0 5' stroke='%23FBF1E4' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/CAFETERIA-PRE-ORDER-SYSTEM/css/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="/CAFETERIA-PRE-ORDER-SYSTEM/">BAUSTK Cafeteria <small>Fresh food pre-order</small></a>
+      <nav aria-label="Main">
+        <a href="/CAFETERIA-PRE-ORDER-SYSTEM/board.html" aria-current="page">Token board</a>
+        <a href="/CAFETERIA-PRE-ORDER-SYSTEM/menu.html">Menu</a>
+        <a href="/CAFETERIA-PRE-ORDER-SYSTEM/reservations.html">My reservations</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="board-head">
+      <h1>Token board</h1>
+      <p class="hint" id="updated">Updates every few seconds</p>
+    </div>
+    <p class="lead">When your token is under Ready, come to the counter, show it and pay as you collect. Only token numbers are shown here.</p>
+    <p class="visually-hidden" id="called" role="status" aria-live="polite"></p>
+    <div id="board-state"></div>
+
+    <div class="board" id="board" hidden>
+      <section aria-labelledby="ready-h">
+        <h2 id="ready-h">Ready – come to the counter</h2>
+        <ol class="board__ready" id="ready" aria-labelledby="ready-h"></ol>
+        <p class="state state--empty" id="ready-empty" hidden>No food is waiting at the counter.</p>
+      </section>
+      <section aria-labelledby="cooking-h">
+        <h2 id="cooking-h">Being cooked</h2>
+        <ul class="board__cooking" id="cooking" aria-labelledby="cooking-h"></ul>
+        <p class="state state--empty" id="cooking-empty" hidden>Nothing is being cooked right now.</p>
+      </section>
+    </div>
+  </main>
+  <footer class="footer"><p>Tokens start again at 001 every morning. Your token is in your confirmation email and on My reservations.</p></footer>
+  <script src="/CAFETERIA-PRE-ORDER-SYSTEM/demo/demo.js"></script>
+  <script src="/CAFETERIA-PRE-ORDER-SYSTEM/js/api.js"></script>
+  <script src="/CAFETERIA-PRE-ORDER-SYSTEM/js/board.js"></script>
+</body>
+</html>

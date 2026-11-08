@@ -15,6 +15,21 @@ const Tray = {
   clear() {
     store.set("tray", {});
   },
+  // The coupon checked against this tray: { code, occasion, kind, value, text }.
+  // The server checks it again when the tray is reserved.
+  coupon() {
+    return store.get("coupon", null);
+  },
+  setCoupon(c) {
+    store.set("coupon", c);
+  },
+  // What the coupon takes off: whole taka, never more than the dishes.
+  discount(subtotal) {
+    const c = Tray.coupon();
+    if (!c || subtotal <= 0) return 0;
+    const off = c.kind === "percent" ? Math.floor((subtotal * c.value) / 100) : c.value;
+    return Math.min(off, subtotal);
+  },
   // Most portions this person may still add for an item.
   room(item, menu) {
     return Math.max(0, Math.min(menu.perUserLimit - item.yours, item.remaining));
@@ -52,10 +67,10 @@ let trayCountShown = null;  // the count last drawn, so a change can pulse once
 function renderTray(menu, onChange, highlight) {
   const byIndex = new Map(menu.items.map((i) => [String(i.index), i]));
   const entries = Object.entries(Tray.lines()).filter(([idx]) => byIndex.has(idx));
-  let total = 0, count = 0;
+  let subtotal = 0, count = 0;
   const rows = entries.map(([idx, qty]) => {
     const item = byIndex.get(idx);
-    total += item.price * qty;
+    subtotal += item.price * qty;
     count += qty;
     const selectId = "tray-qty-" + idx;
     const select = el("select", { id: selectId, "aria-label": "Portions of " + item.name });
@@ -81,6 +96,19 @@ function renderTray(menu, onChange, highlight) {
   document.getElementById("tray-lines").replaceChildren(...rows);
   document.getElementById("tray-empty").hidden = rows.length > 0;
   document.getElementById("tray-total-row").hidden = rows.length === 0;
+  document.getElementById("tray-coupon").hidden = rows.length === 0;
+  const coupon = Tray.coupon();
+  const discount = Tray.discount(subtotal);
+  const total = subtotal - discount;
+  document.getElementById("tray-discount-row").hidden = rows.length === 0 || !coupon;
+  if (coupon) {
+    document.getElementById("tray-sub").textContent = "৳ " + subtotal;
+    document.getElementById("tray-discount-label").replaceChildren(
+      el("span", {}, "Coupon ", el("strong", {}, coupon.code), " (" + coupon.text + ") "),
+      el("button", { id: "coupon-remove", class: "btn", type: "button", "aria-label": "Remove coupon " + coupon.code,
+        onclick: () => { Tray.setCoupon(null); say("coupon-msg", "Coupon removed."); onChange(); } }, "Remove"));
+    document.getElementById("tray-discount").textContent = "− ৳ " + discount;
+  }
   document.getElementById("tray-total").textContent = "৳ " + total;
   const reserveAll = document.getElementById("reserve-all");
   reserveAll.hidden = rows.length === 0;
@@ -107,14 +135,16 @@ function renderTray(menu, onChange, highlight) {
 // Sends the whole tray. The button stays locked until the server answers, so a
 // second press cannot reserve twice.
 async function reserveTray(onDone) {
-  const items = Object.entries(Tray.lines()).map(([idx, qty]) => idx + ":" + qty).join(",");
+  const items = trayItems();
+  const coupon = Tray.coupon();
   const button = document.getElementById("reserve-all");
   if (!items || button.getAttribute("aria-busy") === "true") return;
   const done = busy(button, "Reserving…");
   say("tray-msg", "");
+  document.getElementById("tray-token").hidden = true;
   let r;
   try {
-    r = await api.post("/api/reservations/batch", { items });
+    r = await api.post("/api/reservations/batch", { items, coupon: coupon ? coupon.code : "" });
   } catch (e) {
     r = { ok: false, error: "Could not reach the cafeteria. Check your connection and try again." };
   }
@@ -122,9 +152,58 @@ async function reserveTray(onDone) {
   if (!requireLogin(r, "/CAFETERIA-PRE-ORDER-SYSTEM/login.html")) return;
   if (r.ok) {
     Tray.clear();
-    say("tray-msg", r.message + " Codes: " + r.codes.join(", ") + ". Total " + taka(r.total) + ".", true);
+    Tray.setCoupon(null);
+    say("coupon-msg", "");
+    say("tray-msg", r.message + " Codes: " + r.codes.join(", ") + ". Total " + taka(r.total) +
+      (r.discount > 0 ? " after " + taka(r.discount) + " off" : "") + ".", true);
+    const box = document.getElementById("tray-token");
+    box.replaceChildren(tokenStamp("Your token", r.tokenText, "", "", "small"),
+      el("p", {}, "Keep this number. Watch for it on the ", el("a", { href: "/CAFETERIA-PRE-ORDER-SYSTEM/board.html" }, "token board"), "."));
+    box.hidden = false;
   } else {
     say("tray-msg", r.error + " Nothing was reserved.", false);
   }
   onDone();
+}
+
+function trayItems() {
+  return Object.entries(Tray.lines()).map(([idx, qty]) => idx + ":" + qty).join(",");
+}
+
+// Checks a code against the tray and keeps it for the tray when it is good.
+async function applyCoupon(code, onChange) {
+  code = code.trim();
+  if (!code) {
+    say("coupon-msg", "Type a coupon code first.", false);
+    return;
+  }
+  const button = document.getElementById("coupon-apply");
+  if (button.getAttribute("aria-busy") === "true") return;
+  const done = busy(button, "Checking…");
+  let r;
+  try {
+    r = await api.post("/api/coupons/check", { code, items: trayItems() });
+  } catch (e) {
+    r = { ok: false, error: "Could not reach the cafeteria. Check your connection and try again." };
+  }
+  done();
+  if (!requireLogin(r, "/CAFETERIA-PRE-ORDER-SYSTEM/login.html")) return;
+  if (!r.ok) {
+    say("coupon-msg", r.error, false);
+    return;
+  }
+  Tray.setCoupon({ code: r.code, occasion: r.occasion, kind: r.kind, value: r.value, text: r.text });
+  document.getElementById("coupon-code").value = "";
+  say("coupon-msg", r.code + " applied for " + r.occasion + ": " + r.text + ".", true);
+  onChange();
+}
+
+// The coupons this person may use today, each with a button that applies it.
+function renderOffers(list, onChange) {
+  const offers = (list || []).map((c) => el("li", {},
+    el("span", {}, el("strong", {}, c.code), " " + c.occasion + ": " + c.text + (c.to ? ", until " + c.to : "")),
+    el("button", { class: "btn", type: "button", "aria-label": "Use coupon " + c.code,
+      onclick: () => applyCoupon(c.code, onChange) }, "Use")));
+  document.getElementById("offers").replaceChildren(...offers);
+  document.getElementById("offers-h").hidden = offers.length === 0;
 }
