@@ -485,6 +485,23 @@ static int realMain(int argc, char** argv) {
           "12.6 ready emails in FIFO order, cancelled skipped", order);
     check(countMails("ready", "s11@uni.example") == 0, "12.6 cancelled reservation gets no ready email");
 
+    // ---- order tokens: the public board and the staff counter ----------------------------------
+    {
+        Browser guest;
+        std::string board = body(guest.get("/api/tokens/board"));
+        check(has(board, "\"ok\":true") && has(board, "\"ready\":[{") && !has(board, "@"),
+              "tokens: public board lists ready tokens and no emails or names", board.substr(0, 200));
+        r = guest.post("/api/staff/tokens/handover", {{"token", "1"}});
+        check(status(r) == 401 || status(r) == 403 || status(r) == 404, "tokens: hand-over needs a staff login", body(r));
+        r = staff.post("/api/staff/tokens/handover", {{"token", "999"}});
+        check(status(r) == 404 && has(body(r), "No order today has that token"), "tokens: unknown token refused", body(r));
+        r = staff.post("/api/staff/tokens/handover", {{"token", "abc"}});
+        check(status(r) == 400, "tokens: a token that is not a number is refused", body(r));
+        std::string list = body(staff.get("/api/staff/tokens"));
+        check(has(list, "\"tokens\":[{") && has(list, "\"user\":\"ayon@uni.example\""),
+              "tokens: staff see today's tokens with their owners", list.substr(0, 200));
+    }
+
     // ---- 12.7 reminders, collected, restart, expiry --------------------------------------------
     staff.post("/api/dev/advance", {{"minutes", "60"}});  // 11:00
     check(countMails("reminder", "ayon@uni.example") == 1 && countMails("reminder", "teacher1@uni.example") == 1,
@@ -777,6 +794,72 @@ static int realMain(int argc, char** argv) {
         check(status(r) == 200 && jsonInt(body(r), "total") == 150 && has(mine9, "Biryani") && has(mine9, "Tehari") &&
                   countMails("confirmation", "s9@uni.example", trayFrom) == 1,
               "redesign: tray reserves every dish with one confirmation email", body(r));
+        const std::string tok = jsonStr(body(r), "tokenText");
+        check(tok.size() >= 3 && has(mine9, "\"tokenText\":\"" + tok + "\"") &&
+                  mine9.find("\"tokenText\":\"" + tok + "\"") != mine9.rfind("\"tokenText\":\"" + tok + "\""),
+              "tokens: the whole tray shares one token, shown on My reservations", body(r));
+
+        // ---- teachers' specials, coupons and the staff order list ----
+        teacher.post("/api/login", {{"email", "teacher1@uni.example"}, {"password", PW}});
+        r = staff.post("/api/staff/items", {{"category", "Fresh food"}, {"name", "Morog Polao"}, {"kind", "fresh"},
+                                            {"price", "200"}, {"amount", "10"}, {"teachers", "1"}});
+        const std::string MP = std::to_string(jsonInt(body(r), "index"));
+        std::string sm = body(s[9].get("/api/menu")), tm = body(teacher.get("/api/menu"));
+        check(status(r) == 200 && !has(sm, "Morog Polao") && has(tm, "Morog Polao") && has(tm, "\"teachersOnly\":true"),
+              "specials: a teachers' special shows only on teachers' menus", body(r));
+        r = s[9].post("/api/reservations", {{"item", MP}, {"quantity", "1"}});
+        check(status(r) == 403 && has(body(r), "teachers' special"), "specials: a student cannot reserve it", body(r));
+        r = s[9].post("/api/staff/items/teachers", {{"item", IDX}, {"teachersOnly", "1"}});
+        check(status(r) == 401 || status(r) == 403, "specials: only staff choose who can order", body(r));
+
+        r = s[9].post("/api/staff/coupons", {{"code", "TEACH20"}, {"occasion", "Teachers Day"}, {"kind", "percent"},
+                                             {"value", "20"}, {"audience", "teacher"}});
+        check(status(r) == 401 || status(r) == 403, "coupons: only staff make coupons", body(r));
+        r = staff.post("/api/staff/coupons", {{"code", "teach20"}, {"occasion", "Teachers Day"}, {"kind", "percent"},
+                                              {"value", "20"}, {"audience", "teacher"}, {"from", ""}, {"to", ""},
+                                              {"maxUses", "50"}});
+        auto again = staff.post("/api/staff/coupons", {{"code", "TEACH20"}, {"occasion", "Again"}, {"kind", "fixed"},
+                                                       {"value", "20"}, {"audience", "everyone"}});
+        auto bad = staff.post("/api/staff/coupons", {{"code", "BIG"}, {"occasion", "Too much"}, {"kind", "percent"},
+                                                     {"value", "150"}, {"audience", "everyone"}});
+        check(status(r) == 200 && has(body(r), "TEACH20") && status(again) == 409 && status(bad) == 400,
+              "coupons: staff make a coupon; duplicates and 150 % are refused",
+              body(r) + " / " + body(again) + " / " + body(bad));
+        check(!has(body(s[9].get("/api/coupons/today")), "TEACH20") && has(body(teacher.get("/api/coupons/today")), "TEACH20"),
+              "coupons: offers list only what each person may use");
+        r = s[9].post("/api/coupons/check", {{"code", "TEACH20"}, {"items", IDX + ":1"}});
+        check(status(r) == 403 && has(body(r), "not for your group"), "coupons: a student cannot use a teachers' coupon", body(r));
+        r = teacher.post("/api/coupons/check", {{"code", " teach20 "}, {"items", MP + ":2"}});
+        check(status(r) == 200 && jsonInt(body(r), "subtotal") == 400 && jsonInt(body(r), "discount") == 80 &&
+                  jsonInt(body(r), "total") == 320,
+              "coupons: check shows 20 % off a 400 taka tray", body(r));
+        r = teacher.post("/api/reservations/batch", {{"items", MP + ":2"}, {"coupon", "TEACH20"}});
+        const std::string ttok = jsonStr(body(r), "tokenText");
+        check(status(r) == 200 && jsonInt(body(r), "discount") == 80 && jsonInt(body(r), "total") == 320,
+              "coupons: the teacher reserves the special with the coupon", body(r));
+        r = teacher.post("/api/reservations/batch", {{"items", IDX + ":1"}, {"coupon", "TEACH20"}});  // refused: nothing booked
+        check(status(r) == 409 && has(body(r), "already used"), "coupons: once a day per person", body(r));
+
+        std::string orders = body(staff.get("/api/staff/orders"));
+        size_t tpos = orders.find("\"tokenText\":\"" + ttok + "\""), spos = orders.find("\"tokenText\":\"" + tok + "\"");
+        check(has(orders, "\"role\":\"teacher\"") && has(orders, "\"coupon\":\"TEACH20\"") &&
+                  has(orders, "\"toPay\":320") && tpos != std::string::npos && spos != std::string::npos && tpos < spos,
+              "orders: staff see every order, newest first, with the coupon and what to pay", orders.substr(0, 300));
+        r = s[9].get("/api/staff/orders");
+        check(status(r) == 401 || status(r) == 403, "orders: only staff see the order list", body(r));
+
+        std::string cl = body(staff.get("/api/staff/coupons"));
+        check(has(cl, "\"uses\":1") && has(cl, "\"maxUses\":50") && has(cl, "Working today"),
+              "coupons: staff list counts the use", cl.substr(0, 300));
+        r = staff.post("/api/staff/coupons/active", {{"code", "TEACH20"}, {"active", "0"}});
+        check(status(r) == 200 && !has(body(teacher.get("/api/coupons/today")), "TEACH20"),
+              "coupons: a coupon switched off leaves the offers", body(r));
+        r = staff.post("/api/staff/coupons/remove", {{"code", "TEACH20"}});
+        check(status(r) == 200 && !has(body(staff.get("/api/staff/coupons")), "TEACH20"), "coupons: staff remove a coupon",
+              body(r));
+        r = staff.post("/api/staff/items/teachers", {{"item", MP}, {"teachersOnly", "0"}});
+        check(status(r) == 200 && has(body(s[9].get("/api/menu")), "Morog Polao"),
+              "specials: staff open the dish to everyone again", body(r));
     }
 
     // ---- order history and My account --------------------------------------------------
@@ -915,9 +998,9 @@ static int realMain(int argc, char** argv) {
         check(now >= 0 && now < cutoff && openBefore && has(after, "\"open\":false"),
               "theme: public info says whether orders are open", info + " / " + after);
         std::string css = body(guest.get("/css/app.css"));
-        check(!has(css, "prefers-color-scheme") && has(css, "color-scheme: light") && has(css, "--page: #FFFFFF") &&
-                  has(css, "--bar: #007377") && has(css, "--field: #FFFFFF") && !has(css, "campus-hero"),
-              "theme: no dark-mode stylesheet", css.substr(0, 80));
+        check(!has(css, "prefers-color-scheme") && has(css, "color-scheme: light") && has(css, "--page: #FBF1E4") &&
+                  has(css, "--bar: #B42318") && has(css, "--field: #FFFAF3") && !has(css, "campus-hero"),
+              "theme: one light chili-and-rice theme, no dark-mode stylesheet", css.substr(0, 80));
     }
 
     std::printf("(stopping server)\n");

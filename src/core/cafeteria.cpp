@@ -28,6 +28,17 @@ const char* resultMessage(Result r) {
         case Result::ItemInUse:
             return "This item still has reservations or a waitlist. Switch it off now, and remove it once they are "
                    "collected.";
+        case Result::NoSuchToken: return "No order today has that token.";
+        case Result::TokenNotReady: return "None of that token's food is ready yet.";
+        case Result::TokenDone: return "That token's food has already been handed over.";
+        case Result::TeachersOnly: return "This dish is a teachers' special: only teachers can reserve it.";
+        case Result::BadCoupon: return "That coupon code is not valid.";
+        case Result::CouponNotToday: return "That coupon does not work today.";
+        case Result::CouponNotForYou: return "That coupon is not for your group.";
+        case Result::CouponUsedUp: return "That coupon has been used as many times as it can be.";
+        case Result::CouponAlreadyUsed: return "You have already used that coupon today.";
+        case Result::CouponExists: return "A coupon with that code already exists.";
+        case Result::CouponsFull: return "There are too many coupons. Remove one you no longer need.";
     }
     return "Unknown error.";
 }
@@ -47,6 +58,8 @@ void cafInit(Cafeteria& caf, Clock* clock, int cookingCapacity) {
     caf.clock = clock;
     caf.currentDay = dayKeyOf(clock->now());
     caf.cookingCapacity = cookingCapacity;
+    caf.nextToken = 1;
+    caf.couponCount = 0;
 }
 
 void cafFree(Cafeteria& caf) {
@@ -76,19 +89,20 @@ int userPortionsToday(const Cafeteria& caf, const std::string& user, int itemInd
 }
 
 Result reserve(Cafeteria& caf, const std::string& user, int itemIndex, int quantity,
-               NotificationList& out, Reservation** created) {
-    return reserveWithNote(caf, user, itemIndex, quantity, out, created, "");
+               NotificationList& out, Reservation** created, bool teacher) {
+    return reserveWithNote(caf, user, itemIndex, quantity, out, created, "", teacher);
 }
 
 // The single-dish checks in order, with `heldExtra` / `takenExtra` /
 // `entriesExtra` portions and queue entries already claimed by earlier lines
 // of the same tray (all 0 for a single reservation).
 static Result checkReserve(Cafeteria& caf, const std::string& user, int itemIndex, int quantity, int heldExtra,
-                           int takenExtra, int entriesExtra) {
+                           int takenExtra, int entriesExtra, bool teacher) {
     MenuItem* item = menuAt(caf.menu, itemIndex);
     if (item == nullptr) return Result::BadItem;
     if (item->kind != ItemKind::Fresh) return Result::NotFresh;
     if (!item->available) return Result::NotAvailable;
+    if (item->teachersOnly && !teacher) return Result::TeachersOnly;
     if (quantity < 1 || quantity > caf.settings.perUserLimit) return Result::BadQuantity;
     if (!beforeMinuteOfDay(caf, caf.settings.cutoffMinute)) return Result::CutoffPassed;
     if (quantity + takenExtra > menuRemaining(*item)) return Result::SoldOut;
@@ -100,10 +114,12 @@ static Result checkReserve(Cafeteria& caf, const std::string& user, int itemInde
 
 // Books an already-checked line: node at the list tail, portions from the array,
 // entry in the item's cooking queue, and the person leaves that item's waitlist.
-static Reservation* bookChecked(Cafeteria& caf, const std::string& user, int itemIndex, int quantity) {
+static Reservation* bookChecked(Cafeteria& caf, const std::string& user, int itemIndex, int quantity, int token) {
     MenuItem* item = menuAt(caf.menu, itemIndex);
     time_t now = caf.clock->now();
     Reservation* r = rlAppend(caf.reservations, user, itemIndex, quantity, now, dayKeyOf(now));
+    r->token = token;
+    r->priceTaka = item->priceTaka;  // the price stays as it was when reserved
     item->reservedToday += quantity;
     qEnqueue(caf.cooking[itemIndex], r);
     // Reserving it yourself means you are no longer waiting for it (promotion
@@ -115,11 +131,11 @@ static Reservation* bookChecked(Cafeteria& caf, const std::string& user, int ite
 
 // Checks, then books. No email.
 static Result reserveCore(Cafeteria& caf, const std::string& user, int itemIndex, int quantity,
-                          Reservation** created) {
+                          Reservation** created, bool teacher) {
     if (created) *created = nullptr;
-    Result chk = checkReserve(caf, user, itemIndex, quantity, 0, 0, 0);
+    Result chk = checkReserve(caf, user, itemIndex, quantity, 0, 0, 0, teacher);
     if (chk != Result::Ok) return chk;
-    Reservation* r = bookChecked(caf, user, itemIndex, quantity);
+    Reservation* r = bookChecked(caf, user, itemIndex, quantity, caf.nextToken++);
     if (created) *created = r;
     return Result::Ok;
 }
@@ -129,7 +145,8 @@ static std::string taka(int amount) {
 }
 
 Result reserveBatch(Cafeteria& caf, const std::string& user, const TrayLine* lines, int n, NotificationList& out,
-                    int& failedLine, int* createdIds) {
+                    int& failedLine, int* createdIds, const OrderContext& ctx) {
+    const bool teacher = ctx.role == "teacher";
     cafEnsureToday(caf);
     failedLine = -1;
     if (lines == nullptr || n < 1 || n > MAX_MENU_ITEMS) return Result::BadQuantity;
@@ -141,7 +158,7 @@ Result reserveBatch(Cafeteria& caf, const std::string& user, const TrayLine* lin
         int item = lines[i].itemIndex;
         bool inRange = item >= 0 && item < MAX_MENU_ITEMS;
         Result r = checkReserve(caf, user, item, lines[i].quantity, inRange ? portions[item] : 0,
-                                inRange ? portions[item] : 0, inRange ? entries[item] : 0);
+                                inRange ? portions[item] : 0, inRange ? entries[item] : 0, teacher);
         if (r != Result::Ok) {
             failedLine = i;
             return r;  // nothing has been changed
@@ -150,20 +167,46 @@ Result reserveBatch(Cafeteria& caf, const std::string& user, const TrayLine* lin
         entries[item]++;
     }
 
-    // 2. Book them all. Every check above already passed under the same lock, so
+    // 2. The coupon, if any: checked on the whole tray before anything is booked.
+    int subtotal = 0;
+    for (int i = 0; i < n; i++) subtotal += caf.menu.items[lines[i].itemIndex].priceTaka * lines[i].quantity;
+    int discount = 0;
+    const std::string code = couponCodeNormal(ctx.coupon);
+    if (!code.empty()) {
+        Result cr = checkCoupon(caf, code, ctx.role, user, subtotal, discount);
+        if (cr != Result::Ok) return cr;
+    }
+
+    // 3. Book them all. Every check above already passed under the same lock, so
     // nothing is checked again: the clock may tick past the cutoff by now, and a
     // second check could then refuse a later line after earlier ones were booked.
-    std::string codes, body = "Your reservations are confirmed:\n";
-    int total = 0;
+    const int token = caf.nextToken++;  // the whole tray is one order: one token
+    std::string codes, body = "Your token is " + tokenText(token) + ". Show it at the counter when you collect.\n\n" +
+                              "Your reservations are confirmed:\n";
+    int total = 0, given = 0;
     for (int i = 0; i < n; i++) {
-        Reservation* r = bookChecked(caf, user, lines[i].itemIndex, lines[i].quantity);
+        Reservation* r = bookChecked(caf, user, lines[i].itemIndex, lines[i].quantity, token);
         const MenuItem& m = caf.menu.items[lines[i].itemIndex];
         int lineTotal = m.priceTaka * lines[i].quantity;
         total += lineTotal;
+        if (discount > 0) {
+            // the discount is split in proportion to each dish's price; the last dish takes the rounding
+            int share = (i == n - 1) ? discount - given : (subtotal > 0 ? discount * lineTotal / subtotal : 0);
+            if (share > lineTotal) share = lineTotal;
+            r->coupon = code;
+            r->discountTaka = share;
+            given += share;
+        }
         if (createdIds) createdIds[i] = r->id;
         codes += (i ? ", " : "") + resCode(r->id);
         body += resCode(r->id) + "  " + m.name + " x " + std::to_string(lines[i].quantity) + "  " + taka(lineTotal) +
                 "\n";
+    }
+    if (discount > 0) {
+        Coupon& cp = caf.coupons[findCoupon(caf, code)];
+        cp.uses++;
+        body += "Coupon " + code + " (" + cp.occasion + ", " + couponText(cp) + "): -" + taka(given) + "\n";
+        total -= given;
     }
     body += "Total to pay at the counter: " + taka(total) + "\n" +
             "We will email you when each dish is ready for collection.\n" + "You can cancel until " +
@@ -174,17 +217,18 @@ Result reserveBatch(Cafeteria& caf, const std::string& user, const TrayLine* lin
 }
 
 Result reserveWithNote(Cafeteria& caf, const std::string& user, int itemIndex, int quantity,
-                       NotificationList& out, Reservation** created, const std::string& note) {
+                       NotificationList& out, Reservation** created, const std::string& note, bool teacher) {
     cafEnsureToday(caf);
     Reservation* booked = nullptr;
-    Result res = reserveCore(caf, user, itemIndex, quantity, &booked);
+    Result res = reserveCore(caf, user, itemIndex, quantity, &booked, teacher);
     if (created) *created = booked;
     if (res != Result::Ok) return res;
     MenuItem* item = menuAt(caf.menu, itemIndex);
     Reservation* r = booked;
     std::string code = resCode(r->id);
     nlAppend(out, NotifType::Confirmation, user, "Reservation " + code + " confirmed",
-             note + "Reservation " + code + " confirmed: " + item->name + " x " +
+             note + "Your token is " + tokenText(r->token) + ". Show it at the counter when you collect.\n\n" +
+                 "Reservation " + code + " confirmed: " + item->name + " x " +
                  std::to_string(quantity) + ".\n" +
                  "We will email you when it is ready for collection.\n" +
                  "You can cancel until " + formatMinuteOfDay(caf.settings.cancelDeadlineMinute) +
@@ -206,6 +250,14 @@ Result cancelReservation(Cafeteria& caf, const std::string& user, int reservatio
     r->status = ResStatus::Cancelled;  // stays in the cooking queue; skipped at the front
     MenuItem* item = menuAt(caf.menu, r->itemIndex);
     if (item) item->reservedToday -= r->quantity;
+    // A coupon's use comes back when every dish of its order is cancelled.
+    if (!r->coupon.empty()) {
+        bool orderLeft = false;
+        for (const Reservation* o = caf.reservations.head; o != nullptr && !orderLeft; o = o->next)
+            orderLeft = o != r && o->day == r->day && o->token == r->token && o->status != ResStatus::Cancelled;
+        int ci = findCoupon(caf, r->coupon);
+        if (!orderLeft && ci >= 0 && caf.coupons[ci].uses > 0) caf.coupons[ci].uses--;
+    }
     leaveWaitlist(caf, user, r->itemIndex);   // cancelling means fewer portions, never a re-booking
     promoteWaitlist(caf, r->itemIndex, out);  // the freed portion goes to the first person waiting
     return Result::Ok;
@@ -274,7 +326,8 @@ Result markReady(Cafeteria& caf, const std::string& staff, int itemIndex, int po
 
         std::string code = resCode(r->id);
         nlAppend(out, NotifType::Ready, r->user, "Your " + item->name + " (" + code + ") is ready",
-                 "Your " + item->name + " (" + code + ") is ready for collection.\n" +
+                 (r->token > 0 ? "Token " + tokenText(r->token) + ".\n" : std::string()) +
+                     "Your " + item->name + " (" + code + ") is ready for collection.\n" +
                      "It stays fresh for about " + durationText(caf.settings.freshnessMinutes) +
                      " (until " + formatClock(now + (time_t)caf.settings.freshnessMinutes * 60) + ").",
                  r->id);
@@ -334,6 +387,7 @@ static void rollover(Cafeteria& caf, int newDay) {
         r = next;
     }
     caf.currentDay = newDay;
+    caf.nextToken = 1;  // tokens start again each day
 }
 
 void cafEnsureToday(Cafeteria& caf) {

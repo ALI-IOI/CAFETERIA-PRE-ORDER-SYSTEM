@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#007377">
+  <meta name="theme-color" content="#B42318">
   <link rel="preload" href="/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
   <title>Today’s menu – BAUSTK Cafeteria</title>
   <link rel="stylesheet" href="/css/app.css">
@@ -62,9 +62,20 @@
         <h2 id="tray-h">Your tray</h2>
         <p class="hint" id="tray-empty">Add fresh dishes, then reserve them all at once.</p>
         <ul id="tray-lines"></ul>
+        <div class="tray__coupon" id="tray-coupon" hidden>
+          <form class="row" id="coupon-form">
+            <div class="field"><label for="coupon-code">Coupon code</label><input id="coupon-code" autocomplete="off" maxlength="16" spellcheck="false" aria-describedby="coupon-msg"></div>
+            <button class="btn" type="submit" id="coupon-apply">Apply</button>
+          </form>
+          <p id="coupon-msg" class="msg" role="status" aria-live="polite"></p>
+          <h3 class="tray__offers-h" id="offers-h" hidden>Today’s offers</h3>
+          <ul class="offers" id="offers" aria-labelledby="offers-h"></ul>
+        </div>
+        <div class="tray__sub" id="tray-discount-row" hidden><span>Dishes</span><span id="tray-sub" class="num"></span><span id="tray-discount-label"></span><span id="tray-discount" class="num"></span></div>
         <div class="tray__total" id="tray-total-row" hidden><span>Total to pay at the counter</span><span id="tray-total" class="num"></span></div>
         <button class="btn btn--primary btn--block" type="button" id="reserve-all" hidden>Reserve all</button>
         <p id="tray-msg" class="msg" role="status" aria-live="polite"></p>
+        <div class="tray__token" id="tray-token" hidden></div>
         <p class="hint">You pay in cash when you collect. No payment online.</p>
       </aside>
     </div>

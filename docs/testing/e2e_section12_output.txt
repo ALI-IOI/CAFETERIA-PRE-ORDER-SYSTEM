@@ -47,6 +47,11 @@ PASS 12.5 cancel after deadline refused, portion not returned
 PASS 12.6 mark ready: 4 ready, 1 skipped
 PASS 12.6 ready emails in FIFO order, cancelled skipped
 PASS 12.6 cancelled reservation gets no ready email
+PASS tokens: public board lists ready tokens and no emails or names
+PASS tokens: hand-over needs a staff login
+PASS tokens: unknown token refused
+PASS tokens: a token that is not a number is refused
+PASS tokens: staff see today's tokens with their owners
 PASS 12.7 first hourly reminder at 11:00
 PASS staff search by reservation ID
 PASS 12.9 special characters in search rejected
@@ -76,6 +81,14 @@ PASS reservation allowed again after cutoff moved
 PASS setup: restart with the email outbox blocked
 PASS email retry: a failed confirmation waits in the retry queue
 PASS email retry: sent one minute later once the outbox works again
+PASS hardening: CSP forbids <base> and plugins; no HSTS without --behind-https
+PASS hardening: a page path in another case or with a trailing dot or space needs a login
+PASS hardening: the dev clock refuses a foreign Host (DNS rebinding) and proxied requests
+PASS hardening: a second code request within a minute sends no email and says so
+PASS hardening: the first password still completes the registration
+PASS hardening: an 11th login signs out the oldest session, never refuses
+PASS hardening: parallel wrong passwords still lock the account
+PASS hardening: other requests are served while passwords are checked
 PASS redesign: public_info_without_login
 PASS redesign: staff adds an item
 PASS redesign: staff_adds_item_student_sees_it (with price)
@@ -86,8 +99,30 @@ PASS redesign: other_routes_keep_4kb_limit
 PASS redesign: multipart_body_keeps_4kb_limit
 PASS redesign: item_name_shown_as_text
 PASS redesign: unavailable_item_hidden_and_refused
+PASS remove: student_cannot_remove_items
+PASS remove: item gone from the menu and the staff lists
+PASS remove: no picture is stored for a removed item
+PASS remove: undo brings it back
+PASS remove: refused while reserved
 PASS redesign: tray with one bad line reserves nothing and names the dish
 PASS redesign: tray reserves every dish with one confirmation email
+PASS tokens: the whole tray shares one token, shown on My reservations
+PASS specials: a teachers' special shows only on teachers' menus
+PASS specials: a student cannot reserve it
+PASS specials: only staff choose who can order
+PASS coupons: only staff make coupons
+PASS coupons: staff make a coupon; duplicates and 150 % are refused
+PASS coupons: offers list only what each person may use
+PASS coupons: a student cannot use a teachers' coupon
+PASS coupons: check shows 20 % off a 400 taka tray
+PASS coupons: the teacher reserves the special with the coupon
+PASS coupons: once a day per person
+PASS orders: staff see every order, newest first, with the coupon and what to pay
+PASS orders: only staff see the order list
+PASS coupons: staff list counts the use
+PASS coupons: a coupon switched off leaves the offers
+PASS coupons: staff remove a coupon
+PASS specials: staff open the dish to everyone again
 PASS setup: clock moved past midnight (day rollover)
 PASS history: yesterday's orders listed after midnight
 PASS history: newest first (merge sort)
@@ -110,8 +145,8 @@ PASS staff_hidden_case_and_path_tricks
 PASS setup: restart with an empty counter list
 PASS staff hidden: empty list prints the notice and the page opens
 PASS theme: public info says whether orders are open
-PASS theme: no dark-mode stylesheet
+PASS theme: one light chili-and-rice theme, no dark-mode stylesheet
 (stopping server)
 (server stopped)
 
-113 checks, 113 passed, 0 failed
+148 checks, 148 passed, 0 failed

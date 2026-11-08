@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#B42318">
+  <link rel="preload" href="/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <title>Token board – BAUSTK Cafeteria</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="/">BAUSTK Cafeteria <small>Fresh food pre-order</small></a>
+      <nav aria-label="Main">
+        <a href="/board.html" aria-current="page">Token board</a>
+        <a href="/menu.html">Menu</a>
+        <a href="/reservations.html">My reservations</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="board-head">
+      <h1>Token board</h1>
+      <p class="hint" id="updated">Updates every few seconds</p>
+    </div>
+    <p class="lead">When your token is under Ready, come to the counter, show it and pay as you collect. Only token numbers are shown here.</p>
+    <p class="visually-hidden" id="called" role="status" aria-live="polite"></p>
+    <div id="board-state"></div>
+
+    <div class="board" id="board" hidden>
+      <section aria-labelledby="ready-h">
+        <h2 id="ready-h">Ready – come to the counter</h2>
+        <ol class="board__ready" id="ready" aria-labelledby="ready-h"></ol>
+        <p class="state state--empty" id="ready-empty" hidden>No food is waiting at the counter.</p>
+      </section>
+      <section aria-labelledby="cooking-h">
+        <h2 id="cooking-h">Being cooked</h2>
+        <ul class="board__cooking" id="cooking" aria-labelledby="cooking-h"></ul>
+        <p class="state state--empty" id="cooking-empty" hidden>Nothing is being cooked right now.</p>
+      </section>
+    </div>
+  </main>
+  <footer class="footer"><p>Tokens start again at 001 every morning. Your token is in your confirmation email and on My reservations.</p></footer>
+  <script src="/js/api.js"></script>
+  <script src="/js/board.js"></script>
+</body>
+</html>

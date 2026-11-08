@@ -148,11 +148,18 @@ static int httpStatus(Result r) {
         case Result::BadQuantity:
         case Result::InvalidValue:
         case Result::WrongKind: return 400;
+        case Result::BadCoupon: return 400;
+        case Result::TeachersOnly:
+        case Result::CouponNotForYou: return 403;
         case Result::NotFound:
         case Result::NotOwner: return 404;
         default: return 409;
     }
 }
+
+// The ordering person's group, as coupons and teachers' specials need it.
+static bool isTeacher(const Ctx& c) { return c.session && c.session->role == Role::Teacher; }
+static std::string roleOf(const Ctx& c) { return c.session ? roleName(c.session->role) : "student"; }
 
 static int httpStatus(AuthResult r) {
     switch (r) {
@@ -203,6 +210,9 @@ static void writeReservation(Json& j, const Cafeteria& caf, const Reservation* r
     j.key("freshUntil")
         .value(r->readyAt ? formatClock(r->expiresAt) : "");
     j.key("canCancel").value(canCancel(caf, r));
+    j.key("token").value(r->token);
+    j.key("tokenText").value(r->token > 0 ? tokenText(r->token) : "");
+    j.key("price").value(r->priceTaka).key("discount").value(r->discountTaka).key("coupon").value(r->coupon);
     if (withUser) j.key("user").value(r->user);
     j.endObject();
 }
@@ -213,6 +223,13 @@ static void okMessage(Ctx& c, const std::string& message, bool undoRecorded) {
     j.key("undoRecorded").value(undoRecorded);
     if (!undoRecorded) j.key("warning").value("Undo history is full - this action cannot be undone.");
     j.endObject();
+    reply(c.res, 200, j.str());
+}
+
+// A change that is not on the undo stack (coupons).
+static void okNote(Ctx& c, const std::string& message) {
+    Json j;
+    j.beginObject().key("ok").value(true).key("message").value(message).endObject();
     reply(c.res, 200, j.str());
 }
 
@@ -353,12 +370,14 @@ static void routeUser(httplib::Server& svr, AppState& app) {
             for (int i = 0; i < caf.menu.count; i++) {
                 const MenuItem& m = caf.menu.items[i];
                 if (!m.available) continue;  // hidden while staff have it switched off
+                if (m.teachersOnly && !isTeacher(c)) continue;  // a teachers' special: only teachers see it
                 j.beginObject().key("index").value(i).key("name").value(m.name);
                 j.key("category").value(m.category);
                 j.key("price").value(m.priceTaka);
                 j.key("image").value(imageUrl(m));
                 if (m.kind == ItemKind::Fresh) {
                     j.key("kind").value("fresh");
+                    j.key("teachersOnly").value(m.teachersOnly);
                     j.key("remaining").value(menuRemaining(m));
                     j.key("limit").value(m.dailyLimit);
                     j.key("yours").value(userPortionsToday(caf, c.session->login, i));
@@ -387,7 +406,7 @@ static void routeUser(httplib::Server& svr, AppState& app) {
                 return;
             }
             Reservation* r = nullptr;
-            Result result = reserve(c.app.caf, c.session->login, item, qty, c.out, &r);
+            Result result = reserve(c.app.caf, c.session->login, item, qty, c.out, &r, isTeacher(c));
             if (result != Result::Ok) {
                 fail(c, httpStatus(result), resultMessage(result));
                 return;
@@ -395,7 +414,9 @@ static void routeUser(httplib::Server& svr, AppState& app) {
             c.changed = true;
             Json j;
             j.beginObject().key("ok").value(true).key("id").value(r->id).key("code").value(resCode(r->id));
-            j.key("message").value("Reservation " + resCode(r->id) + " confirmed. Confirmation email sent.");
+            j.key("token").value(r->token).key("tokenText").value(tokenText(r->token));
+            j.key("message").value("Reservation " + resCode(r->id) + " confirmed. Your token is " + tokenText(r->token) +
+                                   ". Confirmation email sent.");
             j.endObject();
             reply(c.res, 200, j.str());
         });
@@ -425,7 +446,7 @@ static void routeUser(httplib::Server& svr, AppState& app) {
                 fail(c, 400, resultMessage(Result::BadQuantity));
                 return;
             }
-            Result r = joinWaitlist(c.app.caf, c.session->login, item, qty, position);
+            Result r = joinWaitlist(c.app.caf, c.session->login, item, qty, position, isTeacher(c));
             if (r != Result::Ok) {
                 fail(c, httpStatus(r), resultMessage(r));
                 return;
@@ -505,6 +526,7 @@ static void routeStaff(httplib::Server& svr, AppState& app) {
                 j.key("price").value(m.priceTaka);
                 j.key("image").value(imageUrl(m));
                 j.key("available").value(m.available);
+                j.key("teachersOnly").value(m.teachersOnly);
                 if (m.kind == ItemKind::Fresh) {
                     int waiting = 0;
                     for (int k = 0; k < caf.cooking[i].count; k++)
@@ -698,6 +720,305 @@ static bool parseTray(const std::string& s, TrayLine* lines, int& n) {
     return true;
 }
 
+
+// ---- order tokens ---------------------------------------------------------------------
+
+static void writeToken(Json& j, const TokenInfo& t, bool withUser) {
+    j.beginObject().key("token").value(t.token).key("text").value(tokenText(t.token));
+    j.key("dishes").value(t.dishes).key("cooking").value(t.cooking).key("ready").value(t.ready).key("done").value(t.done);
+    j.key("state").value(tokenState(t) == TokenState::Cooking ? "cooking"
+                         : tokenState(t) == TokenState::Ready ? "ready" : "done");
+    j.key("readyAt").value(t.readyAt ? formatClock(t.readyAt) : "");
+    if (withUser) j.key("user").value(t.user);
+    j.endObject();
+}
+
+static void routeTokens(httplib::Server& svr, AppState& app) {
+    // Public: the token board for the screen at the counter. Token numbers only,
+    // no names or dishes, so it can be shown to everyone.
+    svr.Get("/api/tokens/board", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::Public, [](Ctx& c) {
+            const Cafeteria& caf = c.app.caf;
+            const int cap = caf.nextToken;
+            TokenInfo* cooking = new TokenInfo[cap];
+            TokenInfo* ready = new TokenInfo[cap];
+            int nc = 0, nr = 0;
+            tokenBoard(caf, cooking, nc, ready, nr, cap);
+            Json j;
+            j.beginObject().key("ok").value(true).key("now").value(formatClock(caf.clock->now()));
+            j.key("issued").value(caf.nextToken - 1);
+            j.key("ready").beginArray();
+            for (int i = 0; i < nr; i++) j.beginObject().key("token").value(ready[i].token).key("text").value(tokenText(ready[i].token)).endObject();
+            j.endArray().key("cooking").beginArray();
+            for (int i = 0; i < nc; i++)
+                j.beginObject().key("token").value(cooking[i].token).key("text").value(tokenText(cooking[i].token))
+                    .key("readyDishes").value(cooking[i].ready).key("dishes").value(cooking[i].dishes).endObject();
+            j.endArray().endObject();
+            delete[] cooking;
+            delete[] ready;
+            reply(c.res, 200, j.str());
+        });
+    });
+
+    // Staff: every token of today with its owner, ascending.
+    svr.Get("/api/staff/tokens", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::Staff, [](Ctx& c) {
+            const Cafeteria& caf = c.app.caf;
+            const int cap = caf.nextToken;
+            TokenInfo* all = new TokenInfo[cap];
+            int n = todaysTokens(caf, all, cap);
+            Json j;
+            j.beginObject().key("ok").value(true).key("tokens").beginArray();
+            for (int i = 0; i < n; i++) writeToken(j, all[i], true);
+            j.endArray().endObject();
+            delete[] all;
+            reply(c.res, 200, j.str());
+        });
+    });
+
+    // Staff: hand a token's ready food over at the counter.
+    svr.Post("/api/staff/tokens/handover", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::Staff, [](Ctx& c) {
+            std::string raw = param(c.req, "token");
+            if (!raw.empty() && (raw[0] == '#' || raw[0] == 'T' || raw[0] == 't')) raw = raw.substr(1);
+            int token;
+            if (raw.empty() || raw.size() > 6 || !parseIntStrict(raw, token) || token <= 0) {
+                fail(c, 400, "Enter the token number, for example 17.");
+                return;
+            }
+            int handed = 0;
+            bool rec = true;
+            Result r = handOverToken(c.app.caf, c.session->login, token, handed, rec);
+            if (r != Result::Ok) {
+                fail(c, r == Result::NoSuchToken ? 404 : 409, resultMessage(r));
+                return;
+            }
+            c.changed = true;
+            okMessage(c, "Token " + tokenText(token) + " handed over: " + std::to_string(handed) +
+                             (handed == 1 ? " dish" : " dishes") + " marked collected.", rec);
+        });
+    });
+}
+
+
+// ---- teachers' specials, the staff order list and coupons ---------------------------------
+
+static std::string dayIso(int day) {  // 20261109 -> "2026-11-09"; 0 -> ""
+    if (day <= 0) return "";
+    char buf[16];
+    std::snprintf(buf, sizeof buf, "%04d-%02d-%02d", day / 10000, day / 100 % 100, day % 100);
+    return buf;
+}
+
+static bool parseIsoDay(const std::string& s, int& day) {  // "" -> 0
+    day = 0;
+    if (s.empty()) return true;
+    int y, m, d;
+    if (s.size() != 10 || s[4] != '-' || s[7] != '-' || !parseIntStrict(s.substr(0, 4), y) ||
+        !parseIntStrict(s.substr(5, 2), m) || !parseIntStrict(s.substr(8, 2), d))
+        return false;
+    day = y * 10000 + m * 100 + d;
+    return true;
+}
+
+static const char* audienceText(const std::string& a) {
+    return a == "student" ? "Students" : a == "teacher" ? "Teachers" : a == "employee" ? "University staff" : "Everyone";
+}
+
+static void writeCoupon(Json& j, const Coupon& cp, const Cafeteria& caf, bool forStaff) {
+    j.beginObject().key("code").value(cp.code).key("occasion").value(cp.occasion);
+    j.key("kind").value(cp.kind == DiscountKind::Percent ? "percent" : "fixed").key("value").value(cp.value);
+    j.key("text").value(couponText(cp)).key("audience").value(cp.audience).key("audienceText").value(audienceText(cp.audience));
+    j.key("from").value(dayIso(cp.fromDay)).key("to").value(dayIso(cp.toDay));
+    if (forStaff) {
+        const int today = caf.currentDay;
+        const char* state = !cp.active ? "Switched off"
+                            : (cp.fromDay && today < cp.fromDay) ? "Not started"
+                            : (cp.toDay && today > cp.toDay) ? "Ended"
+                            : (cp.maxUses > 0 && cp.uses >= cp.maxUses) ? "Used up" : "Working today";
+        j.key("maxUses").value(cp.maxUses).key("uses").value(cp.uses).key("active").value(cp.active).key("state").value(state);
+    }
+    j.endObject();
+}
+
+static void routeSpecials(httplib::Server& svr, AppState& app) {
+    svr.Post("/api/staff/items/teachers", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::Staff, [](Ctx& c) {
+            int item;
+            std::string v = param(c.req, "teachersOnly");
+            bool rec = false;
+            if (!parseIntStrict(param(c.req, "item"), item) || (v != "0" && v != "1")) {
+                fail(c, 400, "Choose everyone or teachers only.");
+                return;
+            }
+            Result r = setTeachersOnly(c.app.caf, c.session->login, item, v == "1", rec);
+            if (r != Result::Ok) {
+                fail(c, httpStatus(r), resultMessage(r));
+                return;
+            }
+            c.changed = true;
+            okMessage(c, lastDescription(c.app.caf), rec);
+        });
+    });
+
+    // Every order placed today, newest first, with who placed it, each dish,
+    // its price, the coupon and what is left to pay at the counter.
+    svr.Get("/api/staff/orders", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::Staff, [](Ctx& c) {
+            const Cafeteria& caf = c.app.caf;
+            Reservation** arr = new Reservation*[MAX_LIST];
+            int n = staffOrdersSorted(caf, arr, MAX_LIST);
+            Json j;
+            j.beginObject().key("ok").value(true).key("orders").beginArray();
+            for (int i = 0; i < n;) {
+                const int token = arr[i]->token;
+                const User* u = ulFind(c.app.auth.users, arr[i]->user);
+                int subtotal = 0, discount = 0, live = 0;
+                j.beginObject().key("token").value(token).key("tokenText").value(tokenText(token));
+                j.key("user").value(arr[i]->user).key("name").value(u ? u->name : "");
+                j.key("role").value(u ? roleName(u->role) : "");
+                j.key("placedAt").value(formatClock(arr[i]->reservedAt)).key("coupon").value(arr[i]->coupon);
+                j.key("dishes").beginArray();
+                for (; i < n && arr[i]->token == token; i++) {
+                    const Reservation* r = arr[i];
+                    const MenuItem* m = menuAt(caf.menu, r->itemIndex);
+                    if (r->status != ResStatus::Cancelled) {
+                        subtotal += r->priceTaka * r->quantity;
+                        discount += r->discountTaka;
+                        live++;
+                    }
+                    j.beginObject().key("code").value(resCode(r->id)).key("item").value(m ? m->name : "?");
+                    j.key("quantity").value(r->quantity).key("price").value(r->priceTaka);
+                    j.key("status").value(statusName(r->status)).endObject();
+                }
+                j.endArray().key("subtotal").value(subtotal).key("discount").value(discount);
+                j.key("toPay").value(subtotal - discount).key("cancelled").value(live == 0);
+                j.endObject();
+            }
+            j.endArray().endObject();
+            delete[] arr;
+            reply(c.res, 200, j.str());
+        });
+    });
+
+    svr.Get("/api/staff/coupons", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::Staff, [](Ctx& c) {
+            const Cafeteria& caf = c.app.caf;
+            Json j;
+            j.beginObject().key("ok").value(true).key("today").value(dayIso(caf.currentDay)).key("coupons").beginArray();
+            for (int i = 0; i < caf.couponCount; i++) writeCoupon(j, caf.coupons[i], caf, true);
+            j.endArray().endObject();
+            reply(c.res, 200, j.str());
+        });
+    });
+
+    svr.Post("/api/staff/coupons", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::Staff, [](Ctx& c) {
+            Coupon cp;
+            std::string kind = param(c.req, "kind"), maxUses = param(c.req, "maxUses");
+            cp.code = param(c.req, "code");
+            cp.occasion = param(c.req, "occasion");
+            cp.audience = param(c.req, "audience");
+            cp.kind = kind == "fixed" ? DiscountKind::Fixed : DiscountKind::Percent;
+            cp.maxUses = 0;
+            cp.uses = 0;
+            cp.active = true;
+            if ((kind != "percent" && kind != "fixed") || !parseIntStrict(param(c.req, "value"), cp.value) ||
+                !parseIsoDay(param(c.req, "from"), cp.fromDay) || !parseIsoDay(param(c.req, "to"), cp.toDay) ||
+                (!maxUses.empty() && !parseIntStrict(maxUses, cp.maxUses))) {
+                fail(c, 400, "Fill in the coupon: a percentage or an amount, and dates as on the form.");
+                return;
+            }
+            Result r = addCoupon(c.app.caf, c.session->login, cp);
+            if (r != Result::Ok) {
+                fail(c, httpStatus(r),
+                     r == Result::InvalidValue
+                         ? "Check the coupon: a code of 3-16 letters and digits, an occasion, 1-100 % or 1-9999 taka, "
+                           "and an end date on or after the start."
+                         : resultMessage(r));
+                return;
+            }
+            c.changed = true;
+            const Coupon& made = c.app.caf.coupons[c.app.caf.couponCount - 1];
+            okNote(c, "Coupon " + made.code + " made for " + made.occasion + ": " + couponText(made) + ".");
+        });
+    });
+
+    svr.Post("/api/staff/coupons/active", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::Staff, [](Ctx& c) {
+            std::string a = param(c.req, "active");
+            if (a != "0" && a != "1") {
+                fail(c, 400, "Choose on or off.");
+                return;
+            }
+            Result r = setCouponActive(c.app.caf, c.session->login, param(c.req, "code"), a == "1");
+            if (r != Result::Ok) {
+                fail(c, httpStatus(r), resultMessage(r));
+                return;
+            }
+            c.changed = true;
+            okNote(c, "Coupon " + couponCodeNormal(param(c.req, "code")) + (a == "1" ? " switched on." : " switched off."));
+        });
+    });
+
+    svr.Post("/api/staff/coupons/remove", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::Staff, [](Ctx& c) {
+            Result r = removeCoupon(c.app.caf, c.session->login, param(c.req, "code"));
+            if (r != Result::Ok) {
+                fail(c, httpStatus(r), resultMessage(r));
+                return;
+            }
+            c.changed = true;
+            okNote(c, "Coupon " + couponCodeNormal(param(c.req, "code")) + " removed.");
+        });
+    });
+
+    // The coupons this person can use today, shown above the tray.
+    svr.Get("/api/coupons/today", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::User, [](Ctx& c) {
+            const Coupon* list[MAX_COUPONS];
+            int n = couponsForToday(c.app.caf, roleOf(c), list, MAX_COUPONS);
+            Json j;
+            j.beginObject().key("ok").value(true).key("coupons").beginArray();
+            for (int i = 0; i < n; i++) writeCoupon(j, *list[i], c.app.caf, false);
+            j.endArray().endObject();
+            reply(c.res, 200, j.str());
+        });
+    });
+
+    // Checks a coupon against the tray before reserving: what it takes off.
+    svr.Post("/api/coupons/check", [&](const Request& req, Response& res) {
+        handle(app, req, res, Access::User, [](Ctx& c) {
+            TrayLine lines[MAX_MENU_ITEMS];
+            int n = 0;
+            if (!parseTray(param(c.req, "items"), lines, n)) {
+                fail(c, 400, "Add dishes to your tray first.");
+                return;
+            }
+            int subtotal = 0;
+            for (int i = 0; i < n; i++) {
+                const MenuItem* m = menuAt(c.app.caf.menu, lines[i].itemIndex);
+                if (m) subtotal += m->priceTaka * lines[i].quantity;
+            }
+            std::string code = param(c.req, "code");
+            int discount = 0;
+            Result r = code.size() > 32 ? Result::BadCoupon
+                                        : checkCoupon(c.app.caf, code, roleOf(c), c.session->login, subtotal, discount);
+            if (r != Result::Ok) {
+                fail(c, httpStatus(r), resultMessage(r));
+                return;
+            }
+            const Coupon& cp = c.app.caf.coupons[findCoupon(c.app.caf, code)];
+            Json j;
+            j.beginObject().key("ok").value(true).key("code").value(cp.code).key("occasion").value(cp.occasion);
+            j.key("text").value(couponText(cp)).key("kind").value(cp.kind == DiscountKind::Percent ? "percent" : "fixed");
+            j.key("value").value(cp.value).key("subtotal").value(subtotal).key("discount").value(discount);
+            j.key("total").value(subtotal - discount).endObject();
+            reply(c.res, 200, j.str());
+        });
+    });
+}
+
 static void routeRedesign(httplib::Server& svr, AppState& app) {
     svr.Get("/api/public/info", [&](const Request& req, Response& res) {
         handle(app, req, res, Access::Public, [](Ctx& c) {
@@ -724,22 +1045,36 @@ static void routeRedesign(httplib::Server& svr, AppState& app) {
             }
             int failed = -1;
             int ids[MAX_MENU_ITEMS];
-            Result r = reserveBatch(c.app.caf, c.session->login, lines, n, c.out, failed, ids);
+            OrderContext ctx;
+            ctx.role = roleOf(c);
+            ctx.coupon = param(c.req, "coupon");
+            if (ctx.coupon.size() > 32) {
+                fail(c, 400, resultMessage(Result::BadCoupon));
+                return;
+            }
+            Result r = reserveBatch(c.app.caf, c.session->login, lines, n, c.out, failed, ids, ctx);
             if (r != Result::Ok) {
                 const MenuItem* m = failed >= 0 ? menuAt(c.app.caf.menu, lines[failed].itemIndex) : nullptr;
                 fail(c, httpStatus(r), (m ? m->name + ": " : std::string()) + resultMessage(r));
                 return;
             }
             c.changed = true;
-            int total = 0;
+            int subtotal = 0, discount = 0;
             Json j;
             j.beginObject().key("ok").value(true).key("codes").beginArray();
             for (int i = 0; i < n; i++) {
                 j.value(resCode(ids[i]));
-                total += c.app.caf.menu.items[lines[i].itemIndex].priceTaka * lines[i].quantity;
+                const Reservation* line = rlFindById(c.app.caf.reservations, ids[i]);
+                subtotal += line ? line->priceTaka * line->quantity : 0;
+                discount += line ? line->discountTaka : 0;
             }
-            j.endArray().key("total").value(total);
-            j.key("message").value("Reserved. Confirmation email sent. Pay at the counter when you collect.");
+            const Reservation* first = rlFindById(c.app.caf.reservations, ids[0]);
+            const int token = first ? first->token : 0;
+            j.endArray().key("subtotal").value(subtotal).key("discount").value(discount);
+            j.key("total").value(subtotal - discount);
+            j.key("token").value(token).key("tokenText").value(tokenText(token));
+            j.key("message").value("Reserved. Your token is " + tokenText(token) +
+                                   ". Show it at the counter and pay when you collect.");
             j.endObject();
             reply(c.res, 200, j.str());
         });
@@ -801,7 +1136,8 @@ static void routeRedesign(httplib::Server& svr, AppState& app) {
                 return;
             }
             Result r = addMenuItem(c.app.caf, c.session->login, param(c.req, "category"), param(c.req, "name"),
-                                   kind == "fresh" ? ItemKind::Fresh : ItemKind::Packaged, price, amount, index);
+                                   kind == "fresh" ? ItemKind::Fresh : ItemKind::Packaged, price, amount, index,
+                                   kind == "fresh" && param(c.req, "teachers") == "1");
             if (r != Result::Ok) {
                 fail(c, httpStatus(r),
                      r == Result::InvalidValue
@@ -1006,5 +1342,7 @@ void registerRoutes(httplib::Server& svr, AppState& app, bool devRoutes) {
     routeUser(svr, app);
     routeStaff(svr, app);
     routeRedesign(svr, app);
+    routeTokens(svr, app);
+    routeSpecials(svr, app);
     if (devRoutes) routeDev(svr, app);
 }

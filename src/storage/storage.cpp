@@ -21,21 +21,29 @@ static bool loadMenu(Cafeteria& caf, const std::string& path, std::string& err) 
         err = "cannot open " + path;
         return false;
     }
-    std::string line, f[9];
+    std::string line, f[10];
     int lineNo = 0;
     while (std::getline(in, line)) {
         lineNo++;
         line = stripCR(line);
         if (isSkippable(line)) continue;
         MenuItem m;
-        // 5 = format before price/picture/availability, 8 = before removed items
-        int n = splitFields(line, '|', f, 9);
-        if ((n != 5 && n != 8 && n != 9) || f[1].empty()) {
+        // 5 = format before price/picture/availability, 8 = before removed items, 9 = before teachers' specials
+        int n = splitFields(line, '|', f, 10);
+        if ((n != 5 && n != 8 && n != 9 && n != 10) || f[1].empty()) {
             err = lineError("menu.txt", lineNo,
                             "expected category|name|kind|stock|dailyLimit|price|image|available|removed");
             return false;
         }
-        if (n == 9) {
+        if (n == 10) {
+            int teachers;
+            if (!parseIntStrict(f[9], teachers) || (teachers != 0 && teachers != 1)) {
+                err = lineError("menu.txt", lineNo, "teachersOnly must be 0 or 1");
+                return false;
+            }
+            m.teachersOnly = teachers == 1;
+        }
+        if (n >= 9) {
             int removed;
             if (!parseIntStrict(f[8], removed) || (removed != 0 && removed != 1)) {
                 err = lineError("menu.txt", lineNo, "removed must be 0 or 1");
@@ -100,18 +108,55 @@ static bool loadSettings(Cafeteria& caf, const std::string& path, std::string& e
     return true;
 }
 
-static bool loadReservations(Cafeteria& caf, const std::string& path, std::string& err) {
+// coupons.txt: code|occasion|kind|value|audience|fromDay|toDay|maxUses|uses|active
+static bool loadCoupons(Cafeteria& caf, const std::string& path, std::string& err) {
+    caf.couponCount = 0;
     std::ifstream in(path);
-    if (!in) return true;  // no reservations yet
-    std::string line, f[11];
+    if (!in) return true;  // no coupons yet
+    std::string line, f[10];
     int lineNo = 0;
     while (std::getline(in, line)) {
         lineNo++;
         line = stripCR(line);
         if (isSkippable(line)) continue;
-        int n = splitFields(line, '|', f, 11);
-        if (n != 9 && n != 11) {  // 9 = format before expiresAt/reminderMinutes were stored
-            err = lineError("reservations.txt", lineNo, "expected 11 fields");
+        Coupon c;
+        int active = 0;
+        bool ok = splitFields(line, '|', f, 10) == 10 && (f[2] == "percent" || f[2] == "fixed") &&
+                  parseIntStrict(f[3], c.value) && parseIntStrict(f[5], c.fromDay) && parseIntStrict(f[6], c.toDay) &&
+                  parseIntStrict(f[7], c.maxUses) && parseIntStrict(f[8], c.uses) && parseIntStrict(f[9], active) &&
+                  c.uses >= 0 && (active == 0 || active == 1);
+        if (ok) {
+            c.code = f[0];
+            c.occasion = f[1];
+            c.kind = f[2] == "percent" ? DiscountKind::Percent : DiscountKind::Fixed;
+            c.audience = f[4];
+            c.active = active == 1;
+            int uses = c.uses;
+            ok = addCoupon(caf, "", c) == Result::Ok;  // the same checks as when staff make one
+            if (ok) caf.coupons[caf.couponCount - 1].uses = uses;
+        }
+        if (!ok) {
+            err = lineError("coupons.txt", lineNo, "bad coupon");
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool loadReservations(Cafeteria& caf, const std::string& path, std::string& err) {
+    std::ifstream in(path);
+    if (!in) return true;  // no reservations yet
+    std::string line, f[15];
+    int lineNo = 0;
+    while (std::getline(in, line)) {
+        lineNo++;
+        line = stripCR(line);
+        if (isSkippable(line)) continue;
+        int n = splitFields(line, '|', f, 15);
+        // 9 = before expiresAt/reminderMinutes were stored, 11 = before order tokens,
+        // 12 = before the price paid and coupons
+        if (n != 9 && n != 11 && n != 12 && n != 15) {
+            err = lineError("reservations.txt", lineNo, "expected 15 fields");
             return false;
         }
         Reservation* r = new Reservation;
@@ -132,7 +177,7 @@ static bool loadReservations(Cafeteria& caf, const std::string& path, std::strin
         r->lastNoticeAt = (time_t)lastNoticeAt;
         long long expiresAt = 0;
         int reminderMinutes = 0;
-        if (n == 11 && (!parseIntStrict(f[9], expiresAt) || !parseIntStrict(f[10], reminderMinutes))) {
+        if (n >= 11 && (!parseIntStrict(f[9], expiresAt) || !parseIntStrict(f[10], reminderMinutes))) {
             delete r;
             err = lineError("reservations.txt", lineNo, "bad expiresAt or reminderMinutes");
             return false;
@@ -143,6 +188,23 @@ static bool loadReservations(Cafeteria& caf, const std::string& path, std::strin
         }
         r->expiresAt = (time_t)expiresAt;
         r->reminderMinutes = reminderMinutes;
+        r->token = 0;
+        if (n >= 12 && (!parseIntStrict(f[11], r->token) || r->token < 0)) {
+            delete r;
+            err = lineError("reservations.txt", lineNo, "bad token");
+            return false;
+        }
+        r->priceTaka = menuAt(caf.menu, r->itemIndex)->priceTaka;  // older lines: today's price
+        r->discountTaka = 0;
+        if (n == 15) {
+            if (!parseIntStrict(f[12], r->priceTaka) || r->priceTaka < 0 || !parseIntStrict(f[14], r->discountTaka) ||
+                r->discountTaka < 0) {
+                delete r;
+                err = lineError("reservations.txt", lineNo, "bad price or discount");
+                return false;
+            }
+            r->coupon = f[13];
+        }
         rlAppendNode(caf.reservations, r);  // keeps nextId above every loaded ID
     }
     return true;
@@ -189,6 +251,11 @@ static void rebuild(Cafeteria& caf) {
     }
     qClear(caf.reminders);
     stInit(caf.history);  // the undo stack starts empty after a restart
+
+    // Tokens continue after the highest one used today.
+    caf.nextToken = 1;
+    for (Reservation* r = caf.reservations.head; r != nullptr; r = r->next)
+        if (r->day == caf.currentDay && r->token >= caf.nextToken) caf.nextToken = r->token + 1;
 
     int readyCount = 0;
     for (Reservation* r = caf.reservations.head; r != nullptr; r = r->next) {
@@ -240,7 +307,7 @@ bool loadCafeteria(Cafeteria& caf, const std::string& dataDir, const std::string
     if (caf.currentDay < 19000101) caf.currentDay = dayBefore;
     if (!loadReservations(caf, dataDir + "/reservations.txt", err)) return false;
     rebuild(caf);
-    return loadWaitlists(caf, dataDir + "/waitlist.txt", err);
+    return loadWaitlists(caf, dataDir + "/waitlist.txt", err) && loadCoupons(caf, dataDir + "/coupons.txt", err);
 }
 
 static std::string reservationLine(const Reservation* r) {
@@ -248,19 +315,22 @@ static std::string reservationLine(const Reservation* r) {
            std::to_string(r->quantity) + "|" + std::to_string((long long)r->reservedAt) + "|" +
            statusName(r->status) + "|" + std::to_string((long long)r->readyAt) + "|" +
            std::to_string((long long)r->lastNoticeAt) + "|" + std::to_string(r->day) + "|" +
-           std::to_string((long long)r->expiresAt) + "|" + std::to_string(r->reminderMinutes) + "\n";
+           std::to_string((long long)r->expiresAt) + "|" + std::to_string(r->reminderMinutes) + "|" +
+           std::to_string(r->token) + "|" + std::to_string(r->priceTaka) + "|" + r->coupon + "|" +
+           std::to_string(r->discountTaka) + "\n";
 }
 
 bool saveCafeteria(Cafeteria& caf, const std::string& dataDir, std::string& err) {
     if (!ensureDir(dataDir, err)) return false;
 
     std::string menu =
-        "# category|name|kind|stock|dailyLimit|priceTaka|imageFile|available|removed  (line order = item index)\n";
+        "# category|name|kind|stock|dailyLimit|priceTaka|imageFile|available|removed|teachersOnly  (line order = item index)\n";
     for (int i = 0; i < caf.menu.count; i++) {
         const MenuItem& m = caf.menu.items[i];
         menu += m.category + "|" + m.name + "|" + (m.kind == ItemKind::Fresh ? "fresh" : "packaged") + "|" +
                 std::to_string(m.stock) + "|" + std::to_string(m.dailyLimit) + "|" + std::to_string(m.priceTaka) +
-                "|" + m.imageFile + "|" + (m.available ? "1" : "0") + "|" + (m.removed ? "1" : "0") + "\n";
+                "|" + m.imageFile + "|" + (m.available ? "1" : "0") + "|" + (m.removed ? "1" : "0") + "|" +
+                (m.teachersOnly ? "1" : "0") + "\n";
     }
 
     std::string settings;
@@ -272,7 +342,7 @@ bool saveCafeteria(Cafeteria& caf, const std::string& dataDir, std::string& err)
     settings += "current_day=" + std::to_string(caf.currentDay) + "\n";
     settings += "next_id=" + std::to_string(caf.reservations.nextId) + "\n";
 
-    std::string res = "# id|user|item|qty|reservedAt|status|readyAt|lastNoticeAt|day|expiresAt|reminderMinutes\n";
+    std::string res = "# id|user|item|qty|reservedAt|status|readyAt|lastNoticeAt|day|expiresAt|reminderMinutes|token|priceTaka|coupon|discountTaka\n";
     for (Reservation* r = caf.reservations.head; r != nullptr; r = r->next) res += reservationLine(r);
 
     std::string wait = "# day|item|user|qty|joinedAt  (queue order, front first)\n";
@@ -286,6 +356,15 @@ bool saveCafeteria(Cafeteria& caf, const std::string& dataDir, std::string& err)
         }
     }
 
+    std::string coupons = "# code|occasion|kind|value|audience|fromDay|toDay|maxUses|uses|active\n";
+    for (int i = 0; i < caf.couponCount; i++) {
+        const Coupon& c = caf.coupons[i];
+        coupons += c.code + "|" + c.occasion + "|" + (c.kind == DiscountKind::Percent ? "percent" : "fixed") + "|" +
+                   std::to_string(c.value) + "|" + c.audience + "|" + std::to_string(c.fromDay) + "|" +
+                   std::to_string(c.toDay) + "|" + std::to_string(c.maxUses) + "|" + std::to_string(c.uses) + "|" +
+                   (c.active ? "1" : "0") + "\n";
+    }
+
     if (caf.archive.size > 0) {
         std::string hist;
         for (Reservation* r = caf.archive.head; r != nullptr; r = r->next) hist += reservationLine(r);
@@ -295,5 +374,6 @@ bool saveCafeteria(Cafeteria& caf, const std::string& dataDir, std::string& err)
     return atomicWrite(dataDir + "/menu.txt", menu, err) &&
            atomicWrite(dataDir + "/settings.txt", settings, err) &&
            atomicWrite(dataDir + "/reservations.txt", res, err) &&
-           atomicWrite(dataDir + "/waitlist.txt", wait, err);
+           atomicWrite(dataDir + "/waitlist.txt", wait, err) &&
+           atomicWrite(dataDir + "/coupons.txt", coupons, err);
 }

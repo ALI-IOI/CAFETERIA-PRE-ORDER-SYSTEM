@@ -16,6 +16,7 @@ struct MenuItem {
     std::string imageFile;  // server-chosen picture file in data/images, or "" for the demo picture
     bool available = true;  // false: hidden from the menu, cannot be reserved
     bool removed = false;   // retired by staff: hidden everywhere, but keeps its index (reservations refer to it)
+    bool teachersOnly = false;  // a teachers' special: only teachers see it on the menu and can reserve it
 };
 
 const int MAX_MENU_ITEMS = 32;

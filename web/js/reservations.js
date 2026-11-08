@@ -52,6 +52,7 @@ async function load() {
     const classes = [res.status === "Ready" ? "is-ready" : "", changed ? "is-changed" : ""].filter(Boolean).join(" ");
     return el("tr", { class: classes || null },
       el("th", { scope: "row" }, res.code),
+      el("td", {}, res.tokenText ? el("span", { class: "token-tag" }, res.tokenText) : "–"),
       el("td", {}, res.item),
       el("td", { class: "num" }, res.quantity),
       // ready orders from yesterday stay in this list, so every time carries its date
@@ -61,9 +62,35 @@ async function load() {
       el("td", {}, cancel));
   });
   document.getElementById("rows").replaceChildren(...rows);
+  drawTokens(r.reservations);
   table.hidden = rows.length === 0;
   document.getElementById("empty").hidden = rows.length > 0;
   restoreFocus();
+}
+
+// One stamp per order token still in play: cooking while any dish is Reserved,
+// ready once every remaining dish is Ready. Collected, cancelled and expired
+// orders drop out.
+function drawTokens(reservations) {
+  const byToken = new Map();
+  for (const res of reservations) {
+    if (!res.token || res.status === "Cancelled") continue;
+    const t = byToken.get(res.token) || { text: res.tokenText, cooking: 0, ready: 0, dishes: 0 };
+    t.dishes++;
+    if (res.status === "Reserved") t.cooking++;
+    if (res.status === "Ready") t.ready++;
+    byToken.set(res.token, t);
+  }
+  const stamps = [];
+  for (const [, t] of [...byToken].sort((a, b) => a[0] - b[0])) {
+    if (t.cooking > 0) {
+      stamps.push(tokenStamp("Cooking", t.text, t.ready ? t.ready + " of " + t.dishes + " ready" : "", "", "small"));
+    } else if (t.ready > 0) {
+      stamps.push(tokenStamp("Ready", t.text, "Collect now", "ready", "small"));
+    }
+  }
+  document.getElementById("tokens").replaceChildren(...stamps);
+  document.getElementById("tokens-hint").hidden = stamps.length === 0;
 }
 
 // The history comes merge-sorted newest first from the server; each day gets

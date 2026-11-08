@@ -100,6 +100,25 @@ static void createDemoAccounts() {
     addPerson(g_app->auth, "3000000000000001", "rahim@example.com", "demo-driver-pass");
 }
 
+// Two sample coupons, so a visitor can try one at the tray (staff can change them).
+static void createDemoCoupons() {
+    Coupon c;
+    c.code = "WELCOME10";
+    c.occasion = "Demo welcome week";
+    c.kind = DiscountKind::Percent;
+    c.value = 10;
+    c.audience = "everyone";
+    c.fromDay = c.toDay = c.maxUses = c.uses = 0;
+    c.active = true;
+    addCoupon(g_app->caf, "demo.staff", c);
+    c.code = "TEACH50";
+    c.occasion = "Teachers' Day";
+    c.kind = DiscountKind::Fixed;
+    c.value = 50;
+    c.audience = "teacher";
+    addCoupon(g_app->caf, "demo.staff", c);
+}
+
 // ---- form decoding -------------------------------------------------------------------
 
 static int hexDigit(char c) {
@@ -181,7 +200,10 @@ EMSCRIPTEN_KEEPALIVE int cafe_boot(int y, int mo, int d, double realNow) {
     app.email = makeSender(smtp, std::string(DATA) + "/outbox");
     mailerInit(app.mailer, app.email, app.clock, DATA);
     if (!mailerLoad(app.mailer, err)) return 1;
-    if (firstVisit) createDemoAccounts();
+    if (firstVisit) {
+        createDemoAccounts();
+        createDemoCoupons();
+    }
     loadDemoSessions();
 
     // The time the browser was away, as the server's timer would have seen it (up to a day).

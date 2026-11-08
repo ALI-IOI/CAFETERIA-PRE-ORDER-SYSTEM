@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#007377">
+  <meta name="theme-color" content="#B42318">
   <link rel="preload" href="/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
   <title>My reservations – BAUSTK Cafeteria</title>
   <link rel="stylesheet" href="/css/app.css">
@@ -29,11 +29,13 @@
     <p id="msg" class="msg" role="status" aria-live="polite"></p>
 
     <h2 id="today-h">Today</h2>
+    <div class="token-strip" id="tokens" aria-label="Your tokens"></div>
+    <p class="hint" id="tokens-hint" hidden>Show your token at the counter when it is ready. Follow every token on the <a href="/board.html">token board</a>.</p>
     <div id="rows-state"></div>
     <div class="card table-wrap" id="today-table">
       <table aria-labelledby="today-h">
         <thead>
-          <tr><th scope="col">Reservation</th><th scope="col">Food</th><th scope="col" class="num">Qty</th>
+          <tr><th scope="col">Reservation</th><th scope="col">Token</th><th scope="col">Food</th><th scope="col" class="num">Qty</th>
               <th scope="col">Reserved at</th><th scope="col">Status</th><th scope="col">Fresh until</th>
               <th scope="col"><span class="visually-hidden">Action</span></th></tr>
         </thead>
