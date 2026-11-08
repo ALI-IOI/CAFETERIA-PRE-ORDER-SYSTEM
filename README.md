@@ -15,7 +15,7 @@ The system has two login terminals. Both are live, with the demo accounts listed
 
 | Terminal | Who logs in there | Live page | Demo login |
 |---|---|---|---|
-| **Public login** | Students, teachers and university staff | [ali-ioi.github.io/CAFETERIA-PRE-ORDER-SYSTEM/login.html](https://ali-ioi.github.io/CAFETERIA-PRE-ORDER-SYSTEM/login.html) | `ayon@uni.example` / `demo-student-pass` (more on the page) |
+| **Public login** | Students, teachers and university staff | [ali-ioi.github.io/CAFETERIA-PRE-ORDER-SYSTEM/login.html](https://ali-ioi.github.io/CAFETERIA-PRE-ORDER-SYSTEM/login.html) | `ali@uni.example` / `demo-student-pass` (more on the page) |
 | **Staff login** | Cafeteria staff only | [ali-ioi.github.io/CAFETERIA-PRE-ORDER-SYSTEM/staff/login.html](https://ali-ioi.github.io/CAFETERIA-PRE-ORDER-SYSTEM/staff/login.html) | `demo.staff` / `demo-staff-pass` |
 
 The real C++ server runs in your browser, compiled to WebAssembly: each browser gets its own demo

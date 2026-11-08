@@ -94,7 +94,7 @@ static void registerDemo(const char* email, const char* id, const char* password
 
 static void createDemoAccounts() {
     addStaff(g_app->auth, "demo.staff", "Demo Staff", "demo-staff-pass");
-    registerDemo("ayon@uni.example", "1072520005101030", "demo-student-pass");
+    registerDemo("ali@uni.example", "1072520005101050", "demo-student-pass");
     registerDemo("teacher1@uni.example", "2000000000000001", "demo-teacher-pass");
     registerDemo("guard1@uni.example", "3000000000000002", "demo-guard-pass");
     addPerson(g_app->auth, "3000000000000001", "rahim@example.com", "demo-driver-pass");
@@ -203,6 +203,8 @@ EMSCRIPTEN_KEEPALIVE int cafe_boot(int y, int mo, int d, double realNow) {
     if (firstVisit) {
         createDemoAccounts();
         createDemoCoupons();
+    } else if (ulFind(app.auth.users, "ali@uni.example") == nullptr) {
+        registerDemo("ali@uni.example", "1072520005101050", "demo-student-pass");  // visitors from before the switch
     }
     loadDemoSessions();
 
