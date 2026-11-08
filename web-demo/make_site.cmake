@@ -32,11 +32,12 @@ endforeach()
 # pages; pages that need a login are kept out of search results. Every page gets the icon.
 file(GLOB_RECURSE html "${OUT}/*.html")
 set(SITE "https://ali-ioi.github.io${BASE}")
-set(ICON "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23007377'/%3E%3Cpath d='M6 15h20a10 10 0 0 1-20 0z' fill='%23E87722'/%3E%3Cpath d='M12 6c-1 2 1 3 0 5M16 5c-1 2 1 3 0 5M20 6c-1 2 1 3 0 5' stroke='%23ffffff' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")
+set(ICON "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23B42318'/%3E%3Cpath d='M6 15h20a10 10 0 0 1-20 0z' fill='%23F2B531'/%3E%3Cpath d='M12 6c-1 2 1 3 0 5M16 5c-1 2 1 3 0 5M20 6c-1 2 1 3 0 5' stroke='%23FBF1E4' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")
 set(ABOUT "Live demo of a C++ data-structures project (BAUSTK DSA I) running in the browser as WebAssembly.")
-set(DESC_index.html "Pre-order freshly cooked cafeteria food at BAUSTK before the cutoff: students, teachers and university staff reserve, the kitchen marks food ready and everyone gets an email. ${ABOUT}")
+set(DESC_index.html "Pre-order freshly cooked cafeteria food at BAUSTK before the cutoff: students, teachers and university staff reserve, get an order token, and collect at the counter when the token board shows it ready. ${ABOUT}")
 set(DESC_login.html "Public login of the BAUSTK cafeteria pre-order system for students, teachers and university staff, with demo accounts. ${ABOUT}")
 set(DESC_register.html "Create a BAUSTK cafeteria account with a university email and ID, verified by an emailed code. ${ABOUT}")
+set(DESC_board.html "The BAUSTK cafeteria token board: which order tokens are ready at the counter and which are still cooking. Token numbers only. ${ABOUT}")
 set(DESC_staff/login.html "Cafeteria staff login of the BAUSTK pre-order system: mark food ready, manage the menu, stock and settings, undo actions. ${ABOUT}")
 foreach(f ${html})
   file(RELATIVE_PATH rel "${OUT}" "${f}")
@@ -60,6 +61,7 @@ file(WRITE "${OUT}/sitemap.xml" "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
   <url><loc>${SITE}/</loc></url>
   <url><loc>${SITE}/login.html</loc></url>
   <url><loc>${SITE}/register.html</loc></url>
+  <url><loc>${SITE}/board.html</loc></url>
   <url><loc>${SITE}/staff/login.html</loc></url>
 </urlset>
 ")

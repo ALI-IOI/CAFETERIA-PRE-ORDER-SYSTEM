@@ -130,6 +130,12 @@ static bool restore(Cafeteria& caf, const StaffAction& a) {
             item->available = a.oldValue != 0;
             return true;
         }
+        case ActionType::SetTeachersOnly: {
+            MenuItem* item = menuAt(caf.menu, a.itemIndex);
+            if (item == nullptr || item->removed) return false;
+            item->teachersOnly = a.oldValue != 0;
+            return true;
+        }
         case ActionType::MarkCollected: {
             Reservation* r = rlFindById(caf.reservations, a.reservationId);
             if (r == nullptr || r->status != ResStatus::Collected) return false;
@@ -188,7 +194,8 @@ Reservation* staffSearchById(const Cafeteria& caf, int id) {
 // ---- menu items (redesign) ------------------------------------------------------
 
 Result addMenuItem(Cafeteria& caf, const std::string& staff, const std::string& category,
-                   const std::string& name, ItemKind kind, int priceTaka, int amount, int& newIndex) {
+                   const std::string& name, ItemKind kind, int priceTaka, int amount, int& newIndex,
+                   bool teachersOnly) {
     (void)staff;
     newIndex = -1;
     // The category starts the menu.txt line, where a leading '#' marks a comment.
@@ -208,6 +215,7 @@ Result addMenuItem(Cafeteria& caf, const std::string& staff, const std::string& 
     m.reservedToday = 0;
     m.priceTaka = priceTaka;
     m.available = true;
+    m.teachersOnly = teachersOnly;
     menuAdd(caf.menu, m);
     newIndex = caf.menu.count - 1;
     return Result::Ok;
@@ -242,6 +250,44 @@ Result setAvailable(Cafeteria& caf, const std::string& staff, int itemIndex, boo
     undoRecorded = stPush(caf.history, a);
     if (available) promoteWaitlist(caf, itemIndex, out);
     return Result::Ok;
+}
+
+Result setTeachersOnly(Cafeteria& caf, const std::string& staff, int itemIndex, bool teachersOnly, bool& undoRecorded) {
+    undoRecorded = false;
+    MenuItem* item = menuAt(caf.menu, itemIndex);
+    if (item == nullptr || item->removed) return Result::BadItem;
+    if (item->kind != ItemKind::Fresh) return Result::NotFresh;  // specials are cooked dishes; snacks stay for everyone
+    StaffAction a = newAction(caf, ActionType::SetTeachersOnly, staff);
+    a.itemIndex = itemIndex;
+    a.oldValue = item->teachersOnly ? 1 : 0;
+    a.newValue = teachersOnly ? 1 : 0;
+    a.description = "Made " + item->name + (teachersOnly ? " a teachers' special" : " open to everyone");
+    item->teachersOnly = teachersOnly;
+    undoRecorded = stPush(caf.history, a);
+    return Result::Ok;
+}
+
+// a comes before b in the staff order list: newer order (higher token) first,
+// then the order's dishes in the order they were reserved.
+static bool orderBefore(const Reservation* a, const Reservation* b) {
+    if (a->token != b->token) return a->token > b->token;
+    return a->id < b->id;
+}
+
+int staffOrdersSorted(const Cafeteria& caf, Reservation** outArr, int cap) {
+    int n = 0;
+    for (Reservation* r = caf.reservations.head; r != nullptr && n < cap; r = r->next)
+        if (r->day == caf.currentDay && r->token > 0) outArr[n++] = r;
+    for (int i = 1; i < n; i++) {  // insertion sort
+        Reservation* key = outArr[i];
+        int j = i - 1;
+        while (j >= 0 && orderBefore(key, outArr[j])) {
+            outArr[j + 1] = outArr[j];
+            j--;
+        }
+        outArr[j + 1] = key;
+    }
+    return n;
 }
 
 Result removeMenuItem(Cafeteria& caf, const std::string& staff, int itemIndex, bool& undoRecorded) {

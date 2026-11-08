@@ -169,3 +169,29 @@ the earlier palettes and are kept as history.
 | Targets | Link-style buttons ("Use a different email", "Log out") are 44 px tall |
 | Windows contrast themes | The selected category tab gets a thicker border and an underline; the current staff section an underline |
 | Phones | All 8 pages at 360 px without sideways scrolling; the five student links fit one row |
+
+## Re-check after the "chili and rice" palette and order tokens (2026-11-08)
+
+The palette and the landing page were redone (inspired by the restaurant site Délice), and order
+tokens were added: a token board page, token stamps on My reservations and in the tray, and a token
+counter in the staff portal. The sections above are kept as history.
+
+| Check | Result |
+|---|---|
+| Contrast pairs | All 35 pairs in `tools/contrast_check.cpp` pass. Tamarind text #2A1410 on the rice-cream page #FBF1E4 15.6:1, secondary #6A4237 7.7:1, cream on the chili band #B42318 5.9:1, cream on the curry-leaf ready stamps #2F6B3C 5.7:1, tamarind on turmeric marks #F2B531 9.5:1. Turmeric and mint are never used as text or lines |
+| Controls | Field and select edges #8C6A5C, 4.3:1 on cream (3:1 needed); buttons a chili edge, 5.9:1 |
+| Focus | Tamarind ring on cream; cream ring inside the chili header, home field and tray bar |
+| Token stamps | A word ("Now serving", "Ready", "Cooking"), the number and a note, all as text: the state is never shown by colour alone. Ready stamps are green with cream text, cooking ones cream with chili text |
+| Token board | Newly ready tokens are announced in a polite live region ("Token 017 is ready"); the board refreshes every 5 seconds without moving focus; numbers only, no names |
+| Motion | A newly called token on the board fades and turns in over 300 ms; nothing else on load; reduced motion switches it off (`build/check_pages`) |
+| Phones | All 9 pages at 375 px without sideways scrolling (checked in the browser) |
+
+## Re-check after teachers' specials and coupons (2026-11-09)
+
+| Check | Result |
+|---|---|
+| Teachers' special tag | Text ("Teachers' special"), not colour alone: cream on curry leaf #2F6B3C, 5.7:1 (`contrast_check`) |
+| Coupon field | Labelled input with an Apply button; the result ("BOISHAKH20 applied…", or why a code is refused) is in a polite live region tied to the field with `aria-describedby`; each offer's Use button and the Remove button name their coupon for screen readers |
+| Tray totals | Dishes, the coupon with its discount, and the total are text rows; the discount is not shown by colour |
+| Staff portal | "Who can order" selects and the coupon on/off checkboxes have accessible names per dish or code; the coupon form uses visible labels and hints; the order list is a table with a caption and a "Token" label for each token number |
+| Phones | Menu and tray at 375 px without sideways scrolling (checked in the browser) |

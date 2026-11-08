@@ -119,30 +119,30 @@
 
   // ---- the demo bar ------------------------------------------------------------------
   const css = `
-    .demo-bar{position:fixed;left:0;right:0;bottom:0;z-index:1000;background:#002855;color:#ffffff;
+    .demo-bar{position:fixed;left:0;right:0;bottom:0;z-index:1000;background:#2A1410;color:#FFFAF3;
       font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:8px 16px;
-      display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;box-shadow:0 -2px 8px #00285540}
+      display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;box-shadow:0 -2px 8px #2A141040}
     .demo-bar p{margin:0;flex:1 1 320px}
-    .demo-bar b{color:#B9DADB}
+    .demo-bar b{color:#F2B531}
     .demo-bar .demo-actions{display:flex;flex-wrap:wrap;gap:8px}
     .demo-bar button,.demo-accounts button{font:inherit;cursor:pointer;border-radius:6px;padding:6px 12px;
-      border:1px solid #B9DADB;background:#ffffff;color:#002855}
-    .demo-bar button:focus-visible,.demo-accounts button:focus-visible{outline:3px solid #E87722;outline-offset:2px}
+      border:1px solid #F2B531;background:#FFFAF3;color:#2A1410}
+    .demo-bar button:focus-visible,.demo-accounts button:focus-visible{outline:3px solid #F2B531;outline-offset:2px}
     .demo-pad{height:96px}
     @media (max-width:640px){.demo-pad{height:176px}}
-    .demo-accounts{margin:16px 0;padding:16px;border:2px dashed #007377;border-radius:12px;background:#ffffff;color:#002855}
+    .demo-accounts{margin:16px 0;padding:16px;border:2px dashed #B42318;border-radius:12px;background:#FFFAF3;color:#2A1410}
     .demo-accounts h2{font-size:18px;margin:0 0 8px}
     .demo-accounts p{margin:0 0 8px}
     .demo-accounts ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
     .demo-accounts li{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}
-    .demo-accounts code{background:#B9DADB;color:#002855;padding:1px 6px;border-radius:4px}
-    dialog.demo-inbox{max-width:min(720px,calc(100vw - 32px));width:100%;border:0;border-radius:12px;padding:0;color:#002855}
-    dialog.demo-inbox::backdrop{background:#00285599}
-    .demo-inbox header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#007377;color:#ffffff}
+    .demo-accounts code{background:#F2B531;color:#2A1410;padding:1px 6px;border-radius:4px}
+    dialog.demo-inbox{max-width:min(720px,calc(100vw - 32px));width:100%;border:0;border-radius:12px;padding:0;color:#2A1410}
+    dialog.demo-inbox::backdrop{background:#2A141099}
+    .demo-inbox header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#B42318;color:#FFFAF3}
     .demo-inbox h2{margin:0;font-size:18px}
-    .demo-inbox header button{font:inherit;border:1px solid #ffffff;background:transparent;color:#ffffff;border-radius:6px;padding:4px 10px;cursor:pointer}
+    .demo-inbox header button{font:inherit;border:1px solid #FFFAF3;background:transparent;color:#FFFAF3;border-radius:6px;padding:4px 10px;cursor:pointer}
     .demo-inbox .demo-mails{padding:16px;max-height:70vh;overflow:auto;display:grid;gap:12px}
-    .demo-inbox pre{white-space:pre-wrap;word-break:break-word;margin:0;padding:12px;background:#f3f8f8;border-radius:8px;font:13px/1.5 ui-monospace,Consolas,monospace}
+    .demo-inbox pre{white-space:pre-wrap;word-break:break-word;margin:0;padding:12px;background:#F6E6D2;border-radius:8px;font:13px/1.5 ui-monospace,Consolas,monospace}
   `;
   const style = document.createElement("style");
   style.textContent = css;

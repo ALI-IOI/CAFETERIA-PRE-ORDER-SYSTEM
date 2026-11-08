@@ -105,6 +105,16 @@ function itemRow(item) {
   avail.addEventListener("change", () =>
     action("/api/staff/items/available", { item: item.index, available: avail.checked ? "1" : "0" }));
 
+  const whoId = "who-" + item.index;
+  let who = el("span", { class: "hint" }, "Everyone");
+  if (item.kind === "fresh") {
+    who = el("select", { id: whoId, class: "who-select", "aria-label": "Who can order " + item.name },
+      el("option", { value: "0", selected: !item.teachersOnly }, "Everyone"),
+      el("option", { value: "1", selected: item.teachersOnly }, "Teachers only"));
+    who.addEventListener("change", () =>
+      action("/api/staff/items/teachers", { item: item.index, teachersOnly: who.value }));
+  }
+
   const fileInput = el("input", { id: fileId, type: "file", accept: "image/jpeg,image/png,image/webp" });
   const uploadButton = el("button", { class: "btn", type: "submit" }, "Upload");
   const uploadForm = el("form", { class: "row" },
@@ -129,9 +139,11 @@ function itemRow(item) {
 
   return el("tr", {},
     el("td", {}, el("img", { class: "thumb", src: item.image, alt: "", width: 64, height: 44 })),
-    el("th", { scope: "row" }, item.name, el("span", { class: "hint" }, item.category + ", " + (item.kind === "fresh" ? "cooked to order" : "packaged"))),
+    el("th", { scope: "row" }, item.name, el("span", { class: "hint" }, item.category + ", " + (item.kind === "fresh" ? "cooked to order" : "packaged")),
+      item.teachersOnly ? el("span", { class: "special-tag" }, "Teachers’ special") : ""),
     el("td", {}, priceForm),
     el("td", {}, el("label", { for: availId, class: "check" }, el("span", { class: "visually-hidden" }, item.name + " available today"), avail)),
+    el("td", {}, who),
     el("td", {}, uploadForm),
     el("td", {}, el("button", {
       class: "btn btn--danger", type: "button", "aria-label": "Remove " + item.name + " from the menu",
@@ -215,6 +227,37 @@ function renderHistory(o) {
       plain(a.description), el("span", { class: "when" }, a.at + " by " + a.staff))));
 }
 
+// Token counter: the tokens whose food is all ready, first ready first, each with
+// its owner and a hand-over button; tokens still cooking are counted below the form.
+async function loadTokens() {
+  const box = document.getElementById("tokens-state");
+  let r;
+  try {
+    r = await api.get("/api/staff/tokens");
+  } catch (e) {
+    r = { ok: false, status: 0 };
+  }
+  if (!requireLogin(r, "/staff/login.html")) return;
+  if (!r.ok || !Array.isArray(r.tokens)) {
+    listState(box, "error", "Couldn’t load today’s tokens. Try again.", refresh);
+    return;
+  }
+  listState(box, null);
+  const ready = r.tokens.filter((t) => t.state === "ready")
+    .sort((a, b) => (a.readyAt < b.readyAt ? -1 : a.readyAt > b.readyAt ? 1 : a.token - b.token));
+  const cooking = r.tokens.filter((t) => t.state === "cooking");
+  document.getElementById("tokens-summary").textContent =
+    ready.length + (ready.length === 1 ? " token" : " tokens") + " ready at the counter, " +
+    cooking.length + " still cooking, " + r.tokens.length + " issued today.";
+  document.getElementById("ready-tokens").replaceChildren(...ready.map((t) => el("li", {},
+    tokenStamp("Ready", t.text, "", "ready", "small"),
+    el("div", {},
+      el("strong", {}, t.ready + (t.ready === 1 ? " dish" : " dishes")),
+      el("p", {}, t.user)),
+    el("button", { class: "btn", type: "button", "aria-label": "Hand over token " + t.text,
+      onclick: (e) => action("/api/staff/tokens/handover", { token: t.token }, e.currentTarget, "Saving…") }, "Hand over"))));
+}
+
 // The boxes above the staff tables carry their loading and error states.
 const LIST_STATES = ["items-state", "stock-state", "res-state"];
 
@@ -264,6 +307,9 @@ async function refresh() {
       ? " " + o.emailsWaiting + (o.emailsWaiting === 1 ? " email" : " emails") + " could not be sent and will be tried again after 1, 5 and 15 minutes."
       : " No emails waiting to retry.");
   await loadReservations(document.getElementById("q").value.trim());
+  await loadTokens();
+  await loadOrders();
+  await loadCoupons();
   restoreFocus();
 }
 
@@ -292,6 +338,14 @@ document.getElementById("clear").addEventListener("click", () => {
   loadReservations("");
 });
 document.getElementById("undo").addEventListener("click", (e) => action("/api/staff/undo", {}, e.currentTarget, "Undoing…"));
+document.getElementById("handover").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  if (!checkFields(form)) return;
+  const input = document.getElementById("tok");
+  await action("/api/staff/tokens/handover", { token: input.value.trim() }, form.querySelector("button"), "Saving…");
+  input.value = "";
+});
 
 document.getElementById("settings-form").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -330,6 +384,7 @@ document.getElementById("add-item").addEventListener("submit", async (e) => {
     kind: document.getElementById("ni-kind").value,
     price: document.getElementById("ni-price").value,
     amount: document.getElementById("ni-amount").value,
+    teachers: document.getElementById("ni-who").value,
   });
   done();
   if (!requireLogin(r, "/staff/login.html")) return;
@@ -340,3 +395,110 @@ document.getElementById("add-item").addEventListener("submit", async (e) => {
 wireLogout("logout", "/staff/login.html");
 refresh();
 watchSections();
+
+// ---- orders placed --------------------------------------------------------
+
+function orderRow(o) {
+  const dishes = el("ul", { class: "order-dishes" }, ...o.dishes.map((d) => el("li", {},
+    el("span", {}, d.item + " × " + d.quantity),
+    el("span", { class: "hint" }, d.code + ", " + taka(d.price) + " each"),
+    statusChip(d.status))));
+  const pay = o.cancelled
+    ? el("span", { class: "hint" }, "Cancelled")
+    : el("div", {}, el("strong", { class: "num" }, "৳ " + o.toPay),
+        o.discount > 0 ? el("span", { class: "hint" }, "৳ " + o.subtotal + " less ৳ " + o.discount + " (coupon " + o.coupon + ")") : "");
+  return el("tr", { class: o.cancelled ? "is-muted" : null },
+    el("th", { scope: "row" }, el("span", { class: "visually-hidden" }, "Token "), el("span", { class: "order-token" }, o.tokenText)),
+    el("td", {}, el("strong", {}, o.name || o.user),
+      el("span", { class: "hint" }, (o.role ? roleLabel(o.role) + ", " : "") + o.user),
+      el("span", { class: "hint" }, "Placed " + o.placedAt)),
+    el("td", {}, dishes),
+    el("td", {}, pay));
+}
+
+async function loadOrders() {
+  const state = document.getElementById("orders-state");
+  let r;
+  try {
+    r = await api.get("/api/staff/orders");
+  } catch (e) {
+    r = { ok: false, status: 0 };
+  }
+  if (!requireLogin(r, "/staff/login.html")) return;
+  if (!r.ok || !Array.isArray(r.orders)) {
+    listState(state, "error", "Couldn’t load today’s orders. Try again.", refresh);
+    return;
+  }
+  listState(state, null);
+  const live = r.orders.filter((o) => !o.cancelled);
+  const due = live.reduce((sum, o) => sum + o.toPay, 0);
+  document.getElementById("orders-summary").textContent = r.orders.length === 0 ? "" :
+    live.length + (live.length === 1 ? " order" : " orders") + " today, ৳ " + due + " to collect at the counter.";
+  document.getElementById("order-rows").replaceChildren(...r.orders.map(orderRow));
+  document.getElementById("orders-empty").hidden = r.orders.length > 0;
+}
+
+// ---- coupons --------------------------------------------------------------
+
+function couponRow(c) {
+  const activeId = "coupon-on-" + c.code;
+  const on = el("input", { id: activeId, type: "checkbox", checked: c.active });
+  on.addEventListener("change", () =>
+    action("/api/staff/coupons/active", { code: c.code, active: on.checked ? "1" : "0" }));
+  const days = c.from && c.to ? c.from + " to " + c.to : c.from ? "From " + c.from : c.to ? "Until " + c.to : "Every day";
+  return el("tr", { class: c.state === "Working today" ? null : "is-muted" },
+    el("th", { scope: "row" }, c.code, el("span", { class: "hint" }, c.occasion)),
+    el("td", {}, c.text),
+    el("td", {}, c.audienceText),
+    el("td", {}, days, el("span", { class: "hint" }, c.state)),
+    el("td", { class: "num" }, c.uses + (c.maxUses > 0 ? " of " + c.maxUses : "")),
+    el("td", {}, el("label", { for: activeId, class: "check" },
+      el("span", { class: "visually-hidden" }, "Coupon " + c.code + " switched on"), on)),
+    el("td", {}, el("button", {
+      class: "btn btn--danger", type: "button", "aria-label": "Remove coupon " + c.code,
+      onclick: (e) => action("/api/staff/coupons/remove", { code: c.code }, e.currentTarget, "Removing…"),
+    }, "Remove")));
+}
+
+async function loadCoupons() {
+  const state = document.getElementById("coupons-state");
+  let r;
+  try {
+    r = await api.get("/api/staff/coupons");
+  } catch (e) {
+    r = { ok: false, status: 0 };
+  }
+  if (!requireLogin(r, "/staff/login.html")) return;
+  if (!r.ok || !Array.isArray(r.coupons)) {
+    listState(state, "error", "Couldn’t load the coupons. Try again.", refresh);
+    return;
+  }
+  listState(state, null);
+  document.getElementById("coupon-rows").replaceChildren(...r.coupons.map(couponRow));
+  document.getElementById("coupons-empty").hidden = r.coupons.length > 0;
+}
+
+document.getElementById("add-coupon").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!checkFields(e.target)) return;
+  const done = busy(e.target.querySelector("button[type=submit]"), "Making…");
+  let r;
+  try {
+    r = await api.post("/api/staff/coupons", {
+      code: document.getElementById("cp-code").value.trim(),
+      occasion: document.getElementById("cp-occasion").value.trim(),
+      kind: document.getElementById("cp-kind").value,
+      value: document.getElementById("cp-value").value,
+      audience: document.getElementById("cp-audience").value,
+      from: document.getElementById("cp-from").value,
+      to: document.getElementById("cp-to").value,
+      maxUses: document.getElementById("cp-max").value,
+    });
+  } catch (err) {
+    r = { ok: false, error: "Could not reach the server. Nothing was changed. Try again." };
+  }
+  done();
+  if (!requireLogin(r, "/staff/login.html")) return;
+  if (report(r)) e.target.reset();
+  refresh();
+});

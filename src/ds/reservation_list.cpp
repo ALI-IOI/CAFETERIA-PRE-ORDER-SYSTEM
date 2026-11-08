@@ -34,6 +34,9 @@ Reservation* rlAppend(ReservationList& list, const std::string& user, int itemIn
     node->expiresAt = 0;
     node->reminderMinutes = 0;
     node->day = day;
+    node->token = 0;
+    node->priceTaka = 0;
+    node->discountTaka = 0;
     rlAppendNode(list, node);
     return node;
 }

@@ -10,6 +10,22 @@
 #include "ds/wait_queue.h"
 #include "ds/reservation_list.h"
 
+// A discount coupon, set up by cafeteria staff for an occasion (coupons.cpp).
+enum class DiscountKind { Percent, Fixed };
+struct Coupon {
+    std::string code;      // what people type: 3-16 letters and digits, kept in capitals
+    std::string occasion;  // what it is for, e.g. "Teachers' Day"
+    DiscountKind kind;
+    int value;             // Percent: 1-100; Fixed: taka off the order
+    std::string audience;  // "everyone", "student", "teacher" or "employee"
+    int fromDay;           // YYYYMMDD, first day it works (0 = no start)
+    int toDay;             // YYYYMMDD, last day it works (0 = no end)
+    int maxUses;           // orders it may be used on in all (0 = no limit)
+    int uses;              // orders it has been used on
+    bool active;           // staff can switch it off without deleting it
+};
+const int MAX_COUPONS = 64;
+
 struct Cafeteria {
     MenuArray menu;                   // array: menu and stock
     ReservationList reservations;     // linked list: every reservation
@@ -22,6 +38,9 @@ struct Cafeteria {
     Clock* clock;
     int currentDay;                   // YYYYMMDD the counters belong to
     int cookingCapacity;
+    int nextToken;                    // order token the next order of today gets (1, 2, ...)
+    Coupon coupons[MAX_COUPONS];      // array: staff-made discount coupons, in the order they were made
+    int couponCount;
 };
 
 enum class Result {
@@ -49,6 +68,17 @@ enum class Result {
     NotAvailable,
     MenuFull,
     ItemInUse,
+    NoSuchToken,
+    TokenNotReady,
+    TokenDone,
+    TeachersOnly,
+    BadCoupon,
+    CouponNotToday,
+    CouponNotForYou,
+    CouponUsedUp,
+    CouponAlreadyUsed,
+    CouponExists,
+    CouponsFull,
 };
 
 const char* resultMessage(Result r);
@@ -59,8 +89,9 @@ void cafFree(Cafeteria& caf);
 // Checks, in order: BadItem, NotFresh, BadQuantity, CutoffPassed, SoldOut,
 // UserLimit, QueueFull. On Ok: new node at the list tail, portions taken from
 // the array, reservation enqueued in the item's cooking queue, confirmation queued.
+// teacher: the person is a teacher (teachers' specials need it; everyone else gets TeachersOnly).
 Result reserve(Cafeteria& caf, const std::string& user, int itemIndex, int quantity,
-               NotificationList& out, Reservation** created);
+               NotificationList& out, Reservation** created, bool teacher = false);
 
 // Allowed while the reservation is Reserved and before the cancellation deadline.
 // The node stays in the cooking queue marked Cancelled; portions go back to the
@@ -142,7 +173,8 @@ Reservation* staffSearchById(const Cafeteria& caf, int id);
 // per-person limit (counting portions already held), once per person per item.
 // Checks in order: BadItem, NotFresh, BadQuantity, CutoffPassed, NotSoldOut,
 // UserLimit, AlreadyWaiting, WaitlistFull. position = 1-based place in line.
-Result joinWaitlist(Cafeteria& caf, const std::string& user, int itemIndex, int quantity, int& position);
+Result joinWaitlist(Cafeteria& caf, const std::string& user, int itemIndex, int quantity, int& position,
+                    bool teacher = false);
 Result leaveWaitlist(Cafeteria& caf, const std::string& user, int itemIndex);
 int waitlistPosition(const Cafeteria& caf, const std::string& user, int itemIndex);  // 0 = not waiting
 int waitlistActiveCount(const Cafeteria& caf, int itemIndex);
@@ -158,7 +190,7 @@ void closeWaitlistsAtCutoff(Cafeteria& caf, NotificationList& out);
 
 // reserve() with an extra first line in the confirmation email (used by promotion).
 Result reserveWithNote(Cafeteria& caf, const std::string& user, int itemIndex, int quantity,
-                       NotificationList& out, Reservation** created, const std::string& note);
+                       NotificationList& out, Reservation** created, const std::string& note, bool teacher = false);
 
 // ---- menu items managed by staff (staff.cpp, redesign) ------------------------
 // Items are never erased: reservations refer to them by array index. Removing
@@ -172,7 +204,16 @@ const int MAX_PRICE_TAKA = 9999;
 // `amount` is the packaged stock (0..MAX_STOCK) or the fresh daily limit
 // (0..cooking capacity). MenuFull when the array is full. Not undoable.
 Result addMenuItem(Cafeteria& caf, const std::string& staff, const std::string& category,
-                   const std::string& name, ItemKind kind, int priceTaka, int amount, int& newIndex);
+                   const std::string& name, ItemKind kind, int priceTaka, int amount, int& newIndex,
+                   bool teachersOnly = false);
+
+// Undoable. A teachers' special is shown on the menu to teachers only, and only
+// they can reserve it or join its waitlist. Orders already made are kept.
+Result setTeachersOnly(Cafeteria& caf, const std::string& staff, int itemIndex, bool teachersOnly, bool& undoRecorded);
+
+// Today's orders for the staff list: reservations that carry a token, newest
+// order first, an order's dishes in reservation order (insertion sort, O(k^2)).
+int staffOrdersSorted(const Cafeteria& caf, Reservation** outArr, int cap);
 
 // Undoable.
 Result setPrice(Cafeteria& caf, const std::string& staff, int itemIndex, int priceTaka, bool& undoRecorded);
@@ -196,11 +237,86 @@ struct TrayLine {
     int quantity;
 };
 
+// Who is ordering and the coupon they typed ("" for none).
+struct OrderContext {
+    std::string role = "student";  // "student", "teacher" or "employee"
+    std::string coupon;
+};
+
 // Checks every line in order with the single-dish rules, counting portions
 // and queue entries claimed by earlier lines of the same tray. On the first
 // failing line returns its Result, sets failedLine and changes nothing.
 // Otherwise books every line (createdIds[i] = reservation ID, may be null)
 // and queues ONE confirmation email listing each dish, its price and the
 // total to pay at the counter. n must be 1..MAX_MENU_ITEMS.
+// With a coupon, the coupon is checked after the lines (BadCoupon, CouponNotToday,
+// CouponNotForYou, CouponUsedUp, CouponAlreadyUsed; failedLine stays -1) and its
+// discount is split over the dishes in proportion to their price.
 Result reserveBatch(Cafeteria& caf, const std::string& user, const TrayLine* lines, int n, NotificationList& out,
-                    int& failedLine, int* createdIds);
+                    int& failedLine, int* createdIds, const OrderContext& ctx = OrderContext());
+
+// ---- coupons (coupons.cpp) ------------------------------------------------------------
+// Staff make coupons for an occasion: a code, a percentage or a fixed amount off
+// the order, who may use it, the days it works and how many orders in all. A
+// person can use a coupon on one order a day. Prices are paid at the counter, so
+// the discount lowers what the person pays there.
+
+std::string couponCodeNormal(const std::string& code);  // trimmed, in capitals
+int findCoupon(const Cafeteria& caf, const std::string& code);  // index, or -1 (linear search)
+
+// InvalidValue (bad code, occasion, value, audience or days), CouponExists, CouponsFull.
+Result addCoupon(Cafeteria& caf, const std::string& staff, Coupon c);
+Result setCouponActive(Cafeteria& caf, const std::string& staff, const std::string& code, bool active);
+Result removeCoupon(Cafeteria& caf, const std::string& staff, const std::string& code);
+
+// Can this person use the coupon on an order of `subtotal` taka today? On Ok,
+// discount is what it takes off (never more than the subtotal).
+Result checkCoupon(const Cafeteria& caf, const std::string& code, const std::string& role, const std::string& user,
+                   int subtotal, int& discount);
+
+// Coupons this person can use today (active, in date, for their role, not used up).
+int couponsForToday(const Cafeteria& caf, const std::string& role, const Coupon** out, int cap);
+
+// "20% off" / "৳ 50 off".
+std::string couponText(const Coupon& c);
+
+// ---- order tokens (tokens.cpp) -----------------------------------------------------
+// Every order gets a token number for the day, as at a restaurant counter: a
+// single reservation, a whole tray (all its dishes share one token) or a
+// waitlist promotion. Tokens start again at 1 each day. The person shows the
+// token at the counter; the token board shows which tokens are being cooked and
+// which are ready, without names.
+
+struct TokenInfo {
+    int token;
+    std::string user;
+    int dishes;      // dishes on the token (cancelled ones are not counted)
+    int cooking;     // still being cooked (Reserved)
+    int ready;       // Ready, waiting at the counter
+    int done;        // Collected or Expired
+    time_t readyAt;  // when the token's last dish became ready (0 while any is cooking)
+};
+
+enum class TokenState { Cooking, Ready, Done };
+TokenState tokenState(const TokenInfo& t);
+
+// "017": how a token is printed (three digits, more if needed).
+std::string tokenText(int token);
+
+// Today's tokens in ascending order. Groups the reservation list with a
+// direct-address array indexed by token number: one pass, O(n + t).
+// Returns how many were written (at most cap).
+int todaysTokens(const Cafeteria& caf, TokenInfo* out, int cap);
+
+// The token board: tokens still cooking, ascending, and ready tokens in the
+// order they became ready (insertion sort by readyAt), so the counter calls
+// them first come, first served. Tokens fully collected are left out.
+void tokenBoard(const Cafeteria& caf, TokenInfo* cooking, int& nCooking, TokenInfo* ready, int& nReady, int cap);
+
+bool findToken(const Cafeteria& caf, int token, TokenInfo& out);
+
+// Staff hand a token's food over: every Ready dish of today's token becomes
+// Collected (one undoable action per dish). NoSuchToken if no order of today
+// has it, TokenDone if all its food was already handed over (or expired),
+// TokenNotReady if none of its dishes is ready yet. handedOver = dishes.
+Result handOverToken(Cafeteria& caf, const std::string& staff, int token, int& handedOver, bool& undoRecorded);

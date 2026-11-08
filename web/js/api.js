@@ -213,7 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// The navy bar at the top of the public and student pages.
+// The tamarind bar at the top of the public and student pages.
 async function fillAnnouncement(id) {
   const bar = document.getElementById(id || "announce");
   if (!bar) return;
@@ -231,6 +231,16 @@ function roleLabel(role) {
 
 function statusChip(status) {
   return el("span", { class: "chip chip--" + status }, status);
+}
+
+// The token stamp: a round double-ringed badge with a word, the number and a note.
+// variant: "" (chili on cream), "ready", "cream", "mint", "turmeric", "ink", "muted"; size: "", "big", "small".
+function tokenStamp(label, number, note, variant, size) {
+  const cls = ["stamp", variant ? "stamp--" + variant : "", size ? "stamp--" + size : ""].filter(Boolean).join(" ");
+  return el("div", { class: cls },
+    el("span", { class: "stamp__label" }, label),
+    el("span", { class: "stamp__num" }, number),
+    note ? el("span", { class: "stamp__note" }, note) : "");
 }
 
 // Sends people who are not logged in back to the right login page.

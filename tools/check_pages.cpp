@@ -2,7 +2,8 @@
 // Pages: a language, a viewport, one h1, a skip link to #main, no inline styles
 // or inline scripts, only /css/app.css, a label for every field, no arrows or
 // decorative dots. Stylesheet: the type and spacing scales exist and every size
-// uses the type scale, reduced motion is handled, no shadows, square corners,
+// uses the type scale, reduced motion is handled, no shadows, square corners (round
+// only through var(--round), for the token stamps),
 // no capitals-only text, no transition or animation longer than 300 ms.
 //
 //   check_pages <web folder>
@@ -184,7 +185,8 @@ static void cssDeclarationRules(const std::string& f, const std::vector<Decl>& d
     for (const Decl& d : decls) {
         const std::string where = " (" + d.selector.substr(0, 50) + ")";
         if (d.prop == "box-shadow") fail(f, "box-shadow" + where);
-        if (d.prop == "border-radius" && d.value != "var(--radius)" && d.value != "0")
+        // square corners everywhere; var(--round) is kept for the circular token stamps
+        if (d.prop == "border-radius" && d.value != "var(--radius)" && d.value != "var(--round)" && d.value != "0")
             fail(f, "border-radius " + d.value + where);
         if (d.prop == "text-transform" && d.value.find("uppercase") != std::string::npos)
             fail(f, "text-transform: uppercase" + where);

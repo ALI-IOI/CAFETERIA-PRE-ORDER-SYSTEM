@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#007377">
+  <meta name="theme-color" content="#B42318">
   <link rel="preload" href="/fonts/CormorantGaramond-600-latin.woff2" as="font" type="font/woff2" crossorigin>
   <title>Staff portal – BAUSTK Cafeteria</title>
   <link rel="stylesheet" href="/css/app.css">
@@ -27,15 +27,31 @@
 
     <div class="portal">
       <nav class="portal__nav" aria-label="Portal sections">
+        <a href="#counter">Token counter</a>
         <a href="#kitchen">Kitchen</a>
         <a href="#undo-h">Undo history</a>
+        <a href="#orders">Orders placed</a>
         <a href="#items">Menu items</a>
+        <a href="#coupons">Coupons</a>
         <a href="#reservations">Reservations</a>
         <a href="#stock">Packaged stock</a>
         <a href="#settings">Settings</a>
       </nav>
 
       <div class="portal__main">
+        <section id="counter" aria-labelledby="counter-h">
+          <h2 id="counter-h">Token counter</h2>
+          <p class="hint">Ask for the token, hand over the dishes that are ready and take the payment. Each dish handed over is one step on the undo history.</p>
+          <form id="handover" class="card row" novalidate>
+            <div class="field"><label for="tok">Token number</label>
+              <input id="tok" name="token" inputmode="numeric" autocomplete="off" maxlength="6" required data-error="Enter the token number, for example 17."></div>
+            <button class="btn btn--primary" type="submit">Hand over</button>
+          </form>
+          <div id="tokens-state"></div>
+          <p class="hint" id="tokens-summary"></p>
+          <ul class="counter-tokens" id="ready-tokens" aria-label="Tokens ready at the counter"></ul>
+        </section>
+
         <div class="split">
           <section id="kitchen" aria-labelledby="kitchen-h">
             <h2 id="kitchen-h">Fresh food</h2>
@@ -57,6 +73,21 @@
           </aside>
         </div>
 
+        <section id="orders" aria-labelledby="orders-h">
+          <h2 id="orders-h">Orders placed today</h2>
+          <p class="hint">Every order, newest token first: who placed it, each dish and what is left to pay at the counter after a coupon.</p>
+          <div id="orders-state"></div>
+          <p class="hint" id="orders-summary"></p>
+          <div class="card table-wrap">
+            <table>
+              <caption class="visually-hidden">Orders placed today, newest first</caption>
+              <thead><tr><th scope="col">Token</th><th scope="col">Placed by</th><th scope="col">Dishes</th><th scope="col">To pay</th></tr></thead>
+              <tbody id="order-rows"></tbody>
+            </table>
+          </div>
+          <p id="orders-empty" class="state state--empty" hidden>No orders yet today.</p>
+        </section>
+
         <section id="items" aria-labelledby="items-h">
           <h2 id="items-h">Menu items</h2>
           <p class="hint">Switch an item off to hide it for now. Remove takes it off the menu for good (Undo brings it back); an item with reservations or a waitlist today cannot be removed. Prices are shown only; people pay at the counter.</p>
@@ -64,7 +95,7 @@
           <div class="card table-wrap">
             <table>
               <caption class="visually-hidden">Menu items with price, availability and picture</caption>
-              <thead><tr><th scope="col">Picture</th><th scope="col">Item</th><th scope="col">Price (taka)</th><th scope="col">Available</th><th scope="col">New picture</th><th scope="col"><span class="visually-hidden">Remove</span></th></tr></thead>
+              <thead><tr><th scope="col">Picture</th><th scope="col">Item</th><th scope="col">Price (taka)</th><th scope="col">Available</th><th scope="col">Who can order</th><th scope="col">New picture</th><th scope="col"><span class="visually-hidden">Remove</span></th></tr></thead>
               <tbody id="item-rows"></tbody>
             </table>
           </div>
@@ -80,8 +111,44 @@
               <input id="ni-price" name="price" autocomplete="off" type="number" min="0" max="9999" value="0" required data-error="Enter a price from 0 to 9999."></div>
             <div class="field"><label for="ni-amount">Daily portions or stock</label>
               <input id="ni-amount" name="amount" autocomplete="off" type="number" min="0" max="9999" value="10" required data-error="Enter a number from 0 to 9999."></div>
+            <div class="field"><label for="ni-who">Who can order</label><span class="hint" id="ni-who-hint">Fresh dishes only</span>
+              <select id="ni-who" aria-describedby="ni-who-hint"><option value="0">Everyone</option><option value="1">Teachers only (a teachers’ special)</option></select></div>
             <div class="field"><button class="btn btn--primary btn--block" type="submit">Add item</button></div>
           </form>
+        </section>
+
+        <section id="coupons" aria-labelledby="coupons-h">
+          <h2 id="coupons-h">Coupons</h2>
+          <p class="hint">Make a code for an occasion: how much it takes off, who may use it and on which days. Each person can use a coupon once a day; it comes off what they pay at the counter. Coupon changes are not on the undo list, so switch a coupon off rather than removing it if you may need it again.</p>
+          <form id="add-coupon" class="card grid" novalidate aria-labelledby="add-coupon-h">
+            <h3 class="visually-hidden" id="add-coupon-h">Make a coupon</h3>
+            <div class="field"><label for="cp-code">Code</label><span class="hint" id="cp-code-hint">3 to 16 letters and digits, for example BOISHAKH20</span>
+              <input id="cp-code" name="code" autocomplete="off" spellcheck="false" required minlength="3" maxlength="16" pattern="[A-Za-z0-9]{3,16}" aria-describedby="cp-code-hint" data-error="Enter 3 to 16 letters and digits."></div>
+            <div class="field"><label for="cp-occasion">Occasion</label><span class="hint" id="cp-occasion-hint">For example Pohela Boishakh, Teachers’ Day</span>
+              <input id="cp-occasion" name="occasion" autocomplete="off" required maxlength="60" aria-describedby="cp-occasion-hint" data-error="Enter what the coupon is for."></div>
+            <div class="field"><label for="cp-kind">Discount</label>
+              <select id="cp-kind"><option value="percent">Percent off the order</option><option value="fixed">Taka off the order</option></select></div>
+            <div class="field"><label for="cp-value">Amount</label><span class="hint" id="cp-value-hint">1 to 100 percent, or 1 to 9999 taka</span>
+              <input id="cp-value" name="value" autocomplete="off" type="number" min="1" max="9999" required aria-describedby="cp-value-hint" data-error="Enter 1 to 100 percent or 1 to 9999 taka."></div>
+            <div class="field"><label for="cp-audience">Who can use it</label>
+              <select id="cp-audience"><option value="everyone">Everyone</option><option value="student">Students</option><option value="teacher">Teachers</option><option value="employee">University staff</option></select></div>
+            <div class="field"><label for="cp-from">First day</label><span class="hint" id="cp-from-hint">Empty: from today</span>
+              <input id="cp-from" name="from" type="date" aria-describedby="cp-from-hint"></div>
+            <div class="field"><label for="cp-to">Last day</label><span class="hint" id="cp-to-hint">Empty: no end</span>
+              <input id="cp-to" name="to" type="date" aria-describedby="cp-to-hint"></div>
+            <div class="field"><label for="cp-max">Most orders</label><span class="hint" id="cp-max-hint">Empty: no limit</span>
+              <input id="cp-max" name="maxUses" autocomplete="off" type="number" min="1" max="100000" aria-describedby="cp-max-hint" data-error="Enter 1 to 100000, or leave it empty."></div>
+            <div class="field"><button class="btn btn--primary btn--block" type="submit">Make coupon</button></div>
+          </form>
+          <div id="coupons-state"></div>
+          <div class="card table-wrap">
+            <table>
+              <caption class="visually-hidden">Coupons, in the order they were made</caption>
+              <thead><tr><th scope="col">Code</th><th scope="col">Discount</th><th scope="col">For</th><th scope="col">Days</th><th scope="col">Used</th><th scope="col">On</th><th scope="col"><span class="visually-hidden">Remove</span></th></tr></thead>
+              <tbody id="coupon-rows"></tbody>
+            </table>
+          </div>
+          <p id="coupons-empty" class="state state--empty" hidden>No coupons yet. Make one above.</p>
         </section>
 
         <section id="reservations" aria-labelledby="res-h">

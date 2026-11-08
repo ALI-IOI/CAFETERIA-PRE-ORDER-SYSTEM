@@ -26,13 +26,15 @@ int waitlistPosition(const Cafeteria& caf, const std::string& user, int itemInde
     return 0;
 }
 
-Result joinWaitlist(Cafeteria& caf, const std::string& user, int itemIndex, int quantity, int& position) {
+Result joinWaitlist(Cafeteria& caf, const std::string& user, int itemIndex, int quantity, int& position,
+                    bool teacher) {
     position = 0;
     cafEnsureToday(caf);
     MenuItem* item = menuAt(caf.menu, itemIndex);
     if (item == nullptr) return Result::BadItem;
     if (item->kind != ItemKind::Fresh) return Result::NotFresh;
     if (!item->available) return Result::NotAvailable;
+    if (item->teachersOnly && !teacher) return Result::TeachersOnly;
     if (quantity < 1 || quantity > caf.settings.perUserLimit) return Result::BadQuantity;
     if (!beforeMinuteOfDay(caf, caf.settings.cutoffMinute)) return Result::CutoffPassed;
     if (quantity <= menuRemaining(*item)) return Result::NotSoldOut;
@@ -95,7 +97,8 @@ int promoteWaitlist(Cafeteria& caf, int itemIndex, NotificationList& out) {
         }
         if (e->quantity > menuRemaining(*item)) break;  // strict FIFO: nobody jumps ahead
         Result r = reserveWithNote(caf, e->user, itemIndex, e->quantity, out, nullptr,
-                                   "Good news: a portion became free and you were first on the waitlist.\n");
+                                   "Good news: a portion became free and you were first on the waitlist.\n",
+                                   true);  // who may order it was checked when they joined
         if (r == Result::QueueFull) break;  // try again when the cooking queue has room
         wqDequeue(q, front);
         if (r == Result::Ok) made++;

@@ -18,6 +18,10 @@ struct Reservation {
     time_t expiresAt;      // fixed when marked ready: readyAt + freshness window (D7)
     int reminderMinutes;   // fixed when marked ready: reminder interval (D7)
     int day;               // YYYYMMDD the reservation belongs to
+    int token;             // order token of that day, shared by every dish of one order (0 = none)
+    int priceTaka;         // price of one portion when it was reserved (what is paid at the counter)
+    std::string coupon;    // coupon code used for the order, or ""
+    int discountTaka;      // this dish's share of the order's coupon discount
     Reservation* next;
 };
 

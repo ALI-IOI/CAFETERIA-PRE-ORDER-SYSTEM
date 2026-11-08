@@ -1,16 +1,17 @@
 # Test report — proposal section 12
 
-**Date:** 2026-11-01 (re-run after the teal and navy redesign and the security hardening) · **Build:** MinGW-w64 g++ 13.1, `-Wall -Wextra`, 0 warnings
+**Date:** 2026-11-09 (re-run after order tokens, the "chili and rice" redesign, teachers' specials and coupons) · **Build:** MinGW-w64 g++ 13.1, `-Wall -Wextra`, 0 warnings
 **Run:** `ctest --test-dir build --output-on-failure`
 
 | Suite | What it is | Result |
 |---|---|---|
-| `unit_tests` | 235 unit tests: data structures (incl. linked-list merge sort), rules, storage, auth, email, lock file, waitlist, email retry, menu items, tray, pictures, order history, password change, university staff, staff computer list, login lockout with parallel guesses, code resend cooldown, session cap (fake clock) | **235 / 235 pass** |
+| `unit_tests` | 256 unit tests: data structures (incl. linked-list merge sort), rules, storage, auth, email, lock file, waitlist, email retry, menu items, tray, pictures, order history, password change, university staff, staff computer list, login lockout with parallel guesses, code resend cooldown, session cap, order tokens, teachers' specials, coupons, the staff order list (fake clock) | **256 / 256 pass** |
 | `no_stl_guard` | Fails the build if `vector/list/queue/stack/deque/map/set/array` appear in `src/ds`, `src/core`, `src/auth`, `src/storage`, `src/console`, `src/email` | **pass** (proven to fail on an injected `#include <vector>`) |
 | `console_demo` | Scripted run of the stage-2 console program, checks the transcript | **pass** |
 | `admin_tool` | `add-staff` and `add-person`: hashed, duplicate/short/mismatched password refused, a student ID refused for `add-person`, refused while a live server holds the lock, allowed with a stale lock | **pass** |
+| `contrast_check`, `hex_colors_only`, `page_rules` | Every text and control colour pair against WCAG 2.2; colours in hex only; type scale, corners, shadows and motion rules on every page | **pass** |
 | `thread_exit_stress` | 640 short-lived client threads against an in-process HTTP server (guards the MinGW thread-exit crash fix below) | **pass** |
-| `e2e_section12` | Starts the real server (fake clock, temp data, email outbox), drives it over HTTP, crashes and restarts it; also headers, Windows path spellings, the dev clock's Host check, parallel wrong passwords | **126 / 126 checks pass** |
+| `e2e_section12` | Starts the real server (fake clock, temp data, email outbox), drives it over HTTP, crashes and restarts it; also headers, Windows path spellings, the dev clock's Host check, parallel wrong passwords, tokens, teachers' specials, coupons, the staff order list | **148 / 148 checks pass** |
 
 Raw output: [ctest_summary.txt](ctest_summary.txt), [unit_tests_output.txt](unit_tests_output.txt),
 [e2e_section12_output.txt](e2e_section12_output.txt).
@@ -175,3 +176,12 @@ item (`MenuItem::removed`, saved as a 9th `menu.txt` field) instead of erasing i
 | Unit (seen failing first) | `remove_item_hides_it_and_refuses_reserve`, `remove_item_refused_while_reserved_or_ready`, `remove_item_allowed_after_cancel_refused_with_waitlist`, `remove_item_bad_or_already_removed`, `undo_remove_item_restores_it`, `removed_item_name_can_be_reused`, `removed_item_cannot_be_switched_on_or_repriced`, `removed_item_survives_restart` | 229/229 Pass |
 | E2E | `remove: student_cannot_remove_items`, `remove: item gone from the menu and the staff lists`, `remove: undo brings it back`, `remove: refused while reserved` | 117/117 Pass |
 | Browser | Remove on Mr. Twist: row gone, "Removed Mr. Twist" on top of the undo stack, hidden from the student menu; Remove on Khichuri with a reservation: refused with the reason; Undo brings it back | Pass |
+
+## Teachers' specials, coupons and the staff order list (2026-11-09)
+
+| Area | Tests | Result |
+|---|---|---|
+| Unit (`tests/test_specials_coupons.cpp`) | `teachers_special_refuses_students_and_takes_teachers`, `teachers_special_can_be_undone_and_is_fresh_only`, `teachers_waitlist_for_a_special`, `coupon_checks_code_audience_and_dates`, `tray_with_a_coupon_splits_the_discount`, `a_refused_coupon_books_nothing`, `cancelling_the_whole_order_gives_the_coupon_back`, `staff_order_list_is_newest_token_first`, `specials_and_coupons_survive_a_restart` | 256/256 Pass |
+| End to end | `specials:` (4): a teachers' special shows only on teachers' menus, a student cannot reserve it, only staff choose who can order, staff open it to everyone again. `coupons:` (10): only staff make coupons; duplicates and 150 % refused; offers list only what each person may use; a student cannot use a teachers' coupon; check shows 20 % off a 400 taka tray; the teacher reserves with it; once a day per person; staff list counts the use; switched off leaves the offers; staff remove it. `orders:` (2): staff see every order newest first with the coupon and what to pay; only staff see the list | 148/148 Pass |
+| Browser | Student tray: BOISHAKH20 applied, ৳ 280 less ৳ 56 = ৳ 224, today's offers listed; teacher menu shows Haleem with a "Teachers' special" tag at 375 px with no sideways scrolling; staff portal: order 004 (Sample Teacher, Haleem and Tehari, ৳ 210 less ৳ 50 = ৳ 160), coupon list with uses and on/off, "Who can order" select at 800 and 1280 px | Pass |
+| WebAssembly demo | Rebuilt; the first visit creates WELCOME10 (10 % off, everyone) and TEACH50 (৳ 50 off, teachers); offers, coupon check and the staff order list answer from the in-browser server | Pass |
