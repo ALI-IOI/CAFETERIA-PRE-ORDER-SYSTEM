@@ -92,6 +92,7 @@ function dishCard(item) {
       el("h3", { class: "dish__name", id: "dish-" + item.index }, item.name),
       el("span", { class: "leader", "aria-hidden": "true" }),
       el("span", { class: item.price > 0 ? "price" : "price price--ask" }, taka(item.price))));
+  if (item.teachersOnly) body.append(el("p", { class: "special-tag" }, "Teachers’ special"));
   if (fresh) {
     const pct = item.limit > 0 ? Math.round((left / item.limit) * 100) : 0;  // the bar is what is left
     const meter = el("div", { class: "meter", role: "img", "aria-label": left + " of " + item.limit + " portions left" }, el("span"));
@@ -186,6 +187,7 @@ async function load() {
   }
   menu = m;
   showStatus();
+  loadOffers();
   const notes = Tray.reconcile(menu);
   if (notes.length) say("msg", notes.join(" "));
   render();
@@ -194,6 +196,20 @@ async function load() {
 document.getElementById("search").addEventListener("input", () => render());
 document.getElementById("sort").addEventListener("change", () => render());
 document.getElementById("reserve-all").addEventListener("click", () => reserveTray(load));
+document.getElementById("coupon-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  applyCoupon(document.getElementById("coupon-code").value, () => render());
+});
+
+async function loadOffers() {
+  let r;
+  try {
+    r = await api.get("/api/coupons/today");
+  } catch (e) {
+    return;  // offers are extra: the menu works without them
+  }
+  if (r.ok) renderOffers(r.coupons, () => render());
+}
 wireLogout("logout", "/CAFETERIA-PRE-ORDER-SYSTEM/");
 loadProfile();
 load();
