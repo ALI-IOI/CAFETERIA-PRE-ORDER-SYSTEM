@@ -42,8 +42,8 @@ TEST(long_text_over_limit) {
 
 TEST(pipe_and_newline_rejected) {
     CHECK(!validName("Test|Student"));
-    CHECK(!validName("Orpheus\nDas"));
-    CHECK(!validName("Orpheus\tDas"));
+    CHECK(!validName("Test\nStudent"));
+    CHECK(!validName("Test\tStudent"));
     CHECK(!validPassword("password\n123"));
     CHECK(!validStaffLogin("staff|1"));
 }
