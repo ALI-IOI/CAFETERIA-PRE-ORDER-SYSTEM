@@ -14,7 +14,7 @@ static std::string writeUniList(const char* name) {
     std::ofstream o(path);
     o << "# fixture university list\n"
       << "id,email,role,name,department\n"
-      << "1000000000000030,orpheus@uni.example,student,Orpheus Papadakis,CSE\n"
+      << "1000000000000030,orpheus@uni.example,student,Odysseus Ithaca,CSE\n"
       << "1000000000000050,ali@uni.example,student,Mohammad Ali Gazi,CSE\n"
       << "2000000000000001,khalid@uni.example,teacher,Hector Troy,CSE\n";
     return path;
@@ -234,7 +234,7 @@ TEST(users_round_trip_through_file) {
     CHECK(u != nullptr);
     CHECK(u->verified);
     CHECK_EQ(u->role, Role::Student);
-    CHECK_EQ(u->name, std::string("Orpheus Papadakis"));
+    CHECK_EQ(u->name, std::string("Odysseus Ithaca"));
     CHECK(verifyPassword(u->passwordHash, "studentpass1"));
     CHECK_EQ(ulFind(loaded, "cafe.staff")->role, Role::Staff);
     ulClear(loaded);
@@ -244,7 +244,7 @@ TEST(bad_university_list_line_reported) {
     fs::path p = fs::temp_directory_path() / "cafeteria_tests" / "bad_uni.csv";
     {
         std::ofstream o(p);
-        o << "id,email,role,name,department\n1000000000000030,orpheus@uni.example,admin,Orpheus,CSE\n";
+        o << "id,email,role,name,department\n1000000000000030,orpheus@uni.example,admin,Test,CSE\n";
     }
     UniList list;
     uniInit(list);

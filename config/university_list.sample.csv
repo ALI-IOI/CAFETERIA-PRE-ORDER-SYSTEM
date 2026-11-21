@@ -2,7 +2,7 @@
 # [CONFIRM] The real list comes from the university. Save it as
 # config/university_list.csv in this format (one person per line):
 id,email,role,name,department
-1000000000000030,orpheus@uni.example,student,Orpheus Papadakis,CSE
+1000000000000030,orpheus@uni.example,student,Odysseus Ithaca,CSE
 1000000000000050,ali@uni.example,student,Mohammad Ali Gazi,CSE
 2000000000000001,teacher1@uni.example,teacher,Sample Teacher,CSE
 # University staff (role employee). The email may be left blank for staff with no university email;

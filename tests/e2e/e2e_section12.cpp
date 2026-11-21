@@ -239,7 +239,7 @@ static void writeFixtures() {
         << "code_minutes=15\ncooking_capacity=100\n";
     std::ofstream uni(g_config + "/university_list.csv");
     uni << "id,email,role,name,department\n"
-        << "1000000000000030,orpheus@uni.example,student,Orpheus Papadakis,CSE\n"
+        << "1000000000000030,orpheus@uni.example,student,Odysseus Ithaca,CSE\n"
         << "1000000000000050,ali@uni.example,student,Mohammad Ali Gazi,CSE\n"
         << "2000000000000001,teacher1@uni.example,teacher,Sample Teacher,EEE\n"
         << "3000000000000002,guard1@uni.example,employee,Sample Guard,Security\n"

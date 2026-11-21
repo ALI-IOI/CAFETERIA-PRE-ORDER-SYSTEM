@@ -96,7 +96,7 @@ struct EmployeeFixture {
         authInit(auth, &clock, cfg);
         std::string err;
         CHECK(uniLoadCsv(auth.uni,
-                         writeCsv("emp_fixture.csv", "1000000000000030,orpheus@uni.example,student,Orpheus Papadakis,CSE\n"
+                         writeCsv("emp_fixture.csv", "1000000000000030,orpheus@uni.example,student,Odysseus Ithaca,CSE\n"
                                                      "3000000000000002,guard1@uni.example,employee,Sample Guard,Security\n"
                                                      "3000000000000001,,employee,Rahim Driver,Transport\n"
                                                      "3000000000000003,,employee,Karim Cleaner,Estate\n"),

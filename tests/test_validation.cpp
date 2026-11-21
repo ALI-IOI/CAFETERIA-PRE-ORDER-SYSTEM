@@ -32,7 +32,7 @@ TEST(university_id_digits_only) {
 }
 
 TEST(long_text_over_limit) {
-    CHECK(validName("Orpheus Papadakis"));
+    CHECK(validName("Odysseus Ithaca"));
     CHECK(!validName(""));
     CHECK(!validName(std::string(61, 'x')));
     CHECK(validPassword("correct horse"));
@@ -41,7 +41,7 @@ TEST(long_text_over_limit) {
 }
 
 TEST(pipe_and_newline_rejected) {
-    CHECK(!validName("Orpheus|Das"));
+    CHECK(!validName("Test|Student"));
     CHECK(!validName("Orpheus\nDas"));
     CHECK(!validName("Orpheus\tDas"));
     CHECK(!validPassword("password\n123"));

@@ -56,7 +56,7 @@ endif()
 file(REMOVE "${WORK}/server.lock")
 file(MAKE_DIRECTORY "${WORK}/config")
 file(WRITE "${WORK}/config/university_list.csv"
-     "id,email,role,name,department\n1000000000000030,orpheus@uni.example,student,Orpheus Papadakis,CSE\n3000000000000001,,employee,Rahim Driver,Transport\n")
+     "id,email,role,name,department\n1000000000000030,orpheus@uni.example,student,Odysseus Ithaca,CSE\n3000000000000001,,employee,Rahim Driver,Transport\n")
 file(WRITE "${WORK}/driver.txt" "driverpass1\ndriverpass1\n")
 execute_process(COMMAND "${EXE}" --data "${WORK}" --config "${WORK}/config" add-person 3000000000000001 rahim@example.com
                 INPUT_FILE "${WORK}/driver.txt" OUTPUT_VARIABLE out ERROR_VARIABLE out RESULT_VARIABLE rc)
