@@ -52,7 +52,7 @@ struct AuthFixture {
 
 TEST(non_university_email_rejected) {
     AuthFixture f;
-    CHECK_EQ(registerStart(f.auth, "orpheus@example.com", "1000000000000030", "longpassword", f.out),
+    CHECK_EQ(registerStart(f.auth, "other@example.com", "1000000000000030", "longpassword", f.out),
              AuthResult::NotUniversityEmail);
     CHECK_EQ(f.out.count, 0);
 }

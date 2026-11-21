@@ -140,7 +140,7 @@ TEST(blank_email_row_personal_email_gets_office_message) {
     CHECK_EQ(registerStart(f.auth, "hermes@example.com", "3000000000000001", "driverpass1", f.out),
              AuthResult::NoUniversityEmail);
     CHECK_EQ(f.out.count, 0);
-    CHECK_EQ(registerStart(f.auth, "orpheus@example.com", "1000000000000030", "studentpass1", f.out),
+    CHECK_EQ(registerStart(f.auth, "other@example.com", "1000000000000030", "studentpass1", f.out),
              AuthResult::NotUniversityEmail);  // listed rows with an email still need the university domain
 }
 

@@ -311,7 +311,7 @@ static int realMain(int argc, char** argv) {
     Browser anon, orpheus, ali, teacher, staff, s[13];
 
     // ---- 12.1 registration ------------------------------------------------------
-    auto r = anon.post("/api/register", {{"email", "orpheus@example.com"}, {"id", "1000000000000030"}, {"password", PW}});
+    auto r = anon.post("/api/register", {{"email", "other@example.com"}, {"id", "1000000000000030"}, {"password", PW}});
     check(status(r) == 400 && has(body(r), "university email"), "12.1 non-university email rejected", body(r));
     r = anon.post("/api/register", {{"email", "orpheus@uni.example"}, {"id", "1000000000000070"}, {"password", PW}});
     check(status(r) == 400 && has(body(r), "not on the university"), "12.1 unlisted ID rejected", body(r));
